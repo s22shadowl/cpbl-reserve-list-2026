@@ -26,6 +26,7 @@
 ## 環境注意事項
 
 - 這台機器的 rtk hook 會改寫 `npx wrangler ...`（曾被改成 `npm run dev` 而失敗）：一律用 `worker/` 的 npm scripts（`dev`、`db:init`、`db:reset`、`deploy`）或 `./node_modules/.bin/wrangler`。
+- 本機假球迷名單：`cd worker && npm run db:seed`（需先 `db:init`），每隊寫入 50 份刻意偏向的名單到**本機** D1 並清空 tally，用來看對答案、共識與爆冷（P1-3）；可重複執行。官方名單開發檔由 `poetry run python -m scraper.official --sample` 產生。
 - 換了 D1 後本機資料庫是空的，`npm run dev` 前先 `npm run db:init`。
 - Cloudflare 會對 Python 預設 User-Agent 回 403；用 curl 加瀏覽器 UA 驗證 API。
 - 測試：`poetry run pytest`（scraper）、`node --test scripts/*.test.mjs`（前端；Node 24 不接受只給目錄）、`cd worker && npm test`（Worker，vitest + workerd）。
