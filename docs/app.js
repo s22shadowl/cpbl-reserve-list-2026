@@ -105,8 +105,12 @@ function match(p){
   if(q){const s=q.trim();if(s&&!p.n.includes(s)&&p.no!==s&&String(+p.no)!==s)return false}
   return true;
 }
+function tileIds(box){return[...box.querySelectorAll(".tile")].map(b=>b.dataset.id)}
 function renderGroups(){
-  const box=$("groups");box.replaceChildren();
+  const box=$("groups"),ae=document.activeElement,had=box.contains(ae)?ae.dataset.id||null:null,prev=had?tileIds(box):[];
+  // Removing a subtree that holds focus makes Chrome lay out the half-empty page at once, clamping scrollY toward 0; drop focus first, restore it below.
+  if(had)ae.blur();
+  box.replaceChildren();
   const full=sel.size>=LIMIT,show=statsShown(DATA.teams[T.code]);let any=false;
   for(const g of GORD){
     const all=ROSTER.filter(p=>p.g===g),list=all.filter(match).sort(sortP);
@@ -116,7 +120,7 @@ function renderGroups(){
       const on=sel.has(p.id);
       const pic=photo(p,"pic");pic.append(el("span",{class:"no",text:p.no}),el("span",{class:"ck","aria-hidden":"true",text:"✓"}));
       const line=show?statLine(p):null,capped=full&&!on;
-      const b=el("button",{class:"tile","aria-pressed":String(on),title:tileTitle(p,show,capped),"aria-label":`${playerHead(p)} ${posLabel(p)}${line?" "+line:""}${on?" 已保留":""}`},pic,
+      const b=el("button",{class:"tile","data-id":p.id,"aria-pressed":String(on),title:tileTitle(p,show,capped),"aria-label":`${playerHead(p)} ${posLabel(p)}${line?" "+line:""}${on?" 已保留":""}`},pic,
         el("span",{class:"tx"},el("span",{class:"nmr"},el("span",{class:"nm",text:p.n}),p.tag?el("span",{class:"tag",text:p.tag}):null),el("span",{class:"sub",text:posLabel(p)+" · "+p.l}),line&&el("span",{class:"stat",text:line})));
       if(capped)b.disabled=true;
       b.onclick=()=>toggle(p.id);
@@ -126,6 +130,7 @@ function renderGroups(){
       el("div",{class:"gh"},el("h2",{},el("span",{class:"en",text:GEN[g]}),GN[g]),el("span",{class:"k"},"已保留 ",el("b",{text:keptIn(g)})," / "+all.length)),grid));
   }
   if(!any)box.append(el("div",{class:"empty"},el("b",{text:"沒有符合條件的球員"}),"換個守位或顯示條件，或清除搜尋字。"));
+  if(had){const id=nextFocusId(prev,tileIds(box),had),t=id&&[...box.querySelectorAll(".tile")].find(b=>b.dataset.id===id&&!b.disabled);if(t)t.focus({preventScroll:true})}
 }
 function keepDraft(){store("rl-draft-"+T.code,JSON.stringify([...sel]))}
 function toggle(id){
