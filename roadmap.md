@@ -69,16 +69,14 @@
 ### P0-7 GitHub Pages 上線與煙霧測試
 - 從 `docs/` 啟用 Pages。
 - 手動跑一遍：六隊各選人、送出、看統計、撤回、複製文字、存圖；也要在手機寬度確認畫面。
-- 2026-11-15 狀態：已上線（https://s22shadowl.github.io/cpbl-reserve-list-2026/）。使用者測試結果：送出 ✅、修改後再送出 ✅、**清空後送出（撤回）❌ 名單沒有更新**。
-- **待修 bug**：送出後清空名單，「送出名單」按鈕變成 disabled，狀態文字顯示「點選球員加入名單」，無法撤回。使用者環境：台鋼、電腦 Chrome，中途切過「大家的統計」，沒有換隊或重新整理。
-  - 2026-11-15 調查：本機（local Worker）照同樣流程重現不了；正式站 `app.js` 與 repo 相同。同時段 D1 顯示悍將、統一、樂天的撤回有成功寫入。
-  - 「點選球員加入名單」代表 `renderStatus()` 當下 `saved` 為空或 `null`（可能是 `loadMine()` 失敗走 catch，或 `loadMine()` 晚於 `save()` 回來而覆蓋 `saved`）。
-  - 已開啟 Workers Logs（`[observability]`）。下次重現時在 Console 執行 `[online, saving, saved && [...saved].length, sel.size]`，並記下 Network 中 `mine`／`picks` 的狀態碼，再對照 Cloudflare 後台的請求紀錄。確認原因後補回歸測試。
+- 2026-11-15 狀態：已上線（https://s22shadowl.github.io/cpbl-reserve-list-2026/）。使用者測試結果：送出 ✅、修改後再送出 ✅、清空後送出（撤回）✅（先前已修好，2026-11-15 補上回歸測試 `scripts/status.test.mjs`）。
+- 送出按鈕狀態抽成 `docs/status.js` 的 `saveState()` 純函式並加上單元測試；Workers Logs 已開啟（`[observability]`），之後可在 Cloudflare 後台查請求紀錄。
 - 修好後：清空正式 D1 的測試資料（`DELETE FROM picks; DELETE FROM tally;`）、本項標記完成、刪除 `plans/2026-11-15-p0-six-teams.md`。
 
 ### P0-8 免費額度防護（已完成）
 - 統計分頁輪詢只在分頁可見時執行，間隔從 60 秒改為 120 秒。
 - 評估把 `/stats` 的邊緣快取從 20 秒拉長到 60 秒。自己剛送出時仍以 `fresh=1` 跳過快取。
+- 修正：自己送出後 65 秒內讀 `/stats` 一律帶 `fresh=1`。原本切到統計分頁時會讀到邊緣／瀏覽器快取的舊資料，蓋掉剛送出後的最新統計。
 
 ### P0-9 球隊主題配色（已完成）
 - 現況：`applyTheme()` 只覆蓋 `--band/--acc/--on-acc/--acc-ink/--hi` 這 5 個變數；其餘顏色（標題字、頁首副標、淡底、卡片底、深色模式底色等）都寫死成悍將海軍藍，所以其他隊的頁面會帶著藍色調。

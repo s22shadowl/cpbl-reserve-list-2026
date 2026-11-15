@@ -183,16 +183,16 @@ function renderDock(){
   $("top").classList.toggle("over",n>LIMIT);
   $("copyTxt").disabled=$("mkImg").disabled=$("clear").disabled=n===0;
 }
-function same(a,b){if(!a||a.size!==b.size)return false;for(const x of a)if(!b.has(x))return false;return true}
 function fmt(t){try{const d=new Date(t);return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`}catch(e){return""}}
 function renderStatus(){
   const s=$("status"),btn=$("save");s.replaceChildren();
-  const dirty=!same(saved||new Set(),sel);btn.classList.remove("dirty");
-  if(saving){s.append("送出中…");btn.disabled=true;return}
-  if(!online&&saved===null){s.append("連線中…");btn.disabled=!sel.size;return}
-  if(!sel.size&&!(saved&&saved.size)){s.append("點選球員加入名單");btn.disabled=true;return}
-  if(dirty){s.append(el("span",{class:"warn",text:saved&&saved.size?"有未送出的變更":"尚未送出"}));btn.disabled=false;btn.classList.add("dirty")}
-  else{s.append("已送出"+(savedAt?" "+fmt(savedAt):""));btn.disabled=true}
+  const k=saveState({saving,online,saved,sel});
+  btn.disabled=k.disabled;btn.classList.toggle("dirty",k.kind==="changed"||k.kind==="unsent");
+  if(k.kind==="saving")s.append("送出中…");
+  else if(k.kind==="connecting")s.append("連線中…");
+  else if(k.kind==="empty")s.append("點選球員加入名單");
+  else if(k.kind==="sent")s.append("已送出"+(savedAt?" "+fmt(savedAt):""));
+  else s.append(el("span",{class:"warn",text:k.kind==="changed"?"有未送出的變更":"尚未送出"}));
 }
 async function api(path,opts){
   const r=await fetch(API+path,opts);const j=await r.json().catch(()=>({}));
