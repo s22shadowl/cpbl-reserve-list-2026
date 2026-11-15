@@ -16,17 +16,33 @@
 ```
 docs/                 GitHub Pages 靜態網站（純 HTML/CSS/JS，無建置步驟）
   index.html, app.js, style.css
-  data/teams.json     各隊可選球員與排除名單（由 scraper 產生）
+  theme.js            六隊與共通頁面的配色推導（TEAMS、deriveTheme）
+  stats.js            卡片上的本季成績格式
+  data/teams.json     各隊可選球員、排除名單、本季成績（由 scraper 產生）
   photos/             球員照片（由 scraper 下載）
 worker/               Cloudflare Worker API + D1
   src/index.js
   src/roster.json     各隊允許送出的球員 ID（由 scraper 產生，必須與 teams.json 一致）
   schema.sql
-scraper/              （規劃中）Python 爬蟲，從中職官網產生上述資料
+scraper/              Python 爬蟲，從中職官網產生上述資料
+  overrides.json      手動排除（引退、FA 等）、強制納入與球員標籤
+scripts/*.test.mjs    前端配色對比與成績格式測試（node --test）
 roadmap.md            開發規劃（P0–P3）
 ```
 
-目前 `docs/data/` 與 `worker/src/roster.json` 仍是原版的悍將資料（2026-10-07），`wrangler.toml` 與 `app.js` 的 API 設定也仍指向原站，將於 roadmap P0 替換。
+## 更新球員資料
+
+需要 Python 3.12 與 Poetry。爬蟲每次請求間隔 1.5 秒；個人頁有快取（`scraper/.cache/`），第一次約 25 分鐘，之後只需幾分鐘。
+
+```bash
+poetry install
+poetry run python -m scraper.build            # 六隊；可加 --team AEO 只更新單隊，--refresh 忽略快取
+poetry run python -m scraper.check            # 驗證資料，失敗時不要 commit
+poetry run pytest                             # scraper 測試
+node --test scripts/*.test.mjs                # 前端測試
+```
+
+自動排除規則：國籍非中華民國且沒有選秀順位的判為洋將，名字有 `◎` 前綴的判為自主／自行培訓。引退、FA 等無法自動判斷的情況，在 `scraper/overrides.json` 手動維護，每筆註明依據。更新 `roster.json` 後需要重新部署 Worker（`cd worker && npm run deploy`）。
 
 ## API（Cloudflare Worker）
 
@@ -56,7 +72,12 @@ npm run db:reset    # 清空本機統計
 python3 -m http.server -d docs 8080 --bind 127.0.0.1    # http://localhost:8080/
 ```
 
-部署需自行建立 Cloudflare Worker 與 D1，並更新 `worker/wrangler.toml` 的 `database_id` 與 `docs/app.js` 的 `API` 網址（見 roadmap P0-6）。
+## 部署
+
+- 前端：GitHub Pages，從 `main` 分支的 `docs/` 發布。
+- 後端：Cloudflare Worker `cpbl-reserve-2026-api` 與 D1 `cpbl-reserve-2026`，以 `cd worker && npm run deploy` 部署。
+
+若要 fork 成自己的服務：建立自己的 D1（`wrangler d1 create`）、更新 `worker/wrangler.toml` 的 `name` 與 `database_id`、執行 `wrangler d1 execute DB --remote --file=schema.sql`、以 `wrangler secret put IP_SALT` 設定隨機鹽值，最後把 `docs/app.js` 的 `API` 改成自己的 Worker 網址。
 
 ## 資料來源與聲明
 

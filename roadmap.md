@@ -37,12 +37,12 @@
 - 個人頁有生日、國籍、選秀順位，名字前綴 `◎` 代表自主／自行培訓。
 - 詳細的 selector 與六隊實測人數見 `plans/2026-11-15-p0-six-teams.md`。
 
-### P0-2 scraper 專案骨架
+### P0-2 scraper 專案骨架（已完成）
 - `scraper/` 加上 `pyproject.toml`（或 `requirements.txt`），相依套件為 requests、beautifulsoup4、lxml，視 P0-1 結果加 playwright。
 - 移植 BE 的 fetcher：可重試／致命錯誤分類、User-Agent、逾時、抓取間隔。
 - 執行入口：`python -m scraper.build`，參數可以指定單隊或全部。
 
-### P0-3 名單解析與產出
+### P0-3 名單解析與產出（已完成）
 - 先用存成 fixture 的 HTML 寫 pytest 測試，再實作 parser（TDD）。
 - 自動排除：國籍非中華民國且無選秀順位的判為 foreign（經選秀入團的外籍球員視同本土球員，列入可選），名字有 `◎` 前綴的判為 training。
 - 套用 `overrides.json`：`exclude` 手動排除球員並註明原因（foreign／training／fa／expansion／removed），`include` 讓被自動規則誤判排除的球員強制變成可選。
@@ -51,17 +51,17 @@
 - 產出 `worker/src/roster.json`，內容**必須等於** teams.json 的可選球員。原版悍將的 roster.json 有 93 人，teams.json 只有 86 人，兩邊不一致，這次要修正。
 - 下載照片到 `docs/photos/<id>.jpg`；沒有照片的球員設 `ph: 0`。
 
-### P0-4 資料檢查腳本
+### P0-4 資料檢查腳本（已完成）
 - `python -m scraper.check`：檢查六隊都有資料、ID 都是 10 位數字、沒有重複、teams.json 與 roster.json 一致、可選人數合理（大於 60），並對照片缺漏發出警告。
 - 每次重新產生資料後都要執行，失敗就不 commit。
 
-### P0-5 前端改為六隊共用
+### P0-5 前端改為六隊共用（已完成）
 - `index.html` 的 `<title>`、description、og 標籤與 `theme-color` 改成不綁特定球隊。
 - 選隊首頁使用中性配色（目前借用悍將的配色），並逐一檢查六隊配色的對比。
 - 頁尾的資料來源說明與日期改為由 `teams.json.updated` 動態帶入。
 - 存圖與複製文字的連結改成新站網址。
 
-### P0-6 Cloudflare 部署
+### P0-6 Cloudflare 部署（已完成）
 - 在自己的帳號建立 Worker（例如 `cpbl-reserve-2026-api`）與 D1，執行 `schema.sql`。
 - 更新 `wrangler.toml` 的 `name` 與 `database_id`，以 `wrangler secret put IP_SALT` 設定新的鹽值。
 - 更新 `docs/app.js` 的 `API` 網址。
@@ -70,11 +70,11 @@
 - 從 `docs/` 啟用 Pages。
 - 手動跑一遍：六隊各選人、送出、看統計、撤回、複製文字、存圖；也要在手機寬度確認畫面。
 
-### P0-8 免費額度防護
+### P0-8 免費額度防護（已完成）
 - 統計分頁輪詢只在分頁可見時執行，間隔從 60 秒改為 120 秒。
 - 評估把 `/stats` 的邊緣快取從 20 秒拉長到 60 秒。自己剛送出時仍以 `fresh=1` 跳過快取。
 
-### P0-9 球隊主題配色
+### P0-9 球隊主題配色（已完成）
 - 現況：`applyTheme()` 只覆蓋 `--band/--acc/--on-acc/--acc-ink/--hi` 這 5 個變數；其餘顏色（標題字、頁首副標、淡底、卡片底、深色模式底色等）都寫死成悍將海軍藍，所以其他隊的頁面會帶著藍色調。
 - 整頁依球隊配色：所有顏色變數改在 `docs/theme.js` 以 JS 純函式 `deriveTheme()` 從各隊的 `band` 與 `acc` 推導。淺色模式與白混合，深色模式與黑混合，每隊的深色模式也帶自己的色調。`applyTheme()` 輸出推導後的完整變數；`style.css` 的 `:root` 預設值等於 `deriveTheme(NEUTRAL)`。
 - 顏色來源：沿用現有 `TEAMS` 的主色；對照官方主色與輔色的修正列為 P2-6。
@@ -82,7 +82,7 @@
 - 可讀性：新增對比檢查腳本，計算六隊加共通頁面、淺色與深色模式下主要文字與背景的 WCAG 對比，都要達到 4.5:1，不達標就調整該隊的 `ink` 或 `hi`。
 - 修正 `style.css` 中自我參照的無效宣告 `--hi:var(--hi)`。
 
-### P0-10 球員本季成績（由 P2-3 提前）
+### P0-10 球員本季成績（由 P2-3 提前）（已完成）
 - 資料來源：`POST /team/teamscoreaction`，表單欄位為 `__RequestVerificationToken`（取自 `GET /team/teamscore?ClubNo=X` 的 MainForm）、`ClubNo`、`KindCode`（A 一軍例行賽、D 二軍例行賽）、`Year`、`Position`（01 打擊、02 投球）、`DefendStation`、`Sortby`、`IndexOfPages=1`、`ExecAction`。
   - 回傳 HTML 表格，球員欄是 `<td class="sticky player"><a href="/team/person?acnt=<ID>">`（小寫 acnt）。
   - 每隊 4 次請求。fixture：`scraper/tests/fixtures/teamscore_AEO*.html`。
