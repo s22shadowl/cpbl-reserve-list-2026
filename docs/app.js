@@ -66,10 +66,10 @@ function showPicker(){
   const g=$("tgrid");g.replaceChildren();
   for(const t of AVAIL){
     const n=DATA.teams[t.code].players.length;
-    const a=el("a",{class:"tcard",href:"#"+t.slug,style:`background:${t.band}`},el("span",{text:t.en}),el("b",{text:t.name}),el("em",{text:`${n} 名可選球員 · 選出 60 人`}));
+    const c=cardColors(t);
+    const a=el("a",{class:"tcard",href:"#"+t.slug,style:`background:${c.bg};color:${c.fg};box-shadow:inset 0 -4px 0 ${c.stripe}`},el("span",{text:t.en}),el("b",{text:t.name}),el("em",{text:`${n} 名可選球員 · 選出 60 人`}));
     g.append(a);
   }
-  g.querySelectorAll(".tcard").forEach((a,i)=>{a.style.boxShadow=`inset 0 -4px 0 ${AVAIL[i].acc}`});
 }
 function renderExempt(){
   const ex=$("exempt");ex.replaceChildren();

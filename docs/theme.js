@@ -3,8 +3,8 @@
 // globals there); scripts/theme.test.mjs loads it with node:vm. Each team gives 5 base colours:
 // band (hero/top bar), acc (accent fill), on (text on acc), ink (accent text, light mode), hi (accent text, dark mode).
 const TEAMS=[
-  {code:"ACN",slug:"brothers",name:"中信兄弟",short:"兄弟",en:"CTBC Brothers",band:"#16161A",acc:"#FFC72C",on:"#16161A",ink:"#8C6500",hi:"#FFC72C"},
-  {code:"ADD",slug:"lions",name:"統一7-ELEVEn獅",short:"統一獅",en:"Uni-President Lions",band:"#2B1A0E",acc:"#F28C28",on:"#1E1206",ink:"#B5530B",hi:"#F9A54C"},
+  {code:"ACN",slug:"brothers",cardSwap:true,name:"中信兄弟",short:"兄弟",en:"CTBC Brothers",band:"#16161A",acc:"#FFC72C",on:"#16161A",ink:"#8C6500",hi:"#FFC72C"},
+  {code:"ADD",slug:"lions",cardSwap:true,name:"統一7-ELEVEn獅",short:"統一獅",en:"Uni-President Lions",band:"#2B1A0E",acc:"#F28C28",on:"#1E1206",ink:"#B5530B",hi:"#F9A54C"},
   {code:"AJL",slug:"monkeys",name:"樂天桃猿",short:"桃猿",en:"Rakuten Monkeys",band:"#3D0A14",acc:"#BF0D3E",on:"#FFFFFF",ink:"#B00C39",hi:"#FF6B8B"},
   {code:"AEO",slug:"guardians",name:"富邦悍將",short:"悍將",en:"Fubon Guardians",band:"#002255",acc:"#004B90",on:"#FFFFFF",ink:"#004B90",hi:"#4FA3FF"},
   {code:"AAA",slug:"dragons",name:"味全龍",short:"味全龍",en:"Wei Chuan Dragons",band:"#5E0A12",acc:"#D7192D",on:"#FFFFFF",ink:"#C3172A",hi:"#FF7D88"},
@@ -58,4 +58,6 @@ function deriveTheme(base){
   return{light,dark};
 }
 // CSS for one token map, e.g. "--page:#F7F7F7;--paper:#FFFFFF;…"
+// Picker card: band background with an accent stripe, or (cardSwap) accent background, on-accent text and a band stripe.
+function cardColors(t){return t.cardSwap?{bg:t.acc,fg:t.on,stripe:t.band}:{bg:t.band,fg:WHITE,stripe:t.acc}}
 function themeDecls(m){return Object.entries(m).map(([k,v])=>k+":"+v).join(";")}

@@ -7,7 +7,7 @@ import vm from "node:vm";
 const root = new URL("../docs/", import.meta.url);
 const ctx = vm.createContext({});
 vm.runInContext(readFileSync(new URL("theme.js", root), "utf8"), ctx, { filename: "theme.js" });
-const { TEAMS, NEUTRAL, deriveTheme } = vm.runInContext("({TEAMS,NEUTRAL,deriveTheme})", ctx);
+const { TEAMS, NEUTRAL, deriveTheme, cardColors } = vm.runInContext("({TEAMS,NEUTRAL,deriveTheme,cardColors})", ctx);
 
 function lum(hex) {
   const m = /^#([0-9a-f]{6})$/i.exec(hex);
@@ -107,3 +107,15 @@ test("app.js has no hard-coded navy palette left (colours come from theme.js)", 
   const navy = ["#1A2233", "#F2F4F7", "#66738A", "#DDE2EA", "#002255", "#004B90"];
   assert.deepEqual(navy.filter((h) => app.toUpperCase().includes(h)), []);
 });
+
+// Picker cards: Brothers and Lions read better on their accent colour (yellow / orange) than on the dark band.
+test("only Brothers and Lions swap picker card colours", () => {
+  assert.deepEqual([...TEAMS.filter((t) => t.cardSwap).map((t) => t.code)], ["ACN", "ADD"]);
+});
+for (const t of TEAMS) {
+  test(`${t.slug} picker card: colours follow cardSwap and text >= 4.5`, () => {
+    const c = { ...cardColors(t) };
+    assert.deepEqual(c, t.cardSwap ? { bg: t.acc, fg: t.on, stripe: t.band } : { bg: t.band, fg: "#FFFFFF", stripe: t.acc });
+    assert.ok(contrast(c.fg, c.bg) >= 4.5, `${c.fg} on ${c.bg}`);
+  });
+}
