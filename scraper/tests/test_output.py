@@ -1,0 +1,33 @@
+from scraper.models import PersonInfo, RosterEntry
+from scraper.output import build_outputs, build_team, player_record
+
+LOCAL = PersonInfo(born="1997-12-29", nationality="中華民國", draft_year=2019, draft_round=1)
+FOREIGN = PersonInfo(born="1992-11-20", nationality="美國", draft_year=None, draft_round=None)
+NO_OVERRIDES = {"include": frozenset(), "exclude": {}}
+
+
+def entry(pid="0000000001", name="甲", mark="", pos="投手", level="一軍"):
+    return RosterEntry(id=pid, name=name, mark=mark, no="12", pos=pos, level=level, photo_url="/x.jpg")
+
+
+def test_player_record_pitcher_omits_p_and_none_fields():
+    rec = player_record(entry(), FOREIGN, has_photo=False)
+    assert rec == {"id": "0000000001", "n": "甲", "no": "12", "g": "P", "l": "一軍", "ph": 0, "b": "1992-11-20"}
+
+
+def test_player_record_fielder():
+    rec = player_record(entry(pos="二壘手", level="二軍"), LOCAL, has_photo=True)
+    assert rec == {"id": "0000000001", "n": "甲", "no": "12", "g": "I", "l": "二軍", "p": "二壘手", "ph": 1,
+                   "b": "1997-12-29", "dy": 2019, "dr": 1}
+
+
+def test_build_team_and_outputs():
+    a, b, c = entry("0000000003", "丙"), entry("0000000001", "甲"), entry("0000000002", "乙", mark="◎")
+    persons = {"0000000001": LOCAL, "0000000002": LOCAL, "0000000003": LOCAL}
+    team = build_team([a, b, c], persons, NO_OVERRIDES, frozenset({"0000000001"}))
+    assert [p["id"] for p in team["players"]] == ["0000000003", "0000000001"]
+    assert [p["ph"] for p in team["players"]] == [0, 1]
+    assert team["exempt"] == {"foreign": [], "training": ["乙"], "fa": [], "expansion": [], "removed": []}
+    teams_json, roster_json = build_outputs({"AEO": team}, "2026-11-15")
+    assert teams_json == {"updated": "2026-11-15", "teams": {"AEO": team}}
+    assert roster_json == {"AEO": ["0000000001", "0000000003"]}
