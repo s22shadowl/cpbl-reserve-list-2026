@@ -9,6 +9,8 @@ const TEAMS=[
   {code:"AAA",slug:"dragons",name:"味全龍",short:"味全龍",en:"Wei Chuan Dragons",band:"#5E0A12",acc:"#D7192D",on:"#FFFFFF",ink:"#C3172A",hi:"#FF7D88"},
   {code:"AKP",slug:"hawks",name:"台鋼雄鷹",short:"雄鷹",en:"TSG Hawks",band:"#0B3326",acc:"#127A55",on:"#FFFFFF",ink:"#0F6E4C",hi:"#5FD3A2"},
 ];
+const NEUTRAL={band:"#1A2233",acc:"#5B6B85",on:"#FFFFFF",ink:"#3D4B63",hi:"#9FB3D1"};
+const EXEMPT=[["foreign","洋將（不需列入）"],["training","自主／自行培訓（不需列入）"],["fa","行使自由球員（不需列入）"],["expansion","擴編選秀被選走（不需列入）"],["removed","已非球員"]];
 const $=id=>document.getElementById(id);
 function el(tag,attrs={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else e.setAttribute(k,v)}for(const k of kids)if(k!=null)e.append(k);return e}
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
@@ -61,7 +63,7 @@ function route(){
   loadMine();
 }
 function showPicker(){
-  applyTheme(TEAMS[3]);
+  applyTheme(NEUTRAL);
   document.title="中職契約保留名簿｜各隊 60 人名單模擬";
   $("kicker").textContent="CPBL · 2027 Reserve List";
   $("h1").textContent="排出你支持球隊的 60 人契約保留名單";
@@ -77,9 +79,8 @@ function showPicker(){
 }
 function renderExempt(){
   const ex=$("exempt");ex.replaceChildren();
-  const e=DATA.teams[T.code].exempt;
-  const add=(label,names)=>{if(names.length)ex.append(el("span",{},el("b",{text:label}),names.join("、")))};
-  add("洋將（不需列入）",e.foreign);add("自主／自行培訓（不需列入）",e.training);add("已非球員",e.removed);
+  const e=DATA.teams[T.code].exempt||{};
+  for(const[k,label]of EXEMPT){const names=e[k]||[];if(names.length)ex.append(el("span",{},el("b",{text:label}),names.join("、")))}
 }
 
 // ---------- top bar ----------
@@ -228,7 +229,7 @@ function setTab(t){
   tab=t;for(const k of["pick","stats"]){$("tab-"+k).setAttribute("aria-selected",String(k===t));$("view-"+k).hidden=k!==t}
   renderAll();store("rl-tab",t);
   clearInterval(statsT);
-  if(t==="stats"){loadStats();statsT=setInterval(()=>{if(!document.hidden)loadStats()},60000)}
+  if(t==="stats"){loadStats();statsT=setInterval(()=>{if(!document.hidden)loadStats()},120000)}
   else if(!stats)loadStats();
 }
 $("tab-pick").onclick=()=>setTab("pick");$("tab-stats").onclick=()=>setTab("stats");
@@ -324,6 +325,8 @@ $("mkImg").onclick=async()=>{
 // ---------- boot ----------
 (async()=>{
   try{DATA=await (await fetch("data/teams.json",{cache:"no-cache"})).json()}catch(e){document.body.append(el("p",{class:"in",text:"名單載入失敗，請重新整理頁面。"}));return}
+  const [yy,mm,dd]=String(DATA.updated||"").split("-");
+  if(dd)$("srcDate").textContent=`${yy} 年 ${+mm} 月 ${+dd} 日`;
   AVAIL=TEAMS.filter(t=>DATA.teams[t.code]);
   for(const t of AVAIL)$("teamSw").append(el("option",{value:t.code,text:t.name}));
   $("teamSw").onchange=e=>{const t=AVAIL.find(x=>x.code===e.target.value);location.hash=t.slug};
