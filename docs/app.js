@@ -1,6 +1,5 @@
 "use strict";
-const LOCAL_HOSTS=["localhost","127.0.0.1"];
-const API=LOCAL_HOSTS.includes(location.hostname)?"http://localhost:8787":"https://cpbl-reserve-2026-api.cpbl-status.workers.dev";
+const API=IS_LOCAL?"http://localhost:8787":"https://cpbl-reserve-2026-api.cpbl-status.workers.dev";
 const LIMIT=60, GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",C:"Catchers",I:"Infielders",O:"Outfielders"}, GORD="PCIO";
 // TEAMS, NEUTRAL, deriveTheme(), themeDecls() come from theme.js (loaded first).
 // ageOn(), cornerBadge(), cardNote(), nameTag(), isRookie() come from card.js (loaded first).
@@ -82,9 +81,11 @@ function route(){
   $("picker").hidden=true;$("app").hidden=false;
   try{if(store("rl-tab")==="stats")tab="stats"}catch(e){}
   setTab(tab);
+  showOfficialCopy();
   loadMine();
 }
 function showPicker(){
+  $("heroOff").hidden=true;
   applyTheme(NEUTRAL);
   document.title="中職契約保留名簿｜各隊 60 人名單模擬";
   $("kicker").textContent="CPBL · 2027 Reserve List";
@@ -154,9 +155,8 @@ function renderGroups(){
       if(badge)pic.append(el("span",{class:"mk-tag "+badge.kind,"aria-hidden":"true",text:badge.text},badge.small?el("small",{text:badge.small}):null));
       if(age!=null)pic.append(el("span",{class:"mk-age","aria-hidden":"true"},el("b",{text:age}),el("small",{text:"歲"})));
       const line=show?statLine(p):null,tier=show?statTier(p):null,capped=full&&!on;
-      const cd=clubMark(p.id,true),cdTxt=cd?"球團"+cd.label:"";
-      const b=el("button",{class:"tile","data-id":p.id,"aria-pressed":String(on),title:tileTitle(p,show,capped)+(note?"\n"+note:"")+(cd?"\n"+cdTxt:""),"aria-label":`${playerHead(p)} ${posLabel(p)}${note?" "+note:""}${line?" "+line:""}${on?" 已保留":""}${cd?" "+cdTxt:""}`},pic,
-        el("span",{class:"tx"},el("span",{class:"nmr"},el("span",{class:"nm",text:p.n}),cd&&cd.node),el("span",{class:"sub",text:posLabel(p)+" · "+p.l}),line&&el("span",{class:"stat"+(tier?" "+tier:""),text:line})));
+      const b=el("button",{class:"tile","data-id":p.id,"aria-pressed":String(on),title:tileTitle(p,show,capped)+(note?"\n"+note:""),"aria-label":`${playerHead(p)} ${posLabel(p)}${note?" "+note:""}${line?" "+line:""}${on?" 已保留":""}`},pic,
+        el("span",{class:"tx"},el("span",{class:"nmr"},el("span",{class:"nm",text:p.n})),el("span",{class:"sub",text:posLabel(p)+" · "+p.l}),line&&el("span",{class:"stat"+(tier?" "+tier:""),text:line})));
       if(capped)b.disabled=true;
       b.onclick=()=>toggle(p.id);
       grid.append(b);
@@ -240,11 +240,11 @@ $("clear").onclick=()=>{
 $("save").onclick=save;
 
 // ---------- official list (flag) ----------
-// Club decision marker: tile = glyph only, ranking row = glyph + word. null when there is no official list.
-function clubMark(id,short){
+// Club decision pill for the stats-tab ranking rows only (picker tiles intentionally omit it). null without an official list.
+function clubMark(id){
   if(!OFF)return null;
   const keep=OFF.has(id),label=keep?"保留":"放生",g=keep?"✓":"✗";
-  return{keep,label,node:el("span",{class:"cd "+(keep?"keep":"drop"),"aria-hidden":"true",title:"球團"+label,text:short?g:g+" "+label})};
+  return{keep,label,node:el("span",{class:"cd "+(keep?"keep":"drop"),title:"球團"+label},el("span",{"aria-hidden":"true",text:g+" "+label}),el("span",{class:"sr",text:"球團"+label}))};
 }
 function plist(items,rate){ // [{p,r}] -> inline chips
   return el("span",{class:"pl"},...items.map(x=>el("span",{class:"pi"},el("b",{text:x.p.no}),x.p.n,rate?el("small",{text:Math.round(x.r*100)+"%"}):null)));
@@ -307,7 +307,7 @@ function renderStats(){
     if(pos==="all"&&x.rank===LIMIT+1)list.append(el("div",{class:"cut"},"▲ 共識 60 人保留線",el("span",{text:"以下為多數人未列入"})));
     const cls=["rk"];if(sel.has(x.p.id))cls.push("mine");if(N>=3&&x.r>=.35&&x.r<=.65)cls.push("split");
     list.append(el("div",{class:cls.join(" ")},el("div",{class:"r",text:x.rank}),photo(x.p,"av"),
-      el("div",{class:"nm"},el("span",{class:"n2",text:x.p.no}),x.p.n,nameTag(x.p)?el("span",{class:"tag",text:nameTag(x.p)}):null,clubMark(x.p.id,false)?.node,el("small",{text:posLabel(x.p)})),
+      el("div",{class:"nm"},el("span",{class:"n2",text:x.p.no}),x.p.n,nameTag(x.p)?el("span",{class:"tag",text:nameTag(x.p)}):null,clubMark(x.p.id)?.node,el("small",{text:posLabel(x.p)})),
       el("div",{class:"track"},el("i",{style:`width:${(x.r*100).toFixed(1)}%`})),
       el("div",{class:"pc"},Math.round(x.r*100)+"%",el("small",{text:`${x.c}/${N}`}))));
   }
@@ -416,7 +416,9 @@ $("mkImg").onclick=async()=>{
 };
 
 function showOfficialCopy(){
-  const d=String(OFFICIAL.updated||"").split("-"),h=$("heroOff");
+  const h=$("heroOff");
+  if(!OFFICIAL||!OFF||!T){h.hidden=true;return}
+  const d=String(OFFICIAL.updated||"").split("-");
   h.textContent=`球團的 ${OFFICIAL.season||2027} 年度保留名單${d[2]?"（"+(+d[1])+"/"+(+d[2])+"）":""}已經公布，現在送出的名單是你的意見、不再是預測。到「大家的統計」對答案，看你和球團、和其他球迷差在哪。`;
   h.hidden=false;
 }
@@ -429,7 +431,7 @@ initMode();
   if(dd)$("srcDate").textContent=`${yy} 年 ${+mm} 月 ${+dd} 日`;
   if(FLAGS.official){
     // dev (localhost) reads the sample list; a missing file just leaves the feature hidden
-    try{const r=await fetch(LOCAL_HOSTS.includes(location.hostname)?"data/official.sample.json":"data/official.json",{cache:"no-cache"});if(r.ok){const j=await r.json();if(j&&j.teams){OFFICIAL=j;showOfficialCopy()}}}catch(e){}
+    try{const r=await fetch(IS_LOCAL?"data/official.sample.json":"data/official.json",{cache:"no-cache"});if(r.ok){const j=await r.json();if(j&&j.teams)OFFICIAL=j}}catch(e){}
   }
   AVAIL=TEAMS.filter(t=>DATA.teams[t.code]);
   for(const t of AVAIL)$("teamSw").append(el("option",{value:t.code,text:t.name}));

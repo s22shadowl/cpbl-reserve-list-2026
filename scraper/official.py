@@ -14,6 +14,8 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from scraper.models import TEAM_CODES
+
 LIMIT = 60
 SEASON = 2027
 SEED = 2027
@@ -64,6 +66,12 @@ def build_official(src: dict) -> dict:
     teams = src.get("teams")
     if not isinstance(teams, dict) or not all(isinstance(v, list) for v in teams.values()):
         raise ValueError("teams 必須是 {球隊代碼: [球員 ID, ...]}")
+    for code, ids in teams.items():
+        if code not in TEAM_CODES:
+            raise ValueError(f"未知的球隊代碼 {code!r}（可用：{', '.join(TEAM_CODES)}）")
+        for pid in ids:
+            if not (isinstance(pid, str) and re.fullmatch(r"\d{10}", pid)):
+                raise ValueError(f"{code} 的球員 ID {pid!r} 必須是 10 碼數字字串")
     return {"season": src["season"], "updated": src["updated"], "teams": {c: sorted(ids) for c, ids in teams.items()}}
 
 

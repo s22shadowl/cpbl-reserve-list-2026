@@ -74,6 +74,17 @@ def test_build_official_rejects_malformed(bad):
         build_official(bad)
 
 
+@pytest.mark.parametrize("ids", [["123"], ["abcdefghij"], ["000000000a"], [1234567890], ["00000000001"], [None]])
+def test_build_official_rejects_bad_ids(ids):
+    with pytest.raises(ValueError, match="球員 ID"):
+        build_official({"season": 2027, "updated": "2026-11-30", "teams": {"ACN": ids}})
+
+
+def test_build_official_rejects_unknown_team():
+    with pytest.raises(ValueError, match="球隊代碼"):
+        build_official({"season": 2027, "updated": "2026-11-30", "teams": {"XXX": ["0000000001"]}})
+
+
 def test_main_writes_official_and_sample(tmp_path, monkeypatch):
     (tmp_path / "docs/data").mkdir(parents=True)
     (tmp_path / "scraper/official").mkdir(parents=True)
