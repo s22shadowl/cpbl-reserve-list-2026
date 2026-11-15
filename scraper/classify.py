@@ -69,7 +69,7 @@ def load_overrides(path: Path) -> dict:
 
 
 def apply_draft(person: PersonInfo, pid: str, overrides: dict) -> PersonInfo:
-    """Fill the draft year/round from overrides["draft"] when the official page has none."""
+    """Override the draft year/round from overrides["draft"] (used when the official page is blank or wrong)."""
     rule = overrides.get("draft", {}).get(pid)
     if not rule:
         return person

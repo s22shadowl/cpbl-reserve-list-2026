@@ -20,7 +20,8 @@ function draftText(p){return p.dy?`${p.dy} 年選秀`+(p.dr?`第 ${p.dr} 輪`:""
 function cardNote(p,ref){
   const age=ageOn(p.b,ref),parts=[];
   if(age!=null)parts.push(age+" 歲");
-  if(isRookie(p))parts.push("新人："+(p.rk==="d"?draftText(p):`${String(ref).slice(0,4)} 年自培轉正`));
+  // Converted rookies are "this season" by definition; no year, so stale data never names the wrong one.
+  if(isRookie(p)){parts.push("新人："+(p.rk==="d"?draftText(p):"今年自培轉正"));if(p.tag)parts.push(p.tag)}
   else if(p.dy)parts.push(draftText(p));
   return parts.join(" · ");
 }

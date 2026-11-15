@@ -50,7 +50,10 @@ test("cardNote: drafted veteran", () => {
 });
 test("cardNote: draft rookie and converted rookie", () => {
   assert.equal(cardNote({ b: "2004-05-01", rk: "d", dy: 2026, dr: 4 }, REF), "22 歲 · 新人：2026 年選秀第 4 輪");
-  assert.equal(cardNote({ b: "2004-05-01", rk: "c" }, REF), "22 歲 · 新人：2026 年自培轉正");
+  assert.equal(cardNote({ b: "2004-05-01", rk: "c" }, REF), "22 歲 · 新人：今年自培轉正");
+});
+test("cardNote: a tagged rookie keeps the tag in the note", () => {
+  assert.equal(cardNote({ b: "2004-05-01", rk: "c", tag: "FA" }, REF), "22 歲 · 新人：今年自培轉正 · FA");
 });
 test("cardNote: missing pieces are skipped", () => {
   assert.equal(cardNote({ dy: 2019 }, REF), "2019 年選秀");
