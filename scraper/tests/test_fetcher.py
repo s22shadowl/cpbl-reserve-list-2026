@@ -86,3 +86,18 @@ def test_408_gives_up_as_retryable():
     with pytest.raises(RetryableScraperError):
         c.person("0000000001")
     assert len(s.calls) == 3
+
+def test_team_stats_posts_four_tables_with_token():
+    page = (FIX / "teamscore_AEO.html").read_text(encoding="utf-8")
+    replies = [FakeResponse(200, text=page)] + [FakeResponse(200, text=f"t{i}") for i in range(4)]
+    c, s = client(replies)
+    pages = c.team_stats("AEO", 2026)
+    assert pages == {("A", "01"): "t0", ("A", "02"): "t1", ("D", "01"): "t2", ("D", "02"): "t3"}
+    assert s.calls[0][:2] == ("GET", BASE_URL + "/team/teamscore?ClubNo=AEO")
+    for method, url, kwargs in s.calls[1:]:
+        assert (method, url) == ("POST", BASE_URL + "/team/teamscoreaction")
+        data = kwargs["data"]
+        assert data["__RequestVerificationToken"].startswith("zUe2F5mGG5dv")
+        assert (data["ClubNo"], data["Year"], data["IndexOfPages"]) == ("AEO", "2026", "1")
+        assert {"DefendStation", "Sortby", "ExecAction"} <= set(data)
+    assert [(k["data"]["KindCode"], k["data"]["Position"]) for _, _, k in s.calls[1:]] == list(pages)

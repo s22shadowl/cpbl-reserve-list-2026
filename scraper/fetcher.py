@@ -6,11 +6,12 @@ redirects to the same URL. A requests.Session keeps that cookie, so plain reques
 
 import logging
 import time
-from typing import Callable, Optional
+from typing import Callable, Dict, Optional, Tuple
 from urllib.parse import quote
 
 import requests
 
+from .parse_stats import KINDS, POSITIONS
 from .parse_team import parse_token
 
 BASE_URL = "https://www.cpbl.com.tw"
@@ -80,6 +81,21 @@ class CpblClient:
             headers={"X-Requested-With": "XMLHttpRequest", "Referer": f"{BASE_URL}/team?ClubNo={code}"},
         ).text
         return first, farm
+
+    def team_stats(self, code: str, season: int) -> Dict[Tuple[str, str], str]:
+        """Return {(KindCode, Position): table HTML} for 一二軍 batting and pitching of one season."""
+        page = f"/team/teamscore?ClubNo={code}"
+        token = parse_token(self._request("GET", page).text)
+        headers = {"X-Requested-With": "XMLHttpRequest", "Referer": BASE_URL + page}
+        tables = {}
+        for kind in KINDS:
+            for position in POSITIONS:
+                form = {
+                    "__RequestVerificationToken": token, "ClubNo": code, "KindCode": kind, "Year": str(season),
+                    "Position": position, "DefendStation": "", "Sortby": "01", "IndexOfPages": "1", "ExecAction": "Q",
+                }
+                tables[(kind, position)] = self._request("POST", "/team/teamscoreaction", data=form, headers=headers).text
+        return tables
 
     def person(self, acnt: str) -> str:
         return self._request("GET", f"/team/person?Acnt={acnt}").text
