@@ -32,10 +32,10 @@
 
 ## P0：上線必要
 
-### P0-1 爬蟲可行性驗證
-- 用 requests 抓官網的球隊球員列表頁與個人頁；若被擋，改用 Playwright（沿用 BE 的 `get_dynamic_page_content`）。
-- 確認可以取得的欄位：球員 ID、姓名、背號、守位、一軍或二軍、照片網址、生日、選秀年份與輪次、國籍或洋將標記。
-- 驗收：寫一份筆記記錄六隊列表頁都能穩定取得的方法、每個欄位的 selector，以及友善抓取間隔。若完全無法取得，回頭討論替代資料來源。
+### P0-1 爬蟲可行性驗證（已完成，2026-11-15）
+- 結論：**只用 requests 就夠，不需要 Playwright**。HiNet CDN 第一次會回 308 並發 cookie，用 Session 保存 cookie 即可；二軍名單用 POST `/team` 加 `KindCode=D` 取得。
+- 個人頁有生日、國籍、選秀順位，名字前綴 `◎` 代表自主／自行培訓。
+- 詳細的 selector 與六隊實測人數見 `plans/2026-11-15-p0-six-teams.md`。
 
 ### P0-2 scraper 專案骨架
 - `scraper/` 加上 `pyproject.toml`（或 `requirements.txt`），相依套件為 requests、beautifulsoup4、lxml，視 P0-1 結果加 playwright。
@@ -44,7 +44,8 @@
 
 ### P0-3 名單解析與產出
 - 先用存成 fixture 的 HTML 寫 pytest 測試，再實作 parser（TDD）。
-- 套用 `overrides.json`：`exclude` 列出要排除的球員和原因（foreign／training／fa／expansion／removed），`include` 讓官網沒列出、但應該可選的球員可以手動補上。
+- 自動排除：國籍不是中華民國的判為 foreign，名字有 `◎` 前綴的判為 training。
+- 套用 `overrides.json`：`exclude` 手動排除球員並註明原因（foreign／training／fa／expansion／removed），`include` 讓被自動規則誤判排除的球員強制變成可選。
 - 產出 `docs/data/teams.json`，格式與現有版本相容：`players[]` 的 `id/n/no/g/l/p/ph`，以及 `exempt.{foreign,training,removed}`。先保留 P1 需要的欄位：`b` 為生日，`dy` 為選秀年份，`dr` 為選秀輪次。
 - 產出 `worker/src/roster.json`，內容**必須等於** teams.json 的可選球員。原版悍將的 roster.json 有 93 人，teams.json 只有 86 人，兩邊不一致，這次要修正。
 - 下載照片到 `docs/photos/<id>.jpg`；沒有照片的球員設 `ph: 0`。
