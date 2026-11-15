@@ -35,7 +35,7 @@
 ### P0-1 爬蟲可行性驗證（已完成，2026-11-15）
 - 結論：**只用 requests 就夠，不需要 Playwright**。HiNet CDN 第一次會回 308 並發 cookie，用 Session 保存 cookie 即可；二軍名單用 POST `/team` 加 `KindCode=D` 取得。
 - 個人頁有生日、國籍、選秀順位，名字前綴 `◎` 代表自主／自行培訓。
-- 詳細的 selector 與六隊實測人數見 `plans/2026-11-15-p0-six-teams.md`。
+- 爬取方式見 `CLAUDE.md` 的「中職官網爬取」。
 
 ### P0-2 scraper 專案骨架（已完成）
 - `scraper/` 加上 `pyproject.toml`（或 `requirements.txt`），相依套件為 requests、beautifulsoup4、lxml，視 P0-1 結果加 playwright。
@@ -66,12 +66,12 @@
 - 更新 `wrangler.toml` 的 `name` 與 `database_id`，以 `wrangler secret put IP_SALT` 設定新的鹽值。
 - 更新 `docs/app.js` 的 `API` 網址。
 
-### P0-7 GitHub Pages 上線與煙霧測試
+### P0-7 GitHub Pages 上線與煙霧測試（已完成）
 - 從 `docs/` 啟用 Pages。
 - 手動跑一遍：六隊各選人、送出、看統計、撤回、複製文字、存圖；也要在手機寬度確認畫面。
 - 2026-11-15 狀態：已上線（https://s22shadowl.github.io/cpbl-reserve-list-2026/）。使用者測試結果：送出 ✅、修改後再送出 ✅、清空後送出（撤回）✅（先前已修好，2026-11-15 補上回歸測試 `scripts/status.test.mjs`）。
 - 送出按鈕狀態抽成 `docs/status.js` 的 `saveState()` 純函式並加上單元測試；Workers Logs 已開啟（`[observability]`），之後可在 Cloudflare 後台查請求紀錄。
-- 修好後：清空正式 D1 的測試資料（`DELETE FROM picks; DELETE FROM tally;`）、本項標記完成、刪除 `plans/2026-11-15-p0-six-teams.md`。
+- 2026-11-15 收尾：已清空正式 D1 的測試資料（picks、tally）。
 
 ### P0-8 免費額度防護（已完成）
 - 統計分頁輪詢只在分頁可見時執行，間隔從 60 秒改為 120 秒。
