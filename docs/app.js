@@ -1,5 +1,6 @@
 "use strict";
-const API="https://cpbl-reserve-api.brienjohn.workers.dev";
+const LOCAL_HOSTS=["localhost","127.0.0.1"];
+const API=LOCAL_HOSTS.includes(location.hostname)?"http://localhost:8787":"https://cpbl-reserve-api.brienjohn.workers.dev";
 const LIMIT=60, GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",C:"Catchers",I:"Infielders",O:"Outfielders"}, GORD="PCIO";
 const TEAMS=[
   {code:"ACN",slug:"brothers",name:"中信兄弟",short:"兄弟",en:"CTBC Brothers",band:"#16161A",acc:"#FFC72C",on:"#16161A",ink:"#8C6500",hi:"#FFC72C"},

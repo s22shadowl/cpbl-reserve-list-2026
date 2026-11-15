@@ -42,14 +42,18 @@ roadmap.md            開發規劃（P0–P3）
 
 ## 本機開發
 
-```bash
-# 前端：任何靜態伺服器
-python3 -m http.server -d docs 8000
+前端在 `localhost` 或 `127.0.0.1` 開啟時，會自動改連本機 Worker（`http://localhost:8787`），不會寫入正式統計。
 
-# Worker
+```bash
+# 1. 本機 Worker + 本機 D1（資料存在 worker/.wrangler/，不需登入 Cloudflare）
 cd worker
-npx wrangler d1 execute <DB_NAME> --local --file=schema.sql
-npx wrangler dev
+npm install
+npm run db:init     # 第一次執行時建立資料表
+npm run dev         # http://localhost:8787
+npm run db:reset    # 清空本機統計
+
+# 2. 前端（另開一個終端機，在 repo 根目錄）
+python3 -m http.server -d docs 8080 --bind 127.0.0.1    # http://localhost:8080/
 ```
 
 部署需自行建立 Cloudflare Worker 與 D1，並更新 `worker/wrangler.toml` 的 `database_id` 與 `docs/app.js` 的 `API` 網址（見 roadmap P0-6）。

@@ -1,0 +1,14 @@
+{
+  "name": "cpbl-reserve-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8787",
+    "db:init": "wrangler d1 execute DB --local --file=schema.sql",
+    "db:reset": "wrangler d1 execute DB --local --command \"DELETE FROM picks; DELETE FROM tally;\"",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.162.0"
+  }
+}
