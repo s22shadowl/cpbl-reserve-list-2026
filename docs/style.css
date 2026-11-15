@@ -220,11 +220,10 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
   .tile .mk-age b{font-size:15px}
   .tile .mk-tag{top:4px;left:4px;height:15px;padding:0 4px;font-size:9px;letter-spacing:-.02em}
   .tile .mk-tag.dy small{margin-left:0}
-  /* Narrow tiles: tighter text padding and proportional digits so 「二軍 ERA 12.96」 fits from 360px up. */
-  .tile .tx{padding-left:3px;padding-right:3px}
+  /* Narrow tiles: 3px text padding (.tx below) and proportional digits so 「二軍 ERA 12.96」 fits from 360px up. */
   .tile .stat{font-size:10px;font-variant-numeric:normal;letter-spacing:-.02em}
   .tile .ck{width:19px;height:19px;top:4px;right:4px;font-size:11px}
-  .tile .tx{padding:3px 5px 4px}
+  .tile .tx{padding:3px 3px 4px}
   .tile .nm{font-size:13px}
   .tile .sub{font-size:10px}
   .kpis{grid-template-columns:repeat(2,1fr)}
