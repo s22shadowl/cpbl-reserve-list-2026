@@ -98,14 +98,14 @@ export default {
     try {
       if (url.pathname === "/stats" && req.method === "GET") {
         if (!ALLOWED[team]) return json({ error: "unknown_team" }, 400);
-        // Edge-cache per colo for 20s; ?fresh=1 (sent right after a viewer's own submit) skips the cached copy.
+        // Edge-cache per colo for 60s; ?fresh=1 (sent right after a viewer's own submit) skips the cached copy.
         const cache = caches.default;
         const key = new Request(`${url.origin}/stats?team=${team}`);
         if (!url.searchParams.has("fresh")) {
           const hit = await cache.match(key);
           if (hit) return hit;
         }
-        const res = json(await stats(env, team), 200, { "Cache-Control": "public, max-age=20" });
+        const res = json(await stats(env, team), 200, { "Cache-Control": "public, max-age=60" });
         ctx.waitUntil(cache.put(key, res.clone()));
         return res;
       }

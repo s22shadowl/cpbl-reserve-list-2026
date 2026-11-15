@@ -32,7 +32,7 @@ roadmap.md            開發規劃（P0–P3）
 
 | 方法 | 路徑 | 說明 |
 |---|---|---|
-| GET | `/stats?team=AEO` | 該隊送出份數 `n` 與每位球員被保留次數 `counts`（邊緣快取 20 秒，`&fresh=1` 略過快取） |
+| GET | `/stats?team=AEO` | 該隊送出份數 `n` 與每位球員被保留次數 `counts`（邊緣快取 60 秒，`&fresh=1` 略過快取） |
 | GET | `/mine?team=AEO&voter=<uuid>` | 此裝置送出的名單 |
 | POST | `/picks` | `{team, voter, ids}` 送出或覆蓋名單；空陣列為撤回 |
 
