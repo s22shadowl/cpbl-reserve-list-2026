@@ -116,6 +116,10 @@
 ### P2-3 球員本季成績
 - 爬取本季一二軍成績，可以參考 BE 的 `parsers/season_stats.py`。打者顯示打擊率與 OPS，投手顯示 ERA 與投球局數。
 - 以精簡欄位存進 teams.json，例如 `s`，並注意檔案大小。
+- 資料來源（2026-11-15 探測）：個人頁的成績表是由 AJAX 載入的。
+  - 打者 `POST /team/getbattingscore`、投手 `POST /team/getpitchscore`，參數 `acnt` 加上 `kindCode`（A 一軍、D 二軍），header 帶個人頁內的 `RequestVerificationToken`，回傳 JSON（`BattingScore` 或 `PitchScore` 字串）。
+  - 逐人抓約多 700～900 次請求，爬一次多約 20 分鐘。
+- 先探測較省的路徑：`/team/teamscore?ClubNo=X` 能否一次取得整隊球員的成績（BE 已用 Playwright 抓這頁）。要確認是否含二軍、是否需要 JS。
 
 ### P2-4 跨隊「釋出市場」頁
 - 新增 `#market` 頁：列出六隊中最常被球迷放在 60 人外的球員，可以依守位篩選。對應推文「爪會簽嗎？」這類討論。
