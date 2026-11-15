@@ -46,6 +46,7 @@
 - 先用存成 fixture 的 HTML 寫 pytest 測試，再實作 parser（TDD）。
 - 自動排除：國籍非中華民國且無選秀順位的判為 foreign（經選秀入團的外籍球員視同本土球員，列入可選），名字有 `◎` 前綴的判為 training。
 - 套用 `overrides.json`：`exclude` 手動排除球員並註明原因（foreign／training／fa／expansion／removed），`include` 讓被自動規則誤判排除的球員強制變成可選。
+- `overrides.json` 的 `tags`（選填）：`{"<id>": {"label", "name", "note"}}` 為球員加上標籤，不影響可選與否，例如已宣告 FA 但仍需列入名單的球員。`label` 最多 6 字，輸出為 teams.json 的 `tag`，卡片名字旁顯示小標籤，title 與 aria-label 也帶上；被 `exclude` 的球員不能加標籤。
 - 產出 `docs/data/teams.json`，格式與現有版本相容：`players[]` 的 `id/n/no/g/l/p/ph`，以及 `exempt.{foreign,training,removed}`。先保留 P1 需要的欄位：`b` 為生日，`dy` 為選秀年份，`dr` 為選秀輪次。
 - 產出 `worker/src/roster.json`，內容**必須等於** teams.json 的可選球員。原版悍將的 roster.json 有 93 人，teams.json 只有 86 人，兩邊不一致，這次要修正。
 - 下載照片到 `docs/photos/<id>.jpg`；沒有照片的球員設 `ph: 0`。

@@ -52,7 +52,8 @@ class FakeClient:
 
 def test_run_end_to_end(tmp_path):
     overrides = tmp_path / "overrides.json"
-    overrides.write_text(json.dumps({"include": [], "exclude": {"0000003339": {"reason": "removed", "name": "林哲瑄"}}},
+    overrides.write_text(json.dumps({"include": [], "exclude": {"0000003339": {"reason": "removed", "name": "林哲瑄"}},
+                                     "tags": {"0000005310": {"label": "FA", "name": "陳真"}}},
                                     ensure_ascii=False), encoding="utf-8")
     teams_path, roster_path = tmp_path / "teams.json", tmp_path / "roster.json"
     teams_path.write_text(json.dumps({"updated": "2026-10-07", "teams": {"ACN": team(61)}}), encoding="utf-8")
@@ -78,6 +79,7 @@ def test_run_end_to_end(tmp_path):
                      "s": {"A": {"g": 18, "ip": "64.0", "era": "2.81", "whip": "1.47", "so": 34},
                            "D": {"g": 8, "ip": "36.0", "era": "2.50", "whip": "1.22", "so": 26}}}
     chen = next(p for p in aeo["players"] if p["id"] == "0000005310")
+    assert chen["tag"] == "FA" and sum("tag" in p for p in aeo["players"]) == 1
     assert chen["s"]["D"] == {"g": 52, "pa": 170, "avg": "0.271", "ops": "0.851", "hr": 7}
     assert sum("s" in p for p in aeo["players"]) < len(aeo["players"])  # non-playing players omit s
     assert sum(p["ph"] for p in aeo["players"]) == 1

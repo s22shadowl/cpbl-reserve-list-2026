@@ -55,3 +55,17 @@ def test_player_record_adds_s_only_when_played():
 def test_build_team_passes_tables():
     team = build_team([entry()], {"0000000001": LOCAL}, NO_OVERRIDES, frozenset(), TABLES)
     assert team["players"][0]["s"] == {"A": PIT_A}
+
+
+def test_player_record_tag():
+    rec = player_record(entry(), LOCAL, has_photo=False, tag="FA")
+    assert rec["tag"] == "FA"
+    assert "tag" not in player_record(entry(), LOCAL, has_photo=False)
+
+
+def test_build_team_applies_tags_from_overrides():
+    ov = {**NO_OVERRIDES, "tags": {"0000000002": {"label": "FA", "name": "乙"}}}
+    persons = {"0000000001": LOCAL, "0000000002": LOCAL}
+    team = build_team([entry("0000000001"), entry("0000000002")], persons, ov, frozenset())
+    assert ["tag" in p for p in team["players"]] == [False, True]
+    assert team["players"][1]["tag"] == "FA"

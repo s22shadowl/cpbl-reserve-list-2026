@@ -6,7 +6,7 @@ import vm from "node:vm";
 const root = new URL("../docs/", import.meta.url);
 const ctx = vm.createContext({});
 vm.runInContext(readFileSync(new URL("stats.js", root), "utf8"), ctx, { filename: "stats.js" });
-const { statLevel, statLine, statTitle, statsShown, tileTitle } = vm.runInContext("({statLevel,statLine,statTitle,statsShown,tileTitle})", ctx);
+const { statLevel, statLine, statTitle, statsShown, tileTitle, playerHead } = vm.runInContext("({statLevel,statLine,statTitle,statsShown,tileTitle,playerHead})", ctx);
 
 const BAT_A = { g: 113, pa: 436, avg: "0.282", ops: "0.771", hr: 13 };
 const BAT_D = { g: 52, pa: 170, avg: "0.271", ops: "1.051", hr: 7 };
@@ -60,4 +60,10 @@ test("tile title keeps stats when the 60-man cap disables the tile", () => {
   assert.equal(tileTitle(p, true, true), "已達 60 人上限，先移除一位才能再加入\n" + full);
   assert.equal(tileTitle(p, false, false), "12 江國豪");
   assert.equal(tileTitle({ no: "1", n: "甲", g: "I" }, true, false), "1 甲\n本季未出賽");
+});
+
+test("player head carries the override tag for title and aria-label", () => {
+  assert.equal(playerHead({ no: "8", n: "王威晨" }), "8 王威晨");
+  assert.equal(playerHead({ no: "8", n: "王威晨", tag: "FA" }), "8 王威晨 FA");
+  assert.equal(tileTitle({ no: "8", n: "王威晨", g: "I", tag: "FA" }, false, false), "8 王威晨 FA");
 });

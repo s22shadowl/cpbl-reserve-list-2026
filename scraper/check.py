@@ -52,6 +52,8 @@ def check(teams_json: dict, roster_json: dict, photo_ids: frozenset) -> Tuple[Li
         for p in players:
             if p.get("ph") and p["id"] not in photo_ids:
                 errors.append(f"{code}：{p['n']} 標記有照片但檔案不存在")
+            if "tag" in p and not (isinstance(p["tag"], str) and p["tag"]):
+                errors.append(f"{code}：{p['n']} 的標籤 tag 必須是非空字串")
             if "s" in p and not _valid_season(p["s"]):
                 errors.append(f"{code}：{p['n']} 的成績欄位 s 格式錯誤")
             if not p.get("ph"):

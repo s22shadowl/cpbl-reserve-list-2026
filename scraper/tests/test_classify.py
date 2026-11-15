@@ -59,12 +59,25 @@ def test_load_overrides_ok(tmp_path):
     ov = load_overrides(write(tmp_path, {"include": ["0000000002"], "exclude": {"0000000001": {"reason": "removed", "name": "甲"}}}))
     assert ov["include"] == frozenset({"0000000002"})
     assert ov["exclude"]["0000000001"]["reason"] == "removed"
+    assert ov["tags"] == {}
+
+
+def test_load_overrides_tags(tmp_path):
+    tags = {"0000000003": {"label": "FA", "name": "丙", "note": "宣告行使 FA"}}
+    ov = load_overrides(write(tmp_path, {"include": [], "exclude": {}, "tags": tags}))
+    assert ov["tags"] == tags
 
 
 @pytest.mark.parametrize("data", [
     {"include": ["123"]},
     {"exclude": {"0000000001": {"reason": "retired"}}},
     {"include": ["0000000001"], "exclude": {"0000000001": {"reason": "fa"}}},
+    {"tags": {"12": {"label": "FA"}}},
+    {"tags": {"0000000001": {"label": ""}}},
+    {"tags": {"0000000001": {"label": 1}}},
+    {"tags": {"0000000001": {"label": "1234567"}}},
+    {"tags": {"0000000001": {}}},
+    {"exclude": {"0000000001": {"reason": "fa"}}, "tags": {"0000000001": {"label": "FA"}}},
 ])
 def test_load_overrides_rejects(tmp_path, data):
     with pytest.raises(ValueError):

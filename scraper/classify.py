@@ -10,6 +10,7 @@ from .models import PersonInfo, RosterEntry
 REASONS = ("foreign", "training", "fa", "expansion", "removed")
 DOMESTIC = "中華民國"
 _INFIELD = {"一壘手", "二壘手", "三壘手", "游擊手", "內野手"}
+TAG_MAX = 6
 _ID = re.compile(r"^\d{10}$")
 
 
@@ -27,11 +28,16 @@ def position_group(pos: str) -> Tuple[str, Optional[str]]:
 
 
 def load_overrides(path: Path) -> dict:
-    """Read and validate overrides.json: {"include": [id...], "exclude": {id: {"reason", "name", "note"}}}."""
+    """Read and validate overrides.json.
+
+    {"include": [id...], "exclude": {id: {"reason", "name", "note"}}, "tags": {id: {"label", "name", "note"}}}
+    Tags only label a player on the site (e.g. "FA"); they never change whether the player is selectable.
+    """
     data = json.loads(path.read_text(encoding="utf-8"))
     include = data.get("include", [])
     exclude = data.get("exclude", {})
-    for pid in [*include, *exclude]:
+    tags = data.get("tags", {})
+    for pid in [*include, *exclude, *tags]:
         if not _ID.match(pid):
             raise ValueError(f"overrides 球員 ID 格式錯誤：{pid}")
     for pid, rule in exclude.items():
@@ -40,7 +46,14 @@ def load_overrides(path: Path) -> dict:
     overlap = set(include) & set(exclude)
     if overlap:
         raise ValueError(f"overrides 同時 include 與 exclude：{sorted(overlap)}")
-    return {"include": frozenset(include), "exclude": exclude}
+    for pid, rule in tags.items():
+        label = rule.get("label")
+        if not isinstance(label, str) or not 0 < len(label) <= TAG_MAX:
+            raise ValueError(f"overrides {pid} 的 label 必須是 1～{TAG_MAX} 字的字串")
+    tagged_out = set(tags) & set(exclude)
+    if tagged_out:
+        raise ValueError(f"overrides 被排除的球員不能加標籤：{sorted(tagged_out)}")
+    return {"include": frozenset(include), "exclude": exclude, "tags": tags}
 
 
 def exempt_reason(entry: RosterEntry, person: PersonInfo, overrides: dict) -> Optional[str]:

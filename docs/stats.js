@@ -35,7 +35,9 @@ function statTitle(p){
 }
 // teams.json marks each team stats:true only when its stat tables were scraped; otherwise show nothing
 function statsShown(team){return!!team&&team.stats===true}
+// "8 王威晨 FA": number, name and the optional override tag (teams.json p.tag)
+function playerHead(p){return `${p.no} ${p.n}`+(p.tag?" "+p.tag:"")}
 function tileTitle(p,show,capped){
-  const head=capped?CAP_MSG:`${p.no} ${p.n}`;
+  const head=capped?CAP_MSG:playerHead(p);
   return show?head+"\n"+statTitle(p):head;
 }

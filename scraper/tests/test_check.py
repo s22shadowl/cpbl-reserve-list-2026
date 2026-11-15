@@ -61,3 +61,14 @@ def test_check_validates_team_stats_flag():
     teams_json["teams"]["ADD"]["stats"] = "yes"
     errors, _ = check(teams_json, roster, photos)
     assert errors == ["ADD：stats 必須是 true 或 false"]
+
+
+def test_check_validates_tag():
+    teams_json, roster, photos = valid()
+    players = teams_json["teams"]["AEO"]["players"]
+    players[0]["tag"] = "FA"
+    assert check(teams_json, roster, photos) == ([], [])
+    players[1]["tag"] = ""
+    players[2]["tag"] = 3
+    errors, _ = check(teams_json, roster, photos)
+    assert len(errors) == 2 and all("標籤 tag" in e for e in errors)

@@ -18,7 +18,7 @@ def season_record(entry: RosterEntry, tables: StatTables) -> dict:
 
 
 def player_record(entry: RosterEntry, person: PersonInfo, has_photo: bool,
-                  tables: Optional[StatTables] = None) -> dict:
+                  tables: Optional[StatTables] = None, tag: Optional[str] = None) -> dict:
     g, p = position_group(entry.pos)
     rec = {"id": entry.id, "n": entry.name, "no": entry.no, "g": g, "l": entry.level}
     if p:
@@ -26,6 +26,8 @@ def player_record(entry: RosterEntry, person: PersonInfo, has_photo: bool,
     rec["ph"] = 1 if has_photo else 0
     optional = {"b": person.born, "dy": person.draft_year, "dr": person.draft_round}
     rec.update({k: v for k, v in optional.items() if v is not None})
+    if tag:
+        rec["tag"] = tag
     season = season_record(entry, tables or {})
     if season:
         rec["s"] = season
@@ -41,12 +43,13 @@ def build_team(
 ) -> dict:
     players = []
     exempt: Dict[str, list] = {r: [] for r in REASONS}
+    tags = overrides.get("tags", {})
     for e in entries:
         reason = exempt_reason(e, persons[e.id], overrides)
         if reason:
             exempt[reason].append(e.name)
         else:
-            players.append(player_record(e, persons[e.id], e.id in photo_ids, tables))
+            players.append(player_record(e, persons[e.id], e.id in photo_ids, tables, tags.get(e.id, {}).get("label")))
     return {"players": players, "exempt": exempt}
 
 

@@ -3,7 +3,7 @@ const LOCAL_HOSTS=["localhost","127.0.0.1"];
 const API=LOCAL_HOSTS.includes(location.hostname)?"http://localhost:8787":"https://cpbl-reserve-api.brienjohn.workers.dev";
 const LIMIT=60, GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",C:"Catchers",I:"Infielders",O:"Outfielders"}, GORD="PCIO";
 // TEAMS, NEUTRAL, deriveTheme(), themeDecls() come from theme.js (loaded first).
-// statLine(), statsShown(), tileTitle() come from stats.js (loaded first).
+// statLine(), statsShown(), tileTitle(), playerHead() come from stats.js (loaded first).
 const EXEMPT=[["foreign","洋將（不需列入）"],["training","自主／自行培訓（不需列入）"],["fa","行使自由球員（不需列入）"],["expansion","擴編選秀被選走（不需列入）"],["removed","已非球員"]];
 const $=id=>document.getElementById(id);
 function el(tag,attrs={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else e.setAttribute(k,v)}for(const k of kids)if(k!=null)e.append(k);return e}
@@ -116,8 +116,8 @@ function renderGroups(){
       const on=sel.has(p.id);
       const pic=photo(p,"pic");pic.append(el("span",{class:"no",text:p.no}),el("span",{class:"ck","aria-hidden":"true",text:"✓"}));
       const line=show?statLine(p):null,capped=full&&!on;
-      const b=el("button",{class:"tile","aria-pressed":String(on),title:tileTitle(p,show,capped),"aria-label":`${p.no} ${p.n} ${posLabel(p)}${line?" "+line:""}${on?" 已保留":""}`},pic,
-        el("span",{class:"tx"},el("span",{class:"nm",text:p.n}),el("span",{class:"sub",text:posLabel(p)+" · "+p.l}),line&&el("span",{class:"stat",text:line})));
+      const b=el("button",{class:"tile","aria-pressed":String(on),title:tileTitle(p,show,capped),"aria-label":`${playerHead(p)} ${posLabel(p)}${line?" "+line:""}${on?" 已保留":""}`},pic,
+        el("span",{class:"tx"},el("span",{class:"nmr"},el("span",{class:"nm",text:p.n}),p.tag?el("span",{class:"tag",text:p.tag}):null),el("span",{class:"sub",text:posLabel(p)+" · "+p.l}),line&&el("span",{class:"stat",text:line})));
       if(capped)b.disabled=true;
       b.onclick=()=>toggle(p.id);
       grid.append(b);
@@ -210,7 +210,7 @@ function renderStats(){
     if(pos==="all"&&x.rank===LIMIT+1)list.append(el("div",{class:"cut"},"▲ 共識 60 人保留線",el("span",{text:"以下為多數人未列入"})));
     const cls=["rk"];if(sel.has(x.p.id))cls.push("mine");if(N>=3&&x.r>=.35&&x.r<=.65)cls.push("split");
     list.append(el("div",{class:cls.join(" ")},el("div",{class:"r",text:x.rank}),photo(x.p,"av"),
-      el("div",{class:"nm"},el("span",{class:"n2",text:x.p.no}),x.p.n,el("small",{text:posLabel(x.p)})),
+      el("div",{class:"nm"},el("span",{class:"n2",text:x.p.no}),x.p.n,x.p.tag?el("span",{class:"tag",text:x.p.tag}):null,el("small",{text:posLabel(x.p)})),
       el("div",{class:"track"},el("i",{style:`width:${(x.r*100).toFixed(1)}%`})),
       el("div",{class:"pc"},Math.round(x.r*100)+"%",el("small",{text:`${x.c}/${N}`}))));
   }
