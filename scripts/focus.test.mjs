@@ -17,6 +17,10 @@ test("moves to the following tile when the toggled one is filtered out", () => {
 test("falls back to the previous tile when the last one disappears", () => {
   assert.equal(nextFocusId(["a", "b", "c"], ["a", "b"], "c"), "b");
 });
+test("skips tiles missing from nextIds (e.g. disabled at the 60 cap)", () => {
+  assert.equal(nextFocusId(["a", "b", "c", "d"], ["a", "d"], "b"), "d");
+  assert.equal(nextFocusId(["a", "b", "c", "d"], ["a"], "c"), "a");
+});
 test("returns null when nothing is left or nothing was focused", () => {
   assert.equal(nextFocusId(["a"], [], "a"), null);
   assert.equal(nextFocusId(["a", "b"], ["a", "b"], null), null);

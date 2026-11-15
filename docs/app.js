@@ -105,11 +105,11 @@ function match(p){
   if(q){const s=q.trim();if(s&&!p.n.includes(s)&&p.no!==s&&String(+p.no)!==s)return false}
   return true;
 }
-function tileIds(box){return[...box.querySelectorAll(".tile")].map(b=>b.dataset.id)}
+function tileIds(box,enabledOnly){return[...box.querySelectorAll(enabledOnly?".tile:not(:disabled)":".tile")].map(b=>b.dataset.id)}
 function renderGroups(){
-  const box=$("groups"),ae=document.activeElement,had=box.contains(ae)?ae.dataset.id||null:null,prev=had?tileIds(box):[];
+  const box=$("groups"),ae=document.activeElement,inBox=box.contains(ae),had=inBox&&ae.classList.contains("tile")?ae.dataset.id:null,prev=had?tileIds(box):[];
   // Removing a subtree that holds focus makes Chrome lay out the half-empty page at once, clamping scrollY toward 0; drop focus first, restore it below.
-  if(had)ae.blur();
+  if(inBox)ae.blur();
   box.replaceChildren();
   const full=sel.size>=LIMIT,show=statsShown(DATA.teams[T.code]);let any=false;
   for(const g of GORD){
@@ -130,7 +130,7 @@ function renderGroups(){
       el("div",{class:"gh"},el("h2",{},el("span",{class:"en",text:GEN[g]}),GN[g]),el("span",{class:"k"},"已保留 ",el("b",{text:keptIn(g)})," / "+all.length)),grid));
   }
   if(!any)box.append(el("div",{class:"empty"},el("b",{text:"沒有符合條件的球員"}),"換個守位或顯示條件，或清除搜尋字。"));
-  if(had){const id=nextFocusId(prev,tileIds(box),had),t=id&&[...box.querySelectorAll(".tile")].find(b=>b.dataset.id===id&&!b.disabled);if(t)t.focus({preventScroll:true})}
+  if(had){const id=nextFocusId(prev,tileIds(box,true),had),t=id&&box.querySelector(`.tile[data-id="${id}"]`);if(t)t.focus({preventScroll:true})}
 }
 function keepDraft(){store("rl-draft-"+T.code,JSON.stringify([...sel]))}
 function toggle(id){
