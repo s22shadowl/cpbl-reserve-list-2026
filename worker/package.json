@@ -6,9 +6,12 @@
     "dev": "wrangler dev --port 8787",
     "db:init": "wrangler d1 execute DB --local --file=schema.sql",
     "db:reset": "wrangler d1 execute DB --local --command \"DELETE FROM picks; DELETE FROM tally;\"",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "test": "vitest run"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.23.0",
+    "vitest": "4.1.12",
     "wrangler": "4.162.0"
   }
 }
