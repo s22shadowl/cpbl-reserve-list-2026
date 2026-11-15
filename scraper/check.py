@@ -73,6 +73,25 @@ def check(teams_json: dict, roster_json: dict, photo_ids: frozenset,
     return errors, warnings
 
 
+def check_official(official: dict, teams_json: dict, label: str) -> List[str]:
+    """Official (or sample) list ids must belong to that team's selectable players, at most LIMIT each."""
+    errors: List[str] = []
+    teams = teams_json.get("teams", {})
+    for code, ids in (official.get("teams") or {}).items():
+        if code not in teams:
+            errors.append(f"{label}：{code} 不是已知球隊")
+            continue
+        known = {p["id"] for p in teams[code].get("players", [])}
+        unknown = [i for i in ids if i not in known]
+        if unknown:
+            errors.append(f"{label}：{code} 有不在球員名單中的 ID {unknown}")
+        if len(set(ids)) != len(ids):
+            errors.append(f"{label}：{code} 的 ID 重複")
+        if len(ids) > LIMIT:
+            errors.append(f"{label}：{code} 超過 {LIMIT} 人（{len(ids)}）")
+    return errors
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     teams_json = json.loads((REPO / "docs/data/teams.json").read_text(encoding="utf-8"))
@@ -80,6 +99,10 @@ def main() -> int:
     photo_ids = frozenset(p.stem for p in (REPO / "docs/photos").glob("*.jpg"))
     overrides = load_overrides(REPO / "scraper/overrides.json")
     errors, warnings = check(teams_json, roster_json, photo_ids, overrides)
+    for name in ("official.json", "official.sample.json"):
+        path = REPO / "docs/data" / name
+        if path.exists():
+            errors += check_official(json.loads(path.read_text(encoding="utf-8")), teams_json, name)
     for w in warnings:
         log.warning("警告：%s", w)
     for e in errors:
