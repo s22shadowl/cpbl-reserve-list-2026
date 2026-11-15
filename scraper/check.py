@@ -14,8 +14,14 @@ from .models import TEAM_CODES
 LIMIT = 60
 REPO = Path(__file__).resolve().parent.parent
 _ID = re.compile(r"^\d{10}$")
+STAT_LEVELS = frozenset({"A", "D"})
 
 log = logging.getLogger(__name__)
+
+
+def _valid_season(s) -> bool:
+    """s is omitted when a player has no games, so a present s must be a non-empty {A/D: dict}."""
+    return isinstance(s, dict) and bool(s) and set(s) <= STAT_LEVELS and all(isinstance(v, dict) for v in s.values())
 
 
 def check(teams_json: dict, roster_json: dict, photo_ids: frozenset) -> Tuple[List[str], List[str]]:
@@ -44,6 +50,8 @@ def check(teams_json: dict, roster_json: dict, photo_ids: frozenset) -> Tuple[Li
         for p in players:
             if p.get("ph") and p["id"] not in photo_ids:
                 errors.append(f"{code}：{p['n']} 標記有照片但檔案不存在")
+            if "s" in p and not _valid_season(p["s"]):
+                errors.append(f"{code}：{p['n']} 的成績欄位 s 格式錯誤")
             if not p.get("ph"):
                 warnings.append(f"{code}：{p['n']} 沒有照片")
     extra = set(roster_json) - set(TEAM_CODES)

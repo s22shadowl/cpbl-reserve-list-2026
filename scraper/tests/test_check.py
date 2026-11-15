@@ -39,3 +39,15 @@ def test_check_warns_missing_photo():
     teams_json["teams"]["AEO"]["players"][0]["ph"] = 0
     errors, warnings = check(teams_json, roster, photos)
     assert errors == [] and len(warnings) == 1
+
+
+def test_check_validates_season_stats_shape():
+    teams_json, roster, photos = valid()
+    players = teams_json["teams"]["AEO"]["players"]
+    players[0]["s"] = {"A": {"g": 1}, "D": {"g": 2}}
+    assert check(teams_json, roster, photos) == ([], [])
+    players[1]["s"] = {"B": {"g": 1}}
+    players[2]["s"] = [1]
+    players[3]["s"] = {}
+    errors, _ = check(teams_json, roster, photos)
+    assert len(errors) == 3 and all("成績欄位 s" in e for e in errors)

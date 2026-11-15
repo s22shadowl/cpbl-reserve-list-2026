@@ -1,5 +1,5 @@
 from scraper.models import PersonInfo, RosterEntry
-from scraper.output import build_outputs, build_team, player_record
+from scraper.output import build_outputs, build_team, player_record, season_record
 
 LOCAL = PersonInfo(born="1997-12-29", nationality="中華民國", draft_year=2019, draft_round=1)
 FOREIGN = PersonInfo(born="1992-11-20", nationality="美國", draft_year=None, draft_round=None)
@@ -31,3 +31,27 @@ def test_build_team_and_outputs():
     teams_json, roster_json = build_outputs({"AEO": team}, "2026-11-15")
     assert teams_json == {"updated": "2026-11-15", "teams": {"AEO": team}}
     assert roster_json == {"AEO": ["0000000001", "0000000003"]}
+
+BAT_A = {"g": 7, "pa": 24, "avg": "0.217", "ops": "0.469", "hr": 0}
+BAT_D = {"g": 52, "pa": 170, "avg": "0.271", "ops": "0.851", "hr": 7}
+PIT_A = {"g": 18, "ip": "64.0", "era": "2.81", "whip": "1.47", "so": 34}
+TABLES = {("A", "01"): {"0000000001": BAT_A}, ("D", "01"): {"0000000001": BAT_D},
+          ("A", "02"): {"0000000001": PIT_A}, ("D", "02"): {}}
+
+
+def test_season_record_picks_table_by_position():
+    assert season_record(entry(pos="投手"), TABLES) == {"A": PIT_A}
+    assert season_record(entry(pos="捕手"), TABLES) == {"A": BAT_A, "D": BAT_D}
+    assert season_record(entry(pid="0000000009"), TABLES) == {}
+    assert season_record(entry(), {}) == {}
+
+
+def test_player_record_adds_s_only_when_played():
+    rec = player_record(entry(pos="游擊手"), FOREIGN, has_photo=False, tables=TABLES)
+    assert rec["s"] == {"A": BAT_A, "D": BAT_D}
+    assert "s" not in player_record(entry(pid="0000000009"), FOREIGN, has_photo=False, tables=TABLES)
+
+
+def test_build_team_passes_tables():
+    team = build_team([entry()], {"0000000001": LOCAL}, NO_OVERRIDES, frozenset(), TABLES)
+    assert team["players"][0]["s"] == {"A": PIT_A}

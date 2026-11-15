@@ -6,7 +6,7 @@ from PIL import Image
 
 import pytest
 
-from scraper.build import ensure_photo, load_person, run, scrape_team
+from scraper.build import SEASON, ensure_photo, load_person, run, scrape_team
 from scraper.classify import REASONS
 from scraper.fetcher import FatalScraperError
 from scraper.parse_team import parse_roster
@@ -31,6 +31,11 @@ class FakeClient:
             raise FatalScraperError("only AEO in fixtures")
         return ((FIX / "team_AEO_A.html").read_text(encoding="utf-8"),
                 (FIX / "team_AEO_D.html").read_text(encoding="utf-8"))
+
+    def team_stats(self, code, season):
+        assert season == SEASON
+        return {(k, p): (FIX / f"teamscore_{code}_{k}_{p}.html").read_text(encoding="utf-8")
+                for k in "AD" for p in ("01", "02")}
 
     def person(self, acnt):
         self.person_calls += 1
@@ -68,7 +73,12 @@ def test_run_end_to_end(tmp_path):
     assert aeo["exempt"]["removed"] == ["林哲瑄"]
     jiang = next(p for p in aeo["players"] if p["id"] == "0000005479")
     assert jiang == {"id": "0000005479", "n": "江國豪", "no": "12", "g": "P", "l": "一軍", "ph": 1,
-                     "b": "1997-12-29", "dy": 2019, "dr": 1}
+                     "b": "1997-12-29", "dy": 2019, "dr": 1,
+                     "s": {"A": {"g": 18, "ip": "64.0", "era": "2.81", "whip": "1.47", "so": 34},
+                           "D": {"g": 8, "ip": "36.0", "era": "2.50", "whip": "1.22", "so": 26}}}
+    chen = next(p for p in aeo["players"] if p["id"] == "0000005310")
+    assert chen["s"]["D"] == {"g": 52, "pa": 170, "avg": "0.271", "ops": "0.851", "hr": 7}
+    assert sum("s" in p for p in aeo["players"]) < len(aeo["players"])  # non-playing players omit s
     assert sum(p["ph"] for p in aeo["players"]) == 1
     roster = json.loads(roster_path.read_text(encoding="utf-8"))
     assert roster["AEO"] == sorted(ids)

@@ -15,6 +15,7 @@ from .fetcher import CpblClient, FatalScraperError, RetryableScraperError
 from .models import TEAM_CODES, PersonInfo, RosterEntry
 from .output import build_outputs, build_team
 from .parse_person import parse_person
+from .parse_stats import parse_stats
 from .parse_team import parse_roster
 from .photos import resize_photo
 
@@ -25,6 +26,7 @@ ROSTER_JSON = REPO / "worker/src/roster.json"
 PHOTOS = REPO / "docs/photos"
 CACHE = REPO / "scraper/.cache/person"
 OVERRIDES = REPO / "scraper/overrides.json"
+SEASON = 2026
 
 log = logging.getLogger(__name__)
 
@@ -81,7 +83,10 @@ def scrape_team(client: CpblClient, code: str, overrides: dict, photos: Path, ca
         persons[e.id] = load_person(client, e.id, cache, refresh)
         if exempt_reason(e, persons[e.id], overrides) is None and ensure_photo(client, e, photos, refresh):
             photo_ids.add(e.id)
-    team = build_team(entries, persons, overrides, frozenset(photo_ids))
+    tables = {key: parse_stats(html, key[1]) for key, html in client.team_stats(code, SEASON).items()}
+    if not any(tables.values()):
+        log.warning("%s：%d 年沒有任何球員成績", code, SEASON)
+    team = build_team(entries, persons, overrides, frozenset(photo_ids), tables)
     log.info("%s：一二軍共 %d 人，可選 %d 人", code, len(entries), len(team["players"]))
     return team
 

@@ -18,14 +18,17 @@ COLUMNS: Mapping[str, Mapping[str, str]] = {
 INT_KEYS = frozenset({"g", "pa", "hr", "so"})
 _ACNT = re.compile(r"acnt=(\d{10})", re.IGNORECASE)
 
+
 def _header_index(headers: List[str], columns: Mapping[str, str]) -> Dict[str, int]:
     missing = [h for h in columns if h not in headers]
     if missing:
         raise ValueError(f"成績表缺少欄位：{missing}")
     return {key: headers.index(h) for h, key in columns.items()}
 
+
 def _value(key: str, text: str):
     return int(text) if key in INT_KEYS else text
+
 
 def parse_stats(html: str, position: str) -> Dict[str, dict]:
     """Return {player id: {key: value}} for one table; {} when the page has no player rows."""

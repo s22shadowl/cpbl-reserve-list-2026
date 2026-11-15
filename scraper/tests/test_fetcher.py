@@ -87,6 +87,7 @@ def test_408_gives_up_as_retryable():
         c.person("0000000001")
     assert len(s.calls) == 3
 
+
 def test_team_stats_posts_four_tables_with_token():
     page = (FIX / "teamscore_AEO.html").read_text(encoding="utf-8")
     replies = [FakeResponse(200, text=page)] + [FakeResponse(200, text=f"t{i}") for i in range(4)]
