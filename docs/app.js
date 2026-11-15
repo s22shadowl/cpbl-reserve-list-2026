@@ -95,7 +95,9 @@ function showPicker(){
 function renderExempt(){
   const ex=$("exempt");ex.replaceChildren();
   const e=DATA.teams[T.code].exempt||{};
-  for(const[k,label]of EXEMPT){const names=e[k]||[];if(names.length)ex.append(el("span",{},el("b",{text:label}),names.join("、")))}
+  const rows=EXEMPT.map(([k,label])=>[label,e[k]||[]]).filter(([,n])=>n.length),n=rows.reduce((a,[,v])=>a+v.length,0);
+  if(!n)return;
+  ex.append(el("details",{},el("summary",{text:`不需列入 60 人名單：${n} 位球員`}),...rows.map(([label,names])=>el("span",{},el("b",{text:label}),names.join("、")))));
 }
 
 // ---------- top bar ----------
@@ -147,13 +149,23 @@ function renderGroups(){
       b.onclick=()=>toggle(p.id);
       grid.append(b);
     }
+    const ids=list.map(p=>p.id),bs=bulkState(ids,sel,LIMIT),add=bs.mode==="add";
+    const bulk=el("button",{type:"button",class:"bulk","aria-label":`${add?"全選":"全部取消"}${GN[g]}（${ids.length} 人）`,text:add?"全選":"全部取消",
+      title:add?(bs.disabled&&bs.need?`剩 ${bs.left} 個名額，還差 ${bs.need-bs.left} 人，無法全選`:bs.need?`選取目前顯示的 ${bs.need} 位${GN[g]}`:"目前顯示的球員已全部選取"):`取消選取目前顯示的 ${ids.length} 位${GN[g]}`});
+    if(bs.disabled)bulk.disabled=true;
+    bulk.onclick=()=>bulkToggle(ids);
     box.append(el("section",{class:"grp",id:"g-"+g},
-      el("div",{class:"gh"},el("h2",{},el("span",{class:"en",text:GEN[g]}),GN[g]),el("span",{class:"k"},"已保留 ",el("b",{text:keptIn(g)})," / "+all.length)),grid));
+      el("div",{class:"gh"},el("h2",{},el("span",{class:"en",text:GEN[g]}),GN[g]),el("span",{class:"k"},"已保留 ",el("b",{text:keptIn(g)})," / "+all.length),bulk),grid));
   }
   if(!any)box.append(el("div",{class:"empty"},el("b",{text:"沒有符合條件的球員"}),"換個守位或顯示條件，或清除搜尋字。"));
   if(had){const id=nextFocusId(prev,tileIds(box,true),had),t=id&&box.querySelector(`.tile[data-id="${id}"]`);if(t)t.focus({preventScroll:true})}
 }
 function keepDraft(){store("rl-draft-"+T.code,JSON.stringify([...sel]))}
+function bulkToggle(ids){
+  const bs=bulkState(ids,sel,LIMIT);if(bs.disabled)return;
+  const next=new Set(sel);for(const id of ids)bs.mode==="add"?next.add(id):next.delete(id);
+  sel=next;keepDraft();renderAll();
+}
 function toggle(id){
   if(sel.has(id))sel.delete(id);else{if(sel.size>=LIMIT)return;sel.add(id)}
   keepDraft();renderAll();
