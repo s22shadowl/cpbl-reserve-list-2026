@@ -82,7 +82,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .pc-tab[aria-pressed="true"]{background:#fff;color:var(--band)}
 .pc-tab[aria-pressed="true"] .k{color:var(--acc-ink-l)}
 .show{flex:none;position:relative}
-.show select{font:inherit;font-size:13px;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:6px 26px 6px 10px;appearance:none;-webkit-appearance:none;cursor:pointer;color-scheme:dark}
+.show select{font:inherit;font-size:13px;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:6px 26px 6px 10px;appearance:none;-webkit-appearance:none;cursor:pointer}
+/* the native option list follows the page colour scheme, so its text must come from page tokens, not the white band text */
+.show option,.teamsw option{color:var(--text);background:var(--paper)}
 .show::after{content:"";position:absolute;right:10px;top:50%;width:6px;height:6px;border-right:1.5px solid var(--band-muted);border-bottom:1.5px solid var(--band-muted);transform:translateY(-70%) rotate(45deg);pointer-events:none}
 .top .bar{height:3px;background:rgba(255,255,255,.12)}
 .top .bar i{display:block;height:100%;background:var(--hi);transition:width .2s}
@@ -204,7 +206,7 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 @media (prefers-reduced-motion:reduce){.top .bar i{transition:none}}
 /* team picker + team switch */
 .teamsw{position:relative;display:inline-flex;align-items:center;gap:6px;margin-bottom:6px}
-.teamsw select{font:inherit;font-size:13px;font-weight:500;color:var(--on-band);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:5px 28px 5px 10px;appearance:none;-webkit-appearance:none;cursor:pointer;color-scheme:dark}
+.teamsw select{font:inherit;font-size:13px;font-weight:500;color:var(--on-band);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:5px 28px 5px 10px;appearance:none;-webkit-appearance:none;cursor:pointer}
 .teamsw::after{content:"";position:absolute;right:11px;top:50%;width:6px;height:6px;border-right:1.5px solid var(--band-muted);border-bottom:1.5px solid var(--band-muted);transform:translateY(-70%) rotate(45deg);pointer-events:none}
 .picker{padding-block:28px 60px}
 .picker h2{font-size:20px;font-weight:500;color:var(--ink);margin:0 0 14px}
