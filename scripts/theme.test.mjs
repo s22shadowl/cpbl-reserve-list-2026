@@ -86,3 +86,24 @@ test('style.css [data-theme="dark"] block equals deriveTheme(NEUTRAL).dark', () 
 test("style.css has no self-referencing custom properties", () => {
   for (const [, k, v] of css.matchAll(/(--[a-z-]+)\s*:\s*var\((--[a-z-]+)\)/g)) assert.notEqual(k, v);
 });
+
+// Non-text contrast: dark-mode accent fills must stand out from the card background (guards liftAccent).
+for (const [name, base] of PALETTES) {
+  test(`${name} dark: --acc vs --paper >= 3 (UI contrast)`, () => {
+    const d = deriveTheme(base).dark;
+    assert.ok(contrast(d["--acc"], d["--paper"]) >= 3, `${d["--acc"]} on ${d["--paper"]}`);
+  });
+  // drawCard() paints --ink / --muted / --acc-ink text on the light --page background.
+  test(`${name} share card: text on light --page >= 4.5`, () => {
+    const l = deriveTheme(base).light;
+    for (const k of ["--ink", "--muted", "--acc-ink"]) {
+      assert.ok(contrast(l[k], l["--page"]) >= 4.5, `${k} ${l[k]} on --page ${l["--page"]}`);
+    }
+  });
+}
+
+test("app.js has no hard-coded navy palette left (colours come from theme.js)", () => {
+  const app = readFileSync(new URL("app.js", root), "utf8");
+  const navy = ["#1A2233", "#F2F4F7", "#66738A", "#DDE2EA", "#002255", "#004B90"];
+  assert.deepEqual(navy.filter((h) => app.toUpperCase().includes(h)), []);
+});

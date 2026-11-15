@@ -14,6 +14,7 @@ const TEAMS=[
 const NEUTRAL={band:"#111214",acc:"#4A4D52",on:"#FFFFFF",ink:"#4A4D52",hi:"#C4C7CC"};
 
 const WHITE="#FFFFFF", BLACK="#000000";
+const AA=4.6; // a little above WCAG 4.5 so rounding never tips a pair under
 function hexRgb(h){const n=parseInt(h.slice(1),16);return[n>>16&255,n>>8&255,n&255]}
 function rgbHex(c){return"#"+c.map(v=>Math.round(Math.min(255,Math.max(0,v))).toString(16).padStart(2,"0")).join("").toUpperCase()}
 // mixHex(a,b,t): t=0 → a, t=1 → b (plain sRGB interpolation).
@@ -24,7 +25,6 @@ function contrastRatio(a,b){const x=luminance(a),y=luminance(b);return(Math.max(
 function ensureContrast(fg,bg,min,toward){let c=fg;for(let t=0.05;contrastRatio(c,bg)<min&&t<=1.0001;t+=0.05)c=mixHex(fg,toward,t);return c}
 // Lift a dark-mode accent fill toward white until it stands out from bg (UI contrast 3:1), never letting the text on it drop below AA.
 function liftAccent(acc,on,bg){let c=acc;for(let t=0.05;contrastRatio(c,bg)<3&&t<=1.0001;t+=0.05){const n=mixHex(acc,WHITE,t);if(contrastRatio(on,n)<AA)break;c=n}return c}
-const AA=4.6; // a little above WCAG 4.5 so rounding never tips a pair under
 
 function deriveTheme(base){
   const {band,acc,on,ink,hi}=base;

@@ -257,7 +257,8 @@ $("copyTxt").onclick=()=>{
 async function drawCard(){
   const W=1080,P=64,IW=W-P*2,RH=52,ORH=38,COLS=4,OCOLS=5;
   const gs=groupsOf().filter(x=>x.on.length),off=offList();
-  const C={bg:"#F2F4F7",band:T.band,ink:"#1A2233",muted:"#66738A",line:"#DDE2EA",white:"#FFFFFF",soft:"rgba(255,255,255,.72)",acc:T.ink};
+  const TH=deriveTheme(T).light;
+  const C={bg:TH["--page"],band:T.band,ink:TH["--ink"],muted:TH["--muted"],line:TH["--line"],white:"#FFFFFF",soft:"rgba(255,255,255,.72)",acc:TH["--acc-ink"]};
   const SANS='"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif',NUM='"Rajdhani","Arial Narrow",sans-serif';
   const all=T.name+T.short+"年度契約保留球員我的人名單不列入依中職聯盟規章第章條簿投手捕手內野外・｜/"+ROSTER.map(p=>p.n).join("");
   try{await Promise.all([document.fonts.load("700 60px "+SANS,all),document.fonts.load("500 24px "+SANS,all),document.fonts.load("400 22px "+SANS,all),document.fonts.load("700 30px "+NUM,"0123456789/")])}catch(e){}
