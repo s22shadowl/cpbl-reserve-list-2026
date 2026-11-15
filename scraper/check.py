@@ -5,15 +5,16 @@ import logging
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
-from .classify import REASONS
+from .classify import REASONS, load_overrides
 from .models import TEAM_CODES
 
 
 LIMIT = 60
 REPO = Path(__file__).resolve().parent.parent
 _ID = re.compile(r"^\d{10}$")
+RK_VALUES = frozenset({"d", "c"})
 STAT_LEVELS = frozenset({"A", "D"})
 
 log = logging.getLogger(__name__)
@@ -24,7 +25,8 @@ def _valid_season(s) -> bool:
     return isinstance(s, dict) and bool(s) and set(s) <= STAT_LEVELS and all(isinstance(v, dict) for v in s.values())
 
 
-def check(teams_json: dict, roster_json: dict, photo_ids: frozenset) -> Tuple[List[str], List[str]]:
+def check(teams_json: dict, roster_json: dict, photo_ids: frozenset,
+          overrides: Optional[dict] = None) -> Tuple[List[str], List[str]]:
     errors: List[str] = []
     warnings: List[str] = []
     teams = teams_json.get("teams", {})
@@ -54,10 +56,17 @@ def check(teams_json: dict, roster_json: dict, photo_ids: frozenset) -> Tuple[Li
                 errors.append(f"{code}：{p['n']} 標記有照片但檔案不存在")
             if "tag" in p and not (isinstance(p["tag"], str) and p["tag"]):
                 errors.append(f"{code}：{p['n']} 的標籤 tag 必須是非空字串")
+            if "rk" in p and p["rk"] not in RK_VALUES:
+                errors.append(f"{code}：{p['n']} 的新人標記 rk 必須是 d 或 c")
             if "s" in p and not _valid_season(p["s"]):
                 errors.append(f"{code}：{p['n']} 的成績欄位 s 格式錯誤")
             if not p.get("ph"):
                 warnings.append(f"{code}：{p['n']} 沒有照片")
+    selectable = {i for ids in roster_json.values() for i in ids}
+    for key in ("rookie", "draft"):
+        for pid, rule in (overrides or {}).get(key, {}).items():
+            if pid not in selectable:
+                errors.append(f"overrides {key} 的 {pid} {rule.get('name', '')} 不在可選球員中")
     extra = set(roster_json) - set(TEAM_CODES)
     if extra:
         errors.append(f"roster.json 有未知球隊 {sorted(extra)}")
@@ -69,7 +78,8 @@ def main() -> int:
     teams_json = json.loads((REPO / "docs/data/teams.json").read_text(encoding="utf-8"))
     roster_json = json.loads((REPO / "worker/src/roster.json").read_text(encoding="utf-8"))
     photo_ids = frozenset(p.stem for p in (REPO / "docs/photos").glob("*.jpg"))
-    errors, warnings = check(teams_json, roster_json, photo_ids)
+    overrides = load_overrides(REPO / "scraper/overrides.json")
+    errors, warnings = check(teams_json, roster_json, photo_ids, overrides)
     for w in warnings:
         log.warning("警告：%s", w)
     for e in errors:

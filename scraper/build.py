@@ -10,9 +10,9 @@ from typing import Dict, Iterable, Optional
 
 from PIL import Image
 
-from .classify import exempt_reason, load_overrides
+from .classify import apply_draft, exempt_reason, load_overrides
 from .fetcher import CpblClient, FatalScraperError, RetryableScraperError
-from .models import TEAM_CODES, PersonInfo, RosterEntry
+from .models import SEASON, TEAM_CODES, PersonInfo, RosterEntry
 from .output import build_outputs, build_team
 from .parse_person import parse_person
 from .parse_stats import parse_stats
@@ -26,7 +26,6 @@ ROSTER_JSON = REPO / "worker/src/roster.json"
 PHOTOS = REPO / "docs/photos"
 CACHE = REPO / "scraper/.cache/person"
 OVERRIDES = REPO / "scraper/overrides.json"
-SEASON = 2026
 
 log = logging.getLogger(__name__)
 
@@ -92,7 +91,7 @@ def scrape_team(client: CpblClient, code: str, overrides: dict, photos: Path, ca
     persons: Dict[str, PersonInfo] = {}
     photo_ids = set()
     for e in entries:
-        persons[e.id] = load_person(client, e.id, cache, refresh)
+        persons[e.id] = apply_draft(load_person(client, e.id, cache, refresh), e.id, overrides)
         if exempt_reason(e, persons[e.id], overrides) is None and ensure_photo(client, e, photos, refresh):
             photo_ids.add(e.id)
     tables = load_stats(client, code)

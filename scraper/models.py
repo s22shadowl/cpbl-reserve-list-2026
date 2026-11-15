@@ -28,3 +28,5 @@ class PersonInfo:
 
 
 TEAM_CODES = ("ACN", "ADD", "AJL", "AEO", "AAA", "AKP")
+
+SEASON = 2026  # the season whose rookies are flagged and whose stats are shown

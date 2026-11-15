@@ -2,6 +2,7 @@
 
 import json
 import re
+from dataclasses import replace
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -30,14 +31,18 @@ def position_group(pos: str) -> Tuple[str, Optional[str]]:
 def load_overrides(path: Path) -> dict:
     """Read and validate overrides.json.
 
-    {"include": [id...], "exclude": {id: {"reason", "name", "note"}}, "tags": {id: {"label", "name", "note"}}}
+    {"include": [id...], "exclude": {id: {"reason", "name", "note"}}, "tags": {id: {"label", "name", "note"}},
+     "rookie": {id: {"name", "note"}}, "draft": {id: {"name", "year", "round", "note"}}}
     Tags only label a player on the site (e.g. "FA"); they never change whether the player is selectable.
+    rookie marks this season's 自培/練習生轉正 players; draft fills a missing draft year/round from the official site.
     """
     data = json.loads(path.read_text(encoding="utf-8"))
     include = data.get("include", [])
     exclude = data.get("exclude", {})
     tags = data.get("tags", {})
-    for pid in [*include, *exclude, *tags]:
+    rookie = data.get("rookie", {})
+    draft = data.get("draft", {})
+    for pid in [*include, *exclude, *tags, *rookie, *draft]:
         if not _ID.match(pid):
             raise ValueError(f"overrides 球員 ID 格式錯誤：{pid}")
     for pid, rule in exclude.items():
@@ -53,7 +58,22 @@ def load_overrides(path: Path) -> dict:
     tagged_out = set(tags) & set(exclude)
     if tagged_out:
         raise ValueError(f"overrides 被排除的球員不能加標籤：{sorted(tagged_out)}")
-    return {"include": frozenset(include), "exclude": exclude, "tags": tags}
+    rookie_out = set(rookie) & set(exclude)
+    if rookie_out:
+        raise ValueError(f"overrides 被排除的球員不能標為新人：{sorted(rookie_out)}")
+    for pid, rule in draft.items():
+        year, rnd = rule.get("year"), rule.get("round")
+        if not all(isinstance(v, int) and not isinstance(v, bool) and v > 0 for v in (year, rnd)):
+            raise ValueError(f"overrides {pid} 的選秀 year、round 必須是正整數")
+    return {"include": frozenset(include), "exclude": exclude, "tags": tags, "rookie": rookie, "draft": draft}
+
+
+def apply_draft(person: PersonInfo, pid: str, overrides: dict) -> PersonInfo:
+    """Fill the draft year/round from overrides["draft"] when the official page has none."""
+    rule = overrides.get("draft", {}).get(pid)
+    if not rule:
+        return person
+    return replace(person, draft_year=rule["year"], draft_round=rule["round"])
 
 
 def exempt_reason(entry: RosterEntry, person: PersonInfo, overrides: dict) -> Optional[str]:

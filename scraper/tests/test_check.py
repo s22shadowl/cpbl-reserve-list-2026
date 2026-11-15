@@ -72,3 +72,24 @@ def test_check_validates_tag():
     players[2]["tag"] = 3
     errors, _ = check(teams_json, roster, photos)
     assert len(errors) == 2 and all("標籤 tag" in e for e in errors)
+
+
+def test_check_validates_rk():
+    teams_json, roster, photos = valid()
+    players = teams_json["teams"]["AEO"]["players"]
+    players[0]["rk"] = "d"
+    players[1]["rk"] = "c"
+    assert check(teams_json, roster, photos) == ([], [])
+    players[2]["rk"] = "x"
+    errors, _ = check(teams_json, roster, photos)
+    assert len(errors) == 1 and "rk" in errors[0]
+
+
+def test_check_overrides_ids_must_be_selectable():
+    teams_json, roster, photos = valid()
+    ids = roster["AEO"]
+    ok = {"rookie": {ids[0]: {}}, "draft": {ids[1]: {}}}
+    assert check(teams_json, roster, photos, ok) == ([], [])
+    bad = {"rookie": {"0000009999": {"name": "甲"}}, "draft": {"0000009998": {"name": "乙"}}}
+    errors, _ = check(teams_json, roster, photos, bad)
+    assert len(errors) == 2 and "0000009999" in errors[0] and "0000009998" in errors[1]

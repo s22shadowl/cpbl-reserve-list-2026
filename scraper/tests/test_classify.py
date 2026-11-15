@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from scraper.classify import exempt_reason, load_overrides, position_group
+from scraper.classify import apply_draft, exempt_reason, load_overrides, position_group
 from scraper.models import PersonInfo, RosterEntry
 
 LOCAL = PersonInfo(born="1997-12-29", nationality="中華民國", draft_year=2019, draft_round=1)
@@ -78,7 +78,31 @@ def test_load_overrides_tags(tmp_path):
     {"tags": {"0000000001": {"label": "1234567"}}},
     {"tags": {"0000000001": {}}},
     {"exclude": {"0000000001": {"reason": "fa"}}, "tags": {"0000000001": {"label": "FA"}}},
+    {"rookie": {"12": {"name": "甲"}}},
+    {"exclude": {"0000000001": {"reason": "fa"}}, "rookie": {"0000000001": {"name": "甲"}}},
+    {"draft": {"12": {"year": 2025, "round": 7}}},
+    {"draft": {"0000000001": {"year": "2025", "round": 7}}},
+    {"draft": {"0000000001": {"year": 2025, "round": 0}}},
+    {"draft": {"0000000001": {"year": 2025}}},
 ])
 def test_load_overrides_rejects(tmp_path, data):
     with pytest.raises(ValueError):
         load_overrides(write(tmp_path, data))
+
+
+def test_load_overrides_rookie_and_draft(tmp_path):
+    rookie = {"0000000001": {"name": "甲", "note": "自培轉正"}}
+    draft = {"0000000002": {"name": "乙", "year": 2025, "round": 7, "note": "補進"}}
+    ov = load_overrides(write(tmp_path, {"rookie": rookie, "draft": draft}))
+    assert ov["rookie"] == rookie and ov["draft"] == draft
+    empty = load_overrides(write(tmp_path, {}))
+    assert empty["rookie"] == {} and empty["draft"] == {}
+
+
+def test_apply_draft_overrides_person():
+    person = PersonInfo(born="1999-01-01", nationality="中華民國", draft_year=None, draft_round=None)
+    ov = {"draft": {"0000000002": {"year": 2025, "round": 7}}}
+    out = apply_draft(person, "0000000002", ov)
+    assert (out.draft_year, out.draft_round, out.born) == (2025, 7, "1999-01-01")
+    assert apply_draft(person, "0000000003", ov) is person
+    assert apply_draft(person, "0000000002", {}) is person

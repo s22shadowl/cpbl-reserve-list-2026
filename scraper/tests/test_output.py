@@ -69,3 +69,20 @@ def test_build_team_applies_tags_from_overrides():
     team = build_team([entry("0000000001"), entry("0000000002")], persons, ov, frozenset())
     assert ["tag" in p for p in team["players"]] == [False, True]
     assert team["players"][1]["tag"] == "FA"
+
+
+NEW = PersonInfo(born="2004-03-01", nationality="中華民國", draft_year=2026, draft_round=4)
+
+
+def test_player_record_rk():
+    assert player_record(entry(), NEW, has_photo=False)["rk"] == "d"
+    assert player_record(entry(), LOCAL, has_photo=False, rookie=True)["rk"] == "c"
+    assert player_record(entry(), NEW, has_photo=False, rookie=True)["rk"] == "d"
+    assert "rk" not in player_record(entry(), LOCAL, has_photo=False)
+
+
+def test_build_team_applies_rookie_overrides():
+    ov = {**NO_OVERRIDES, "rookie": {"0000000002": {"name": "乙"}}}
+    persons = {"0000000001": LOCAL, "0000000002": LOCAL}
+    team = build_team([entry("0000000001"), entry("0000000002")], persons, ov, frozenset())
+    assert [p.get("rk") for p in team["players"]] == [None, "c"]

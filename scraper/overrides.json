@@ -9,5 +9,20 @@
     "0000000929": {"label": "FA", "name": "王威晨", "note": "2026-11-05 宣告行使國內 FA"},
     "0000006227": {"label": "FA", "name": "曾峻岳", "note": "宣告行使旅外 FA"},
     "0000005788": {"label": "FA", "name": "林凱威", "note": "宣告行使旅外 FA"}
+  },
+  "rookie": {
+    "0000007792": {"name": "施季定華", "note": "2026-03-20 列為合約所屬（中信）：https://www.sportsv.net/articles/126111"},
+    "0000007781": {"name": "朱柏翰", "note": "2026-01 簽自培，8/31 新註冊（統一）：https://www.cna.com.tw/news/aspt/202601230147.aspx"},
+    "0000007036": {"name": "戴伯丞", "note": "2026-05-20 自培轉正（統一）：https://sports.ltn.com.tw/news/breakingnews/5462181"},
+    "0000007772": {"name": "莊孟源", "note": "2025 年底簽自培，2026-10-06 一軍初登板（樂天）：https://sports.ltn.com.tw/news/breakingnews/5294347"},
+    "0000007018": {"name": "劉子杰", "note": "2026 自培轉正（樂天）：https://sports.ltn.com.tw/news/breakingnews/5601163"},
+    "0000005336": {"name": "童堉誠", "note": "2026 自培轉正，5/8 升一軍（富邦）：https://www.cna.com.tw/news/aspt/202605080297.aspx"},
+    "0000007578": {"name": "蔡袁華辰", "note": "2026-07 自培轉正（富邦）：https://tsna.com/article/130106"},
+    "0000007802": {"name": "黃宇昇", "note": "2026-06 簽自培，8/28 轉正（富邦）：https://sports.ltn.com.tw/news/breakingnews/5557319"},
+    "0000006910": {"name": "王伯洋", "note": "2026 開季前自培轉正（味全）：https://sports.ltn.com.tw/news/breakingnews/5420767"},
+    "0000007587": {"name": "潘信安", "note": "2025-07 自培，2026 轉合約所屬（味全）：https://tw.sports.yahoo.com/news/%E4%B8%AD%E8%81%B7-%E6%BD%98%E4%BF%A1%E5%AE%89%E8%87%AA%E4%B8%BB%E5%9F%B9%E8%A8%93%E8%BD%89%E5%90%88%E7%B4%84%E7%90%83%E5%93%A1-%E8%91%89%E7%B8%BD%E9%BB%9E2%E8%80%83%E9%87%8F-%E5%92%8C%E5%8A%89%E5%9F%BA%E9%B4%BB%E6%89%93%E4%BA%9E%E9%81%8B%E6%9C%89%E9%97%9C-093300691.html"}
+  },
+  "draft": {
+    "0000007608": {"name": "傅鈞致", "year": 2025, "round": 7, "note": "2025 選秀第 7 輪補進（味全）：https://udn.com/news/story/7001/8971717"}
   }
 }
