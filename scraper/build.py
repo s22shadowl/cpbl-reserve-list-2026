@@ -8,6 +8,8 @@ from datetime import date
 from pathlib import Path
 from typing import Dict, Iterable
 
+from PIL import Image
+
 from .classify import exempt_reason, load_overrides
 from .fetcher import CpblClient, FatalScraperError, RetryableScraperError
 from .models import TEAM_CODES, PersonInfo, RosterEntry
@@ -27,15 +29,20 @@ OVERRIDES = REPO / "scraper/overrides.json"
 log = logging.getLogger(__name__)
 
 
-def person_html(client: CpblClient, acnt: str, cache: Path, refresh: bool) -> str:
-    """Fetch a personal page, reusing scraper/.cache unless refresh is set."""
+def load_person(client: CpblClient, acnt: str, cache: Path, refresh: bool) -> PersonInfo:
+    """Return parsed person info; the cache only ever holds pages that parsed successfully."""
     path = cache / f"{acnt}.html"
     if path.exists() and not refresh:
-        return path.read_text(encoding="utf-8")
+        try:
+            return parse_person(path.read_text(encoding="utf-8"))
+        except ValueError:
+            log.warning("%s 快取頁面無法解析，刪除並重新下載", acnt)
+            path.unlink()
     html = client.person(acnt)
+    info = parse_person(html)  # raises ValueError before anything is cached
     cache.mkdir(parents=True, exist_ok=True)
     path.write_text(html, encoding="utf-8")
-    return html
+    return info
 
 
 def ensure_photo(client: CpblClient, entry: RosterEntry, photos: Path, refresh: bool) -> bool:
@@ -48,7 +55,7 @@ def ensure_photo(client: CpblClient, entry: RosterEntry, photos: Path, refresh: 
         return False
     try:
         data = resize_photo(client.photo(entry.photo_url))
-    except (RetryableScraperError, FatalScraperError, OSError) as e:
+    except (RetryableScraperError, FatalScraperError, OSError, Image.DecompressionBombError) as e:
         log.warning("%s %s 照片下載失敗：%s", entry.id, entry.name, e)
         return False
     photos.mkdir(parents=True, exist_ok=True)
@@ -61,10 +68,17 @@ def scrape_team(client: CpblClient, code: str, overrides: dict, photos: Path, ca
     entries = parse_roster(first_html, "一軍") + parse_roster(farm_html, "二軍")
     if not entries:
         raise FatalScraperError(f"{code}：球員列表是空的，頁面結構可能改變")
+    unique: Dict[str, RosterEntry] = {}
+    for e in entries:
+        if e.id in unique:
+            log.warning("%s：%s %s 同時出現在一二軍，保留 %s", code, e.id, e.name, unique[e.id].level)
+        else:
+            unique[e.id] = e
+    entries = list(unique.values())
     persons: Dict[str, PersonInfo] = {}
     photo_ids = set()
     for e in entries:
-        persons[e.id] = parse_person(person_html(client, e.id, cache, refresh))
+        persons[e.id] = load_person(client, e.id, cache, refresh)
         if exempt_reason(e, persons[e.id], overrides) is None and ensure_photo(client, e, photos, refresh):
             photo_ids.add(e.id)
     team = build_team(entries, persons, overrides, frozenset(photo_ids))

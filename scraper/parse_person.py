@@ -15,10 +15,13 @@ def cn_number(text: str) -> int:
     """Convert 1-99 written as digits or Chinese numerals ("十二", "二十") to int."""
     if text.isdigit():
         return int(text)
-    if "十" not in text:
-        return _CN_DIGITS[text]
-    tens, _, ones = text.partition("十")
-    return (_CN_DIGITS[tens] if tens else 1) * 10 + (_CN_DIGITS[ones] if ones else 0)
+    try:
+        if "十" not in text:
+            return _CN_DIGITS[text]
+        tens, _, ones = text.partition("十")
+        return (_CN_DIGITS[tens] if tens else 1) * 10 + (_CN_DIGITS[ones] if ones else 0)
+    except KeyError:
+        raise ValueError(f"無法解析中文數字：{text!r}") from None
 
 
 def _desc(soup: BeautifulSoup, cls: str) -> str:

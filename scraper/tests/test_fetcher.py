@@ -11,6 +11,7 @@ FIX = Path(__file__).parent / "fixtures"
 class FakeResponse:
     def __init__(self, status=200, text="", content=b""):
         self.status_code, self.text, self.content = status, text, content
+        self.encoding = None
 
 
 class FakeSession:
@@ -66,3 +67,22 @@ def test_photo_path_is_url_encoded():
     c, s = client([FakeResponse(200, content=b"img")])
     assert c.photo("/files/atts/X/12江國豪2026.jpg") == b"img"
     assert s.calls[0][1] == BASE_URL + "/files/atts/X/12%E6%B1%9F%E5%9C%8B%E8%B1%AA2026.jpg"
+
+
+def test_success_response_forced_to_utf8():
+    c, _ = client([FakeResponse(200, text="ok")])
+    resp = c._once("GET", BASE_URL + "/x")
+    assert resp.encoding == "utf-8"
+
+
+def test_429_is_retryable():
+    c, s = client([FakeResponse(429), FakeResponse(200, text="ok")])
+    assert c.person("0000000001") == "ok"
+    assert len(s.calls) == 2
+
+
+def test_408_gives_up_as_retryable():
+    c, s = client([FakeResponse(408)] * 3)
+    with pytest.raises(RetryableScraperError):
+        c.person("0000000001")
+    assert len(s.calls) == 3

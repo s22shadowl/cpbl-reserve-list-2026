@@ -40,3 +40,9 @@ def test_person_foreign():
 def test_person_missing_brief_raises():
     with pytest.raises(ValueError):
         parse_person("<html></html>")
+
+
+@pytest.mark.parametrize("text", ["1十", "x"])
+def test_cn_number_invalid_raises_value_error(text):
+    with pytest.raises(ValueError):
+        cn_number(text)

@@ -50,10 +50,11 @@ class CpblClient:
             resp = self._session.request(method, url, timeout=TIMEOUT, **kwargs)
         except requests.RequestException as e:
             raise RetryableScraperError(f"{method} {url} 失敗：{e}") from e
-        if 500 <= resp.status_code < 600:
-            raise RetryableScraperError(f"{method} {url} 伺服器錯誤 HTTP {resp.status_code}")
+        if resp.status_code in (408, 429) or 500 <= resp.status_code < 600:
+            raise RetryableScraperError(f"{method} {url} 暫時性錯誤 HTTP {resp.status_code}")
         if resp.status_code >= 400:
             raise FatalScraperError(f"{method} {url} 客戶端錯誤 HTTP {resp.status_code}")
+        resp.encoding = "utf-8"
         return resp
 
     def _request(self, method: str, path: str, **kwargs) -> requests.Response:

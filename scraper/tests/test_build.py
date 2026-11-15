@@ -4,9 +4,12 @@ from pathlib import Path
 
 from PIL import Image
 
-from scraper.build import run
+import pytest
+
+from scraper.build import ensure_photo, load_person, run, scrape_team
 from scraper.classify import REASONS
 from scraper.fetcher import FatalScraperError
+from scraper.parse_team import parse_roster
 
 FIX = Path(__file__).parent / "fixtures"
 EMPTY_EXEMPT = {r: [] for r in REASONS}
@@ -74,3 +77,54 @@ def test_run_end_to_end(tmp_path):
     calls = fake.person_calls
     run(fake, ["AEO"], False, "2026-11-15", **kwargs)
     assert fake.person_calls == calls  # second run served from cache
+
+
+class BadPageClient(FakeClient):
+    def person(self, acnt):
+        self.person_calls += 1
+        return "<html></html>"
+
+
+def test_unparseable_page_not_cached(tmp_path):
+    with pytest.raises(ValueError):
+        load_person(BadPageClient(), "0000005479", tmp_path / "cache", False)
+    assert not list((tmp_path / "cache").glob("*.html")) if (tmp_path / "cache").exists() else True
+
+
+def test_corrupt_cache_is_replaced(tmp_path):
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    (cache / "0000005479.html").write_text("<html></html>", encoding="utf-8")
+    fake = FakeClient()
+    info = load_person(fake, "0000005479", cache, False)
+    assert info.nationality == "中華民國" and fake.person_calls == 1
+    assert "PlayerBrief" in (cache / "0000005479.html").read_text(encoding="utf-8")
+
+
+class DupClient(FakeClient):
+    def team_pages(self, code):
+        html = (FIX / "team_AEO_A.html").read_text(encoding="utf-8")
+        return html, html
+
+
+def test_scrape_team_dedupes_keeping_first_team(tmp_path):
+    ov = {"include": frozenset(), "exclude": {}}
+    first_ids = [e.id for e in parse_roster((FIX / "team_AEO_A.html").read_text(encoding="utf-8"), "一軍")]
+    team = scrape_team(DupClient(), "AEO", ov, tmp_path / "p", tmp_path / "c", False)
+    ids = [p["id"] for p in team["players"]]
+    assert len(ids) == len(set(ids))
+    assert {p["l"] for p in team["players"]} == {"一軍"}
+    assert len(ids) <= len(first_ids)
+
+
+def test_ensure_photo_handles_decompression_bomb(tmp_path, monkeypatch):
+    import scraper.build as b
+    from PIL import Image
+    from scraper.models import RosterEntry
+
+    def boom(data):
+        raise Image.DecompressionBombError("big")
+
+    monkeypatch.setattr(b, "resize_photo", boom)
+    e = RosterEntry("0000000001", "甲", "", "1", "投手", "一軍", "/x.jpg")
+    assert ensure_photo(FakeClient(), e, tmp_path, False) is False
