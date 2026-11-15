@@ -130,7 +130,7 @@ function match(p){
 }
 function tileIds(box,enabledOnly){return[...box.querySelectorAll(enabledOnly?".tile:not(:disabled)":".tile")].map(b=>b.dataset.id)}
 function renderGroups(){
-  const box=$("groups"),ae=document.activeElement,inBox=box.contains(ae),had=inBox&&ae.classList.contains("tile")?ae.dataset.id:null,prev=had?tileIds(box):[];
+  const box=$("groups"),ae=document.activeElement,inBox=box.contains(ae),had=inBox&&ae.classList.contains("tile")?ae.dataset.id:null,hadG=inBox&&ae.classList.contains("bulk")?ae.dataset.g:null,prev=had?tileIds(box):[];
   // Removing a subtree that holds focus makes Chrome lay out the half-empty page at once, clamping scrollY toward 0; drop focus first, restore it below.
   if(inBox)ae.blur();
   box.replaceChildren();
@@ -152,13 +152,16 @@ function renderGroups(){
     const ids=list.map(p=>p.id),bs=bulkState(ids,sel,LIMIT),add=bs.mode==="add";
     const bulk=el("button",{type:"button",class:"bulk","aria-label":`${add?"全選":"全部取消"}${GN[g]}（${ids.length} 人）`,text:add?"全選":"全部取消",
       title:add?(bs.disabled&&bs.need?`需要 ${bs.need} 個名額，只剩 ${bs.left} 個，無法全選`:bs.need?`選取目前顯示的 ${bs.need} 位${GN[g]}`:"目前顯示的球員已全部選取"):`取消選取目前顯示的 ${ids.length} 位${GN[g]}`});
-    if(bs.disabled)bulk.disabled=true;
-    bulk.onclick=()=>bulkToggle(ids);
+    // aria-disabled (not disabled) keeps it focusable and tappable, so the reason can be shown as a toast.
+    if(bs.disabled)bulk.setAttribute("aria-disabled","true");
+    bulk.dataset.g=g;
+    bulk.onclick=()=>{if(bs.disabled){toast(bulk.title);return}bulkToggle(ids)};
     box.append(el("section",{class:"grp",id:"g-"+g},
       el("div",{class:"gh"},el("h2",{},el("span",{class:"en",text:GEN[g]}),GN[g]),el("span",{class:"k"},"已保留 ",el("b",{text:keptIn(g)})," / "+all.length),bulk),grid));
   }
   if(!any)box.append(el("div",{class:"empty"},el("b",{text:"沒有符合條件的球員"}),"換個守位或顯示條件，或清除搜尋字。"));
   if(had){const id=nextFocusId(prev,tileIds(box,true),had),t=id&&box.querySelector(`.tile[data-id="${id}"]`);if(t)t.focus({preventScroll:true})}
+  if(hadG){const b=box.querySelector(`.bulk[data-g="${hadG}"]`);if(b)b.focus({preventScroll:true})}
 }
 function keepDraft(){store("rl-draft-"+T.code,JSON.stringify([...sel]))}
 function bulkToggle(ids){

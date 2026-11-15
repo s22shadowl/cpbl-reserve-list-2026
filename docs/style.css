@@ -105,8 +105,8 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .gh h2 .en{font-family:var(--f-num);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-right:8px}
 .gh .k{font-size:13px;color:var(--muted)}
 .gh .bulk{margin-left:auto;align-self:center;border:1px solid var(--line);background:var(--paper);color:var(--acc-ink);border-radius:4px;padding:3px 10px;font-size:13px;white-space:nowrap;cursor:pointer;flex:none}
-.gh .bulk:hover:not(:disabled){border-color:var(--acc-ink)}
-.gh .bulk:disabled{opacity:.45;cursor:not-allowed}
+.gh .bulk:hover:not([aria-disabled="true"]){border-color:var(--acc-ink)}
+.gh .bulk[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
 .gh .k b{font-family:var(--f-num);font-size:17px;color:var(--acc-ink);font-weight:700}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
 .tile{border:1px solid var(--line);border-radius:4px;padding:0;background:var(--paper);cursor:pointer;text-align:left;display:flex;flex-direction:column;overflow:hidden;min-width:0}
