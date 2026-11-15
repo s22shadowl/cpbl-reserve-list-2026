@@ -81,6 +81,17 @@
 - 可讀性：新增對比檢查腳本，計算六隊加共通頁面、淺色與深色模式下主要文字與背景的 WCAG 對比，都要達到 4.5:1，不達標就調整該隊的 `ink` 或 `hi`。
 - 修正 `style.css` 中自我參照的無效宣告 `--hi:var(--hi)`。
 
+### P0-10 球員本季成績（由 P2-3 提前）
+- 資料來源：`POST /team/teamscoreaction`，表單欄位為 `__RequestVerificationToken`（取自 `GET /team/teamscore?ClubNo=X` 的 MainForm）、`ClubNo`、`KindCode`（A 一軍例行賽、D 二軍例行賽）、`Year`、`Position`（01 打擊、02 投球）、`DefendStation`、`Sortby`、`IndexOfPages=1`、`ExecAction`。
+  - 回傳 HTML 表格，球員欄是 `<td class="sticky player"><a href="/team/person?acnt=<ID>">`（小寫 acnt）。
+  - 每隊 4 次請求。fixture：`scraper/tests/fixtures/teamscore_AEO*.html`。
+- 新增 `scraper/parse_stats.py`，build 依球員 ID 對應，季度常數 `SEASON = 2026`。
+- `teams.json` 每位球員加上選填欄位 `s`，只放有出賽的層級：
+  - 打者：`{"A":{"g","pa","avg","ops","hr"},"D":{...}}`
+  - 投手：`{"A":{"g","ip","era","whip","so"},"D":{...}}`
+  - 守位為投手的取投球成績，其餘取打擊成績。
+- 前端卡片多一行，顯示出賽較多的層級：打者 `一軍 .282 · OPS .771`，投手 `一軍 ERA 1.71 · 36.1 局`，沒出賽顯示 `本季未出賽`。`title` 顯示一二軍完整數據。統計頁排行不顯示成績。
+
 ---
 
 ## P1：回應使用者回饋
@@ -113,7 +124,7 @@
 - 送出後在統計頁列出「你和多數球迷意見不同的決定」：你保留但保留率低於 30%，以及你放生但保留率高於 70% 的球員。
 - 該隊至少要有 10 份名單才顯示。只用現有的 stats 資料，不需要新的 API。
 
-### P2-3 球員本季成績
+### P2-3 球員本季成績（已提前為 P0-10，以下為當初的探測紀錄）
 - 爬取本季一二軍成績，可以參考 BE 的 `parsers/season_stats.py`。打者顯示打擊率與 OPS，投手顯示 ERA 與投球局數。
 - 以精簡欄位存進 teams.json，例如 `s`，並注意檔案大小。
 - 資料來源（2026-11-15 探測）：個人頁的成績表是由 AJAX 載入的。
