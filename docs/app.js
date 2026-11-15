@@ -3,6 +3,7 @@ const LOCAL_HOSTS=["localhost","127.0.0.1"];
 const API=LOCAL_HOSTS.includes(location.hostname)?"http://localhost:8787":"https://cpbl-reserve-2026-api.cpbl-status.workers.dev";
 const LIMIT=60, GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",C:"Catchers",I:"Infielders",O:"Outfielders"}, GORD="PCIO";
 // TEAMS, NEUTRAL, deriveTheme(), themeDecls() come from theme.js (loaded first).
+// ageOn(), cornerBadge(), cardNote(), nameTag(), isRookie() come from card.js (loaded first).
 // statLine(), statsShown(), tileTitle(), playerHead() come from stats.js (loaded first).
 const EXEMPT=[["foreign","洋將（不需列入）"],["training","自主／自行培訓（不需列入）"],["fa","行使自由球員（不需列入）"],["expansion","擴編選秀被選走（不需列入）"],["removed","已非球員"]];
 const $=id=>document.getElementById(id);
@@ -128,6 +129,7 @@ function match(p){
   if(pos!=="all"&&p.g!==pos)return false;
   if(st==="on"&&!sel.has(p.id))return false;
   if(st==="off"&&sel.has(p.id))return false;
+  if(st==="new"&&!isRookie(p))return false;
   if(q){const s=q.trim();if(s&&!p.n.includes(s)&&p.no!==s&&String(+p.no)!==s)return false}
   return true;
 }
@@ -145,9 +147,12 @@ function renderGroups(){
     for(const p of list){
       const on=sel.has(p.id);
       const pic=photo(p,"pic");pic.append(el("span",{class:"no",text:p.no}),el("span",{class:"ck","aria-hidden":"true",text:"✓"}));
+      const badge=cornerBadge(p),age=ageOn(p.b,DATA.updated),note=cardNote(p,DATA.updated);
+      if(badge)pic.append(el("span",{class:"mk-tag "+badge.kind,"aria-hidden":"true",text:badge.text},badge.small?el("small",{text:badge.small}):null));
+      if(age!=null)pic.append(el("span",{class:"mk-age","aria-hidden":"true"},el("b",{text:age}),el("small",{text:"歲"})));
       const line=show?statLine(p):null,capped=full&&!on;
-      const b=el("button",{class:"tile","data-id":p.id,"aria-pressed":String(on),title:tileTitle(p,show,capped),"aria-label":`${playerHead(p)} ${posLabel(p)}${line?" "+line:""}${on?" 已保留":""}`},pic,
-        el("span",{class:"tx"},el("span",{class:"nmr"},el("span",{class:"nm",text:p.n}),p.tag?el("span",{class:"tag",text:p.tag}):null),el("span",{class:"sub",text:posLabel(p)+" · "+p.l}),line&&el("span",{class:"stat",text:line})));
+      const b=el("button",{class:"tile","data-id":p.id,"aria-pressed":String(on),title:tileTitle(p,show,capped)+(note?"\n"+note:""),"aria-label":`${playerHead(p)} ${posLabel(p)}${note?" "+note:""}${line?" "+line:""}${on?" 已保留":""}`},pic,
+        el("span",{class:"tx"},el("span",{class:"nmr"},el("span",{class:"nm",text:p.n})),el("span",{class:"sub",text:posLabel(p)+" · "+p.l}),line&&el("span",{class:"stat",text:line})));
       if(capped)b.disabled=true;
       b.onclick=()=>toggle(p.id);
       grid.append(b);
@@ -254,7 +259,7 @@ function renderStats(){
     if(pos==="all"&&x.rank===LIMIT+1)list.append(el("div",{class:"cut"},"▲ 共識 60 人保留線",el("span",{text:"以下為多數人未列入"})));
     const cls=["rk"];if(sel.has(x.p.id))cls.push("mine");if(N>=3&&x.r>=.35&&x.r<=.65)cls.push("split");
     list.append(el("div",{class:cls.join(" ")},el("div",{class:"r",text:x.rank}),photo(x.p,"av"),
-      el("div",{class:"nm"},el("span",{class:"n2",text:x.p.no}),x.p.n,x.p.tag?el("span",{class:"tag",text:x.p.tag}):null,el("small",{text:posLabel(x.p)})),
+      el("div",{class:"nm"},el("span",{class:"n2",text:x.p.no}),x.p.n,nameTag(x.p)?el("span",{class:"tag",text:nameTag(x.p)}):null,el("small",{text:posLabel(x.p)})),
       el("div",{class:"track"},el("i",{style:`width:${(x.r*100).toFixed(1)}%`})),
       el("div",{class:"pc"},Math.round(x.r*100)+"%",el("small",{text:`${x.c}/${N}`}))));
   }

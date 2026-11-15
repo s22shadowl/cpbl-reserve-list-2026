@@ -117,13 +117,20 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .ph-no{font-family:var(--f-num);font-weight:700;font-size:34px;color:var(--muted)}
 .tile .no{position:absolute;left:6px;bottom:1px;z-index:1;font-family:var(--f-num);font-weight:700;font-size:22px;line-height:1.1;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:.03em}
 .tile .pic.nopic .no{display:none}
+.tile .mk-tag{position:absolute;top:5px;left:5px;z-index:2;font-size:10px;font-weight:700;line-height:1;padding:3px 6px;border-radius:999px;background:var(--acc);color:var(--on-acc);letter-spacing:.04em;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.tile .mk-tag.fa{background:var(--paper);color:var(--ink)}
+.tile .mk-tag.dy{background:rgba(0,0,0,.42);color:#fff;font-family:var(--f-num);font-weight:600;font-size:11px;letter-spacing:.02em;box-shadow:none;padding:2px 6px}
+.tile .mk-tag.dy small{font-family:var(--f-body);font-size:9px;font-weight:500;margin-left:1px}
+.tile .mk-age{position:absolute;right:6px;bottom:3px;z-index:1;color:#fff;text-align:right;line-height:1.05;text-shadow:0 1px 2px rgba(0,0,0,.5);font-variant-numeric:tabular-nums}
+.tile .mk-age b{font-family:var(--f-num);font-weight:700;font-size:17px}
+.tile .mk-age small{font-size:9px;font-weight:500;margin-left:1px}
+.tile .pic.nopic .mk-age{color:var(--muted);text-shadow:none}
 .tile .ck{position:absolute;top:5px;right:5px;z-index:1;width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.9);background:rgba(var(--shade-rgb),.25);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:transparent}
 .tile .tx{display:flex;flex-direction:column;min-width:0;padding:4px 7px 5px}
 .tile .nm{font-size:15px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35}
 .tile .nmr{display:flex;align-items:center;gap:5px;min-width:0}
 .tile .nmr .nm{min-width:0}
 .tag{flex:none;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:999px;background:var(--acc);color:var(--on-acc);letter-spacing:.04em}
-.tile[aria-pressed="true"] .tag{background:var(--on-acc);color:var(--acc)}
 .rk .nm .tag{margin-left:6px;vertical-align:2px}
 .tile .sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tile .stat{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
@@ -204,6 +211,9 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
   .pc-tab .t{font-size:12.5px}
   .grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
   .tile .no{font-size:18px;left:4px}
+  .tile .mk-age b{font-size:15px}
+  .tile .mk-tag{font-size:9px;padding:2px 5px}
+  .tile .mk-tag.dy{font-size:10px}
   .tile .ck{width:19px;height:19px;top:4px;right:4px;font-size:11px}
   .tile .tx{padding:3px 5px 4px}
   .tile .nm{font-size:13px}
