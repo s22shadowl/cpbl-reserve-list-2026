@@ -1,8 +1,8 @@
-name = "cpbl-reserve-api"
+name = "cpbl-reserve-2026-api"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "cpbl-reserve"
-database_id = "59d7afd6-1cae-4371-a510-8fe5f4a95dce"
+database_name = "cpbl-reserve-2026"
+database_id = "2eefb3df-a20f-49f9-bd8b-c0adfc3ad4c8"
