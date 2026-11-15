@@ -51,3 +51,13 @@ def test_check_validates_season_stats_shape():
     players[3]["s"] = {}
     errors, _ = check(teams_json, roster, photos)
     assert len(errors) == 3 and all("成績欄位 s" in e for e in errors)
+
+
+def test_check_validates_team_stats_flag():
+    teams_json, roster, photos = valid()
+    teams_json["teams"]["AEO"]["stats"] = True
+    teams_json["teams"]["ACN"]["stats"] = False
+    assert check(teams_json, roster, photos) == ([], [])
+    teams_json["teams"]["ADD"]["stats"] = "yes"
+    errors, _ = check(teams_json, roster, photos)
+    assert errors == ["ADD：stats 必須是 true 或 false"]

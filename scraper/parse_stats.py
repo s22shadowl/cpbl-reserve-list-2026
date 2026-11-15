@@ -27,7 +27,11 @@ def _header_index(headers: List[str], columns: Mapping[str, str]) -> Dict[str, i
 
 
 def _value(key: str, text: str):
-    return int(text) if key in INT_KEYS else text
+    """'（5）' -> 5; blank or dash cells -> None (the key is then omitted)."""
+    cleaned = text.strip().strip("（）()").strip()
+    if not cleaned.strip("-"):
+        return None
+    return int(cleaned) if key in INT_KEYS else cleaned
 
 
 def parse_stats(html: str, position: str) -> Dict[str, dict]:
@@ -49,5 +53,6 @@ def parse_stats(html: str, position: str) -> Dict[str, dict]:
         if not m:
             continue
         cells = [td.get_text(strip=True) for td in tr.find_all("td")]
-        stats[m.group(1)] = {key: _value(key, cells[i]) for key, i in index.items()}
+        values = {key: _value(key, cells[i]) for key, i in index.items()}
+        stats[m.group(1)] = {key: v for key, v in values.items() if v is not None}
     return stats

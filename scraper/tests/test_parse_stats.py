@@ -51,3 +51,11 @@ def test_missing_column_raises():
 def test_unknown_position_raises():
     with pytest.raises(ValueError):
         parse_stats("", "03")
+
+
+def test_blank_dash_and_parenthesised_cells():
+    head = "".join(f"<th>{h}</th>" for h in ["球員", "出賽數", "打席", "打擊率", "整體攻擊指數", "全壘打"])
+    cells = "".join(f"<td>{v}</td>" for v in ["3", "（5）", "-", "--", ""])
+    html = (f'<table><tr>{head}</tr><tr><td class="sticky player">'
+            f'<a href="/team/person?acnt=0000000001">甲</a></td>{cells}</tr></table>')
+    assert parse_stats(html, BATTING) == {"0000000001": {"g": 3, "pa": 5}}

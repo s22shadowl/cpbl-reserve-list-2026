@@ -6,7 +6,7 @@ import logging
 import sys
 from datetime import date
 from pathlib import Path
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Optional
 
 from PIL import Image
 
@@ -65,6 +65,18 @@ def ensure_photo(client: CpblClient, entry: RosterEntry, photos: Path, refresh: 
     return True
 
 
+def load_stats(client: CpblClient, code: str) -> Optional[dict]:
+    """Season stat tables for one team, or None (with a warning) so a stats outage never blocks the roster."""
+    try:
+        tables = {key: parse_stats(html, key[1]) for key, html in client.team_stats(code, SEASON).items()}
+    except (RetryableScraperError, FatalScraperError, ValueError) as e:
+        log.warning("%s：本季成績抓取失敗，此隊不顯示成績：%s", code, e)
+        return None
+    if not any(tables.values()):
+        log.warning("%s：%d 年沒有任何球員成績", code, SEASON)
+    return tables
+
+
 def scrape_team(client: CpblClient, code: str, overrides: dict, photos: Path, cache: Path, refresh: bool) -> dict:
     first_html, farm_html = client.team_pages(code)
     entries = parse_roster(first_html, "一軍") + parse_roster(farm_html, "二軍")
@@ -83,10 +95,8 @@ def scrape_team(client: CpblClient, code: str, overrides: dict, photos: Path, ca
         persons[e.id] = load_person(client, e.id, cache, refresh)
         if exempt_reason(e, persons[e.id], overrides) is None and ensure_photo(client, e, photos, refresh):
             photo_ids.add(e.id)
-    tables = {key: parse_stats(html, key[1]) for key, html in client.team_stats(code, SEASON).items()}
-    if not any(tables.values()):
-        log.warning("%s：%d 年沒有任何球員成績", code, SEASON)
-    team = build_team(entries, persons, overrides, frozenset(photo_ids), tables)
+    tables = load_stats(client, code)
+    team = {**build_team(entries, persons, overrides, frozenset(photo_ids), tables or {}), "stats": tables is not None}
     log.info("%s：一二軍共 %d 人，可選 %d 人", code, len(entries), len(team["players"]))
     return team
 

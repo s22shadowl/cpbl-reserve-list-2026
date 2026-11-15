@@ -66,6 +66,7 @@ def test_run_end_to_end(tmp_path):
     assert data["updated"] == "2026-11-15"
     assert list(data["teams"]) == ["ACN", "AEO"]  # other teams kept, TEAM_CODES order
     aeo = data["teams"]["AEO"]
+    assert aeo["stats"] is True
     ids = {p["id"] for p in aeo["players"]}
     assert "0000006749" not in ids and "0000007577" not in ids and "0000003339" not in ids
     assert "魔力藍" in aeo["exempt"]["foreign"]
@@ -138,3 +139,30 @@ def test_ensure_photo_handles_decompression_bomb(tmp_path, monkeypatch):
     monkeypatch.setattr(b, "resize_photo", boom)
     e = RosterEntry("0000000001", "甲", "", "1", "投手", "一軍", "/x.jpg")
     assert ensure_photo(FakeClient(), e, tmp_path, False) is False
+
+
+class NoStatsClient(FakeClient):
+    def team_stats(self, code, season):
+        raise FatalScraperError("teamscore down")
+
+
+def test_stats_failure_still_builds_roster(tmp_path, caplog):
+    teams_path, roster_path = tmp_path / "teams.json", tmp_path / "roster.json"
+    run(NoStatsClient(), ["AEO"], False, "2026-11-15", teams_path=teams_path, roster_path=roster_path,
+        photos=tmp_path / "photos", cache=tmp_path / "cache", overrides_path=Path(__file__).parents[1] / "overrides.json")
+    aeo = json.loads(teams_path.read_text(encoding="utf-8"))["teams"]["AEO"]
+    assert aeo["stats"] is False and aeo["players"]
+    assert not any("s" in p for p in aeo["players"])
+    assert json.loads(roster_path.read_text(encoding="utf-8"))["AEO"]
+    assert "AEO" in caplog.text and "teamscore down" in caplog.text
+
+
+class BadStatsClient(FakeClient):
+    def team_stats(self, code, season):
+        return {("A", "01"): "<table><tr><th>球員</th></tr><tr><td class='player'><a href='?acnt=0000000001'>甲</a></td></tr></table>"}
+
+
+def test_unparseable_stats_marks_team_without_stats(tmp_path):
+    ov = {"include": frozenset(), "exclude": {}}
+    team = scrape_team(BadStatsClient(), "AEO", ov, tmp_path / "p", tmp_path / "c", False)
+    assert team["stats"] is False and not any("s" in p for p in team["players"])

@@ -3,7 +3,7 @@ const LOCAL_HOSTS=["localhost","127.0.0.1"];
 const API=LOCAL_HOSTS.includes(location.hostname)?"http://localhost:8787":"https://cpbl-reserve-api.brienjohn.workers.dev";
 const LIMIT=60, GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",C:"Catchers",I:"Infielders",O:"Outfielders"}, GORD="PCIO";
 // TEAMS, NEUTRAL, deriveTheme(), themeDecls() come from theme.js (loaded first).
-// statLine(), statTitle() come from stats.js (loaded first).
+// statLine(), statsShown(), tileTitle() come from stats.js (loaded first).
 const EXEMPT=[["foreign","洋將（不需列入）"],["training","自主／自行培訓（不需列入）"],["fa","行使自由球員（不需列入）"],["expansion","擴編選秀被選走（不需列入）"],["removed","已非球員"]];
 const $=id=>document.getElementById(id);
 function el(tag,attrs={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else e.setAttribute(k,v)}for(const k of kids)if(k!=null)e.append(k);return e}
@@ -107,7 +107,7 @@ function match(p){
 }
 function renderGroups(){
   const box=$("groups");box.replaceChildren();
-  const full=sel.size>=LIMIT;let any=false;
+  const full=sel.size>=LIMIT,show=statsShown(DATA.teams[T.code]);let any=false;
   for(const g of GORD){
     const all=ROSTER.filter(p=>p.g===g),list=all.filter(match).sort(sortP);
     if(!list.length)continue;any=true;
@@ -115,10 +115,10 @@ function renderGroups(){
     for(const p of list){
       const on=sel.has(p.id);
       const pic=photo(p,"pic");pic.append(el("span",{class:"no",text:p.no}),el("span",{class:"ck","aria-hidden":"true",text:"✓"}));
-      const line=statLine(p);
-      const b=el("button",{class:"tile","aria-pressed":String(on),title:`${p.no} ${p.n}\n${statTitle(p)}`,"aria-label":`${p.no} ${p.n} ${posLabel(p)} ${line}${on?" 已保留":""}`},pic,
-        el("span",{class:"tx"},el("span",{class:"nm",text:p.n}),el("span",{class:"sub",text:posLabel(p)+" · "+p.l}),el("span",{class:"stat",text:line})));
-      if(full&&!on){b.disabled=true;b.title="已達 60 人上限，先移除一位才能再加入"}
+      const line=show?statLine(p):null,capped=full&&!on;
+      const b=el("button",{class:"tile","aria-pressed":String(on),title:tileTitle(p,show,capped),"aria-label":`${p.no} ${p.n} ${posLabel(p)}${line?" "+line:""}${on?" 已保留":""}`},pic,
+        el("span",{class:"tx"},el("span",{class:"nm",text:p.n}),el("span",{class:"sub",text:posLabel(p)+" · "+p.l}),line&&el("span",{class:"stat",text:line})));
+      if(capped)b.disabled=true;
       b.onclick=()=>toggle(p.id);
       grid.append(b);
     }

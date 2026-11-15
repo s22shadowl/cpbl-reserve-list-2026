@@ -45,6 +45,8 @@ def check(teams_json: dict, roster_json: dict, photo_ids: frozenset) -> Tuple[Li
             errors.append(f"{code}：可選球員只有 {len(ids)} 人，應多於 {LIMIT}")
         if sorted(ids) != sorted(roster_json.get(code, [])):
             errors.append(f"{code}：teams.json 與 roster.json 的球員不一致")
+        if "stats" in teams[code] and not isinstance(teams[code]["stats"], bool):
+            errors.append(f"{code}：stats 必須是 true 或 false")
         if set(teams[code].get("exempt", {})) != set(REASONS):
             errors.append(f"{code}：exempt 欄位必須剛好是 {REASONS}")
         for p in players:
