@@ -6,6 +6,15 @@
 
 開發規劃與優先順序見 [`roadmap.md`](roadmap.md)。
 
+## 功能
+
+- 選隊後勾選 60 人，送出、修改或清空撤回；一鍵全選／全部取消各守位目前顯示的球員。
+- 球員卡：照片四角顯示新人／旅外FA／選秀年份、勾選、背號、年齡；成績行統一為 `一軍 ERA 4.83`／`一軍 OPS .771`，依出賽量分主力（較濃）與樣本少（較淡）。
+- 篩選全部／已保留／未列入／新人，搜尋姓名或背號。
+- 「大家的統計」：保留率排行與共識 60 人保留線。
+- 複製文字、存成圖片分享。
+- 對答案（官方名單公布後開放，目前只在本機開啟）：你和球團的重疊人數、球迷平均、共識差異與爆冷。
+
 ## 規則重點
 
 - 各球團須於每年 11 月 30 日前提出下年度契約保留球員，上限 60 人；未列入者可與其他球團洽談。
@@ -16,18 +25,28 @@
 ```
 docs/                 GitHub Pages 靜態網站（純 HTML/CSS/JS，無建置步驟）
   index.html, app.js, style.css
+  flags.js            功能開關與本機判斷（FLAGS、IS_LOCAL）
   theme.js            六隊與共通頁面的配色推導（TEAMS、deriveTheme）
-  stats.js            卡片上的本季成績格式
-  data/teams.json     各隊可選球員、排除名單、本季成績（由 scraper 產生）
+  stats.js            卡片成績行與樣本量層級
+  card.js             卡片角標（新人／FA／選秀年份）、年齡與說明文字
+  bulk.js             一鍵全選／全部取消的判斷
+  status.js           送出按鈕狀態
+  official.js         對答案計算（重疊、球迷平均、共識差異、爆冷）
+  data/teams.json     各隊可選球員、排除名單、本季成績、新人標記（由 scraper 產生）
+  data/official.sample.json  開發用假官方名單（正式名單公布後另產生 official.json）
   photos/             球員照片（由 scraper 下載）
 worker/               Cloudflare Worker API + D1
   src/index.js
   src/roster.json     各隊允許送出的球員 ID（由 scraper 產生，必須與 teams.json 一致）
   schema.sql
+  test/               vitest + workerd 測試
+  scripts/seed-dev.mjs  本機假球迷名單
 scraper/              Python 爬蟲，從中職官網產生上述資料
-  overrides.json      手動排除（引退、FA 等）、強制納入與球員標籤
-scripts/*.test.mjs    前端配色對比與成績格式測試（node --test）
+  overrides.json      手動排除（引退、國內 FA）、強制納入、標籤（旅外FA）、新人（rookie）、選秀補正（draft）
+  official.py         官方名單轉檔與開發用假名單
+scripts/*.test.mjs    前端純函式測試（node --test）
 roadmap.md            開發規劃（P0–P3）
+.impeccable.md        設計脈絡（使用者、風格、原則）
 ```
 
 ## 更新球員資料
@@ -40,9 +59,10 @@ poetry run python -m scraper.build            # 六隊；可加 --team AEO 只�
 poetry run python -m scraper.check            # 驗證資料，失敗時不要 commit
 poetry run pytest                             # scraper 測試
 node --test scripts/*.test.mjs                # 前端測試
+cd worker && npm test                         # Worker 測試
 ```
 
-自動排除規則：國籍非中華民國且沒有選秀順位的判為洋將，名字有 `◎` 前綴的判為自主／自行培訓。引退、FA 等無法自動判斷的情況，在 `scraper/overrides.json` 手動維護，每筆註明依據。更新 `roster.json` 後需要重新部署 Worker（`cd worker && npm run deploy`）。
+自動排除規則：國籍非中華民國且沒有選秀順位的判為洋將，名字有 `◎` 前綴的判為自主／自行培訓。引退、國內 FA 等無法自動判斷的情況，在 `scraper/overrides.json` 手動維護，每筆註明依據；旅外 FA 不排除，只加標籤。新人為 2026 年選秀，加上 `rookie` 中今年自培轉正的球員。更新 `roster.json` 後需要重新部署 Worker（`cd worker && npm run deploy`）。
 
 ## API（Cloudflare Worker）
 
@@ -58,7 +78,7 @@ node --test scripts/*.test.mjs                # 前端測試
 
 ## 本機開發
 
-前端在 `localhost` 或 `127.0.0.1` 開啟時，會自動改連本機 Worker（`http://localhost:8787`），不會寫入正式統計。
+前端在 `localhost` 或 `127.0.0.1` 開啟時，會自動改連本機 Worker（`http://localhost:8787`），不會寫入正式統計，並開啟對答案功能（讀 `official.sample.json`）。
 
 ```bash
 # 1. 本機 Worker + 本機 D1（資料存在 worker/.wrangler/，不需登入 Cloudflare）
@@ -67,6 +87,7 @@ npm install
 npm run db:init     # 第一次執行時建立資料表
 npm run dev         # http://localhost:8787
 npm run db:reset    # 清空本機統計
+npm run db:seed     # 寫入假球迷名單（看對答案、共識與爆冷）
 
 # 2. 前端（另開一個終端機，在 repo 根目錄）
 python3 -m http.server -d docs 8080 --bind 127.0.0.1    # http://localhost:8080/
@@ -76,6 +97,8 @@ python3 -m http.server -d docs 8080 --bind 127.0.0.1    # http://localhost:8080/
 
 - 前端：GitHub Pages，從 `main` 分支的 `docs/` 發布。
 - 後端：Cloudflare Worker `cpbl-reserve-2026-api` 與 D1 `cpbl-reserve-2026`，以 `cd worker && npm run deploy` 部署。
+- 可選球員減少時，先推前端、等 Pages 更新後再部署 Worker。
+- 對答案上線：見 roadmap P1-3 的上線步驟。
 
 若要 fork 成自己的服務：建立自己的 D1（`wrangler d1 create`）、更新 `worker/wrangler.toml` 的 `name` 與 `database_id`、執行 `wrangler d1 execute DB --remote --file=schema.sql`、以 `wrangler secret put IP_SALT` 設定隨機鹽值，最後把 `docs/app.js` 的 `API` 改成自己的 Worker 網址。
 
