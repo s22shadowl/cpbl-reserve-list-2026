@@ -46,13 +46,15 @@ def load_overrides(path: Path) -> dict:
 def exempt_reason(entry: RosterEntry, person: PersonInfo, overrides: dict) -> Optional[str]:
     """None when the player must be chosen from; otherwise one of REASONS.
 
-    Priority: manual include > manual exclude > non-domestic nationality > ◎ mark.
+    Priority: manual include > manual exclude > foreign > ◎ mark.
+    Foreign means a non-domestic nationality with no draft: a foreign national picked in the
+    CPBL draft (e.g. a Japanese 本土選秀 pick) is a local player and must be chosen from.
     """
     if entry.id in overrides["include"]:
         return None
     if entry.id in overrides["exclude"]:
         return overrides["exclude"][entry.id]["reason"]
-    if person.nationality and person.nationality != DOMESTIC:
+    if person.nationality and person.nationality != DOMESTIC and person.draft_year is None:
         return "foreign"
     if entry.mark == "◎":
         return "training"

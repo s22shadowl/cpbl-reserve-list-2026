@@ -36,6 +36,13 @@ def test_exempt_rules():
     assert exempt_reason(entry(mark="*"), LOCAL, NO_OVERRIDES) is None
 
 
+def test_drafted_foreign_national_is_local_player():
+    drafted = PersonInfo(born="2003-04-01", nationality="日本", draft_year=2026, draft_round=10)
+    assert exempt_reason(entry(), drafted, NO_OVERRIDES) is None
+    assert exempt_reason(entry(), FOREIGN, NO_OVERRIDES) == "foreign"
+    assert exempt_reason(entry(mark="◎"), drafted, NO_OVERRIDES) == "training"
+
+
 def test_exempt_overrides_win():
     ov = {"include": frozenset({"0000000002"}), "exclude": {"0000000001": {"reason": "fa"}}}
     assert exempt_reason(entry("0000000001"), LOCAL, ov) == "fa"

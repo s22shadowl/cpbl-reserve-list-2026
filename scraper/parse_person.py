@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from .models import PersonInfo
 
 _CN_DIGITS = {"一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
-_DRAFT = re.compile(r"(\d{4})年第([0-9一二三四五六七八九十]+)輪")
+_DRAFT = re.compile(r"(\d{4})年?第([0-9一二三四五六七八九十]+)輪")
 
 
 def cn_number(text: str) -> int:
@@ -30,7 +30,7 @@ def _desc(soup: BeautifulSoup, cls: str) -> str:
 
 
 def parse_draft(text: str) -> tuple:
-    """'富邦悍將2019年第一輪' -> (2019, 1); anything else -> (None, None)."""
+    """'富邦悍將2019年第一輪' or '中信兄弟2026第十輪' (no 年) -> (year, round); anything else -> (None, None)."""
     m = _DRAFT.search(text)
     if not m:
         return None, None

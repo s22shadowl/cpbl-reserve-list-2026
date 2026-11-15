@@ -44,7 +44,7 @@
 
 ### P0-3 名單解析與產出
 - 先用存成 fixture 的 HTML 寫 pytest 測試，再實作 parser（TDD）。
-- 自動排除：國籍不是中華民國的判為 foreign，名字有 `◎` 前綴的判為 training。
+- 自動排除：國籍非中華民國且無選秀順位的判為 foreign（經選秀入團的外籍球員視同本土球員，列入可選），名字有 `◎` 前綴的判為 training。
 - 套用 `overrides.json`：`exclude` 手動排除球員並註明原因（foreign／training／fa／expansion／removed），`include` 讓被自動規則誤判排除的球員強制變成可選。
 - 產出 `docs/data/teams.json`，格式與現有版本相容：`players[]` 的 `id/n/no/g/l/p/ph`，以及 `exempt.{foreign,training,removed}`。先保留 P1 需要的欄位：`b` 為生日，`dy` 為選秀年份，`dr` 為選秀輪次。
 - 產出 `worker/src/roster.json`，內容**必須等於** teams.json 的可選球員。原版悍將的 roster.json 有 93 人，teams.json 只有 86 人，兩邊不一致，這次要修正。
