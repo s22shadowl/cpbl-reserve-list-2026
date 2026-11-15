@@ -36,7 +36,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .hero{background:var(--band);color:var(--on-band);padding-block:28px 26px;position:relative;overflow:hidden}
 .hero::after{content:"";position:absolute;right:-60px;top:0;bottom:0;width:320px;background:var(--acc);transform:skewX(-14deg);opacity:.35}
 .hero .in{position:relative;z-index:1}
-.kicker{font-family:var(--f-num);font-weight:600;letter-spacing:.22em;font-size:13px;color:var(--band-muted);text-transform:uppercase}
+.kicker{font-family:var(--f-num);font-weight:600;letter-spacing:.22em;font-size:13px;color:var(--band-muted);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:420px){.kicker{letter-spacing:.1em}}
 .hero h1{font-weight:700;font-size:clamp(26px,4.6vw,38px);line-height:1.2;margin:4px 0 10px;text-wrap:balance}
 .hero p{margin:0;max-width:62ch;font-size:14px;color:var(--band-muted);font-weight:300}
 .hero p b{color:var(--on-band);font-weight:500}

@@ -151,7 +151,7 @@ function renderGroups(){
     }
     const ids=list.map(p=>p.id),bs=bulkState(ids,sel,LIMIT),add=bs.mode==="add";
     const bulk=el("button",{type:"button",class:"bulk","aria-label":`${add?"全選":"全部取消"}${GN[g]}（${ids.length} 人）`,text:add?"全選":"全部取消",
-      title:add?(bs.disabled&&bs.need?`剩 ${bs.left} 個名額，還差 ${bs.need-bs.left} 人，無法全選`:bs.need?`選取目前顯示的 ${bs.need} 位${GN[g]}`:"目前顯示的球員已全部選取"):`取消選取目前顯示的 ${ids.length} 位${GN[g]}`});
+      title:add?(bs.disabled&&bs.need?`需要 ${bs.need} 個名額，只剩 ${bs.left} 個，無法全選`:bs.need?`選取目前顯示的 ${bs.need} 位${GN[g]}`:"目前顯示的球員已全部選取"):`取消選取目前顯示的 ${ids.length} 位${GN[g]}`});
     if(bs.disabled)bulk.disabled=true;
     bulk.onclick=()=>bulkToggle(ids);
     box.append(el("section",{class:"grp",id:"g-"+g},
