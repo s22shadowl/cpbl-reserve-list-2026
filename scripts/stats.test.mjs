@@ -36,8 +36,8 @@ test("no s means no games this season", () => {
 
 test("title lists every level with full numbers", () => {
   assert.equal(statTitle({ g: "I", s: { A: BAT_A, D: BAT_D } }),
-    "一軍 113 場 · 436 打席 · 打擊率 .282 · OPS .771 · 全壘打 13\n" +
-    "二軍 52 場 · 170 打席 · 打擊率 .271 · OPS 1.051 · 全壘打 7（一軍主力）");
+    "一軍 113 場 · 436 打席 · 打擊率 .282 · OPS .771 · 全壘打 13（一軍主力）\n" +
+    "二軍 52 場 · 170 打席 · 打擊率 .271 · OPS 1.051 · 全壘打 7");
   assert.equal(statTitle({ g: "P", s: { D: PIT_D } }), "二軍 8 場 · 36.2 局 · ERA 2.50 · WHIP 1.22 · 奪三振 26");
 });
 

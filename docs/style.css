@@ -220,6 +220,9 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
   .tile .mk-age b{font-size:15px}
   .tile .mk-tag{top:4px;left:4px;height:15px;padding:0 4px;font-size:9px;letter-spacing:-.02em}
   .tile .mk-tag.dy small{margin-left:0}
+  /* Narrow tiles: tighter text padding and proportional digits so 「二軍 ERA 12.96」 fits from 360px up. */
+  .tile .tx{padding-left:3px;padding-right:3px}
+  .tile .stat{font-size:10px;font-variant-numeric:normal;letter-spacing:-.02em}
   .tile .ck{width:19px;height:19px;top:4px;right:4px;font-size:11px}
   .tile .tx{padding:3px 5px 4px}
   .tile .nm{font-size:13px}
@@ -251,4 +254,4 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .tcard:focus-visible{outline:3px solid var(--text);outline-offset:2px}
 a.btn{text-decoration:none}
 /* Very narrow phones: drop 選秀 so the year badge clears the check circle (full text stays in title/aria). */
-@media (max-width:374px){.tile .mk-tag.dy small{display:none}}
+@media (max-width:374px){.tile .mk-tag.dy small{display:none}.tile .stat{font-size:9.5px}}

@@ -36,13 +36,15 @@ const TIER_HINT={low:"（樣本少）",core:"（一軍主力）"};
 function statTitle(p){
   const rows=STAT_LEVELS.filter(([k])=>p.s&&p.s[k]);
   if(!rows.length)return NO_GAMES;
+  // The tier hint belongs to the level shown on the card, so it goes on that level's line.
+  const shown=statLevel(p),hint=TIER_HINT[statTier(p)]||"";
   const lines=rows.map(([k,name])=>{
     const r=p.s[k];
     return name+" "+(isPitcher(p)
       ?`${val(r.g)} 場 · ${val(r.ip)} 局 · ERA ${val(r.era)} · WHIP ${val(r.whip)} · 奪三振 ${val(r.so)}`
-      :`${val(r.g)} 場 · ${val(r.pa)} 打席 · 打擊率 ${rate(r.avg)} · OPS ${rate(r.ops)} · 全壘打 ${val(r.hr)}`);
+      :`${val(r.g)} 場 · ${val(r.pa)} 打席 · 打擊率 ${rate(r.avg)} · OPS ${rate(r.ops)} · 全壘打 ${val(r.hr)}`)+(k===shown?hint:"");
   }).join("\n");
-  return lines+(TIER_HINT[statTier(p)]||"");
+  return lines;
 }
 // teams.json marks each team stats:true only when its stat tables were scraped; otherwise show nothing
 function statsShown(team){return!!team&&team.stats===true}
