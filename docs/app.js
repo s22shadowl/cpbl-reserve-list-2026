@@ -2,15 +2,7 @@
 const LOCAL_HOSTS=["localhost","127.0.0.1"];
 const API=LOCAL_HOSTS.includes(location.hostname)?"http://localhost:8787":"https://cpbl-reserve-api.brienjohn.workers.dev";
 const LIMIT=60, GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",C:"Catchers",I:"Infielders",O:"Outfielders"}, GORD="PCIO";
-const TEAMS=[
-  {code:"ACN",slug:"brothers",name:"中信兄弟",short:"兄弟",en:"CTBC Brothers",band:"#16161A",acc:"#FFC72C",on:"#16161A",ink:"#8C6500",hi:"#FFC72C"},
-  {code:"ADD",slug:"lions",name:"統一7-ELEVEn獅",short:"統一獅",en:"Uni-President Lions",band:"#2B1A0E",acc:"#F28C28",on:"#1E1206",ink:"#B5530B",hi:"#F9A54C"},
-  {code:"AJL",slug:"monkeys",name:"樂天桃猿",short:"桃猿",en:"Rakuten Monkeys",band:"#3D0A14",acc:"#BF0D3E",on:"#FFFFFF",ink:"#B00C39",hi:"#FF6B8B"},
-  {code:"AEO",slug:"guardians",name:"富邦悍將",short:"悍將",en:"Fubon Guardians",band:"#002255",acc:"#004B90",on:"#FFFFFF",ink:"#004B90",hi:"#4FA3FF"},
-  {code:"AAA",slug:"dragons",name:"味全龍",short:"味全龍",en:"Wei Chuan Dragons",band:"#5E0A12",acc:"#D7192D",on:"#FFFFFF",ink:"#C3172A",hi:"#FF7D88"},
-  {code:"AKP",slug:"hawks",name:"台鋼雄鷹",short:"雄鷹",en:"TSG Hawks",band:"#0B3326",acc:"#127A55",on:"#FFFFFF",ink:"#0F6E4C",hi:"#5FD3A2"},
-];
-const NEUTRAL={band:"#1A2233",acc:"#5B6B85",on:"#FFFFFF",ink:"#3D4B63",hi:"#9FB3D1"};
+// TEAMS, NEUTRAL, deriveTheme(), themeDecls() come from theme.js (loaded first).
 const EXEMPT=[["foreign","洋將（不需列入）"],["training","自主／自行培訓（不需列入）"],["fa","行使自由球員（不需列入）"],["expansion","擴編選秀被選走（不需列入）"],["removed","已非球員"]];
 const $=id=>document.getElementById(id);
 function el(tag,attrs={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else e.setAttribute(k,v)}for(const k of kids)if(k!=null)e.append(k);return e}
@@ -37,10 +29,10 @@ function photo(p,cls){
   return b;
 }
 function applyTheme(t){
-  const css=`:root{--band:${t.band};--acc:${t.acc};--on-acc:${t.on};--acc-ink:${t.ink};--acc-ink-l:${t.ink};--hi:${t.hi}}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--acc-ink:${t.hi}}}
-:root[data-theme="dark"]{--acc-ink:${t.hi}}`;
-  $("teamTheme").textContent=css;
+  const th=deriveTheme(t),l=themeDecls(th.light),d=themeDecls(th.dark);
+  $("teamTheme").textContent=`:root{${l}}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){${d}}}
+:root[data-theme="dark"]{${d}}`;
   document.querySelector('meta[name="theme-color"]').setAttribute("content",t.band);
 }
 
