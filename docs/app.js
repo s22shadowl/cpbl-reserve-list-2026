@@ -33,6 +33,9 @@ function initMode(){
 let DATA=null, AVAIL=[], T=null, ROSTER=[], BY={};
 let sel=new Set(), saved=null, savedAt=null, stats=null, online=false, saving=false, statsT=0;
 let pos="all", st="all", q="", tab="pick";
+// After our own submit, cached /stats (edge + browser, max-age 60s) is older than what we just wrote; bypass it for a while.
+let freshUntil=0;
+const FRESH_MS=65000;
 
 function voterId(){
   let v=store("rl-voter");
@@ -212,7 +215,7 @@ async function save(){
   const ids=[...sel].sort();
   try{
     const j=await api("/picks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({team:T.code,voter:VOTER,ids})});
-    saved=new Set(ids);savedAt=j.at;online=true;stats=null;toast(ids.length?"已送出 "+ids.length+" 人名單":"已撤回你的名單");
+    saved=new Set(ids);savedAt=j.at;online=true;stats=null;freshUntil=Date.now()+FRESH_MS;toast(ids.length?"已送出 "+ids.length+" 人名單":"已撤回你的名單");
   }catch(e){
     toast(e.status===429?"這個網路今天送出太多份名單，請明天再試":"送出失敗，請檢查網路後再試一次");
   }
@@ -229,7 +232,7 @@ $("save").onclick=save;
 
 // ---------- stats ----------
 async function loadStats(fresh){
-  const code=T.code;
+  const code=T.code;fresh=fresh||Date.now()<freshUntil;
   try{const j=await api("/stats?team="+code+(fresh?"&fresh=1":""));if(!T||T.code!==code)return;stats=j;online=true}catch(e){if(!stats)stats={error:true}}
   if(tab==="stats")renderStats();subCount();
 }
