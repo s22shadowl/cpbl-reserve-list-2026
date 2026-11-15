@@ -4,7 +4,7 @@ const API=LOCAL_HOSTS.includes(location.hostname)?"http://localhost:8787":"https
 const LIMIT=60, GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",C:"Catchers",I:"Infielders",O:"Outfielders"}, GORD="PCIO";
 // TEAMS, NEUTRAL, deriveTheme(), themeDecls() come from theme.js (loaded first).
 // ageOn(), cornerBadge(), cardNote(), nameTag(), isRookie() come from card.js (loaded first).
-// statLine(), statsShown(), tileTitle(), playerHead() come from stats.js (loaded first).
+// statLine(), statTier(), statsShown(), tileTitle(), playerHead() come from stats.js (loaded first).
 const EXEMPT=[["foreign","洋將（不需列入）"],["training","自主／自行培訓（不需列入）"],["fa","行使自由球員（不需列入）"],["expansion","擴編選秀被選走（不需列入）"],["removed","已非球員"]];
 const $=id=>document.getElementById(id);
 function el(tag,attrs={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else e.setAttribute(k,v)}for(const k of kids)if(k!=null)e.append(k);return e}
@@ -150,9 +150,9 @@ function renderGroups(){
       const badge=cornerBadge(p),age=ageOn(p.b,DATA.updated),note=cardNote(p,DATA.updated);
       if(badge)pic.append(el("span",{class:"mk-tag "+badge.kind,"aria-hidden":"true",text:badge.text},badge.small?el("small",{text:badge.small}):null));
       if(age!=null)pic.append(el("span",{class:"mk-age","aria-hidden":"true"},el("b",{text:age}),el("small",{text:"歲"})));
-      const line=show?statLine(p):null,capped=full&&!on;
+      const line=show?statLine(p):null,tier=show?statTier(p):null,capped=full&&!on;
       const b=el("button",{class:"tile","data-id":p.id,"aria-pressed":String(on),title:tileTitle(p,show,capped)+(note?"\n"+note:""),"aria-label":`${playerHead(p)} ${posLabel(p)}${note?" "+note:""}${line?" "+line:""}${on?" 已保留":""}`},pic,
-        el("span",{class:"tx"},el("span",{class:"nmr"},el("span",{class:"nm",text:p.n})),el("span",{class:"sub",text:posLabel(p)+" · "+p.l}),line&&el("span",{class:"stat",text:line})));
+        el("span",{class:"tx"},el("span",{class:"nmr"},el("span",{class:"nm",text:p.n})),el("span",{class:"sub",text:posLabel(p)+" · "+p.l}),line&&el("span",{class:"stat"+(tier?" "+tier:""),text:line})));
       if(capped)b.disabled=true;
       b.onclick=()=>toggle(p.id);
       grid.append(b);

@@ -21,17 +21,28 @@ function levelName(k){return STAT_LEVELS.find(([c])=>c===k)[1]}
 function statLine(p){
   const k=statLevel(p);if(!k)return NO_GAMES;
   const r=p.s[k];
-  return levelName(k)+" "+(isPitcher(p)?`ERA ${val(r.era)} · ${val(r.ip)} 局`:`${rate(r.avg)} · OPS ${rate(r.ops)}`);
+  return levelName(k)+" "+(isPitcher(p)?`ERA ${val(r.era)}`:`OPS ${rate(r.ops)}`);
 }
+// Sample-size tier of the shown level (roadmap P2-7): "low" under 10 IP / 30 PA, "core" for 一軍 at 40 IP / 250 PA, else null.
+const LOW_OUTS=30, LOW_PA=30, CORE_OUTS=120, CORE_PA=250;
+function statTier(p){
+  const k=statLevel(p);if(!k)return null;
+  const w=workload(p,p.s[k]),pit=isPitcher(p);
+  if(w<(pit?LOW_OUTS:LOW_PA))return "low";
+  if(k==="A"&&w>=(pit?CORE_OUTS:CORE_PA))return "core";
+  return null;
+}
+const TIER_HINT={low:"（樣本少）",core:"（一軍主力）"};
 function statTitle(p){
   const rows=STAT_LEVELS.filter(([k])=>p.s&&p.s[k]);
   if(!rows.length)return NO_GAMES;
-  return rows.map(([k,name])=>{
+  const lines=rows.map(([k,name])=>{
     const r=p.s[k];
     return name+" "+(isPitcher(p)
       ?`${val(r.g)} 場 · ${val(r.ip)} 局 · ERA ${val(r.era)} · WHIP ${val(r.whip)} · 奪三振 ${val(r.so)}`
       :`${val(r.g)} 場 · ${val(r.pa)} 打席 · 打擊率 ${rate(r.avg)} · OPS ${rate(r.ops)} · 全壘打 ${val(r.hr)}`);
   }).join("\n");
+  return lines+(TIER_HINT[statTier(p)]||"");
 }
 // teams.json marks each team stats:true only when its stat tables were scraped; otherwise show nothing
 function statsShown(team){return!!team&&team.stats===true}

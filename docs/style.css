@@ -135,10 +135,15 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .rk .nm .tag{margin-left:6px;vertical-align:2px}
 .tile .sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tile .stat{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+/* sample-size tiers (roadmap P2-7): low .7 keeps >=3:1 on --paper in light and dark */
+.tile .stat.low{opacity:.7}
+.tile .stat.core{color:var(--text);font-weight:500}
 .tile[aria-pressed="true"]{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
 .tile[aria-pressed="true"] .tx{background:var(--acc)}
 .tile[aria-pressed="true"] .nm{color:var(--on-acc)}
 .tile[aria-pressed="true"] .sub,.tile[aria-pressed="true"] .stat{color:var(--on-acc);opacity:.8}
+.tile[aria-pressed="true"] .stat.low{opacity:.65}
+.tile[aria-pressed="true"] .stat.core{opacity:1}
 .tile[aria-pressed="true"] .ck{background:var(--acc);border-color:#fff;color:var(--on-acc)}
 .tile:not([aria-pressed="true"]):not(:disabled):hover{border-color:var(--acc)}
 .tile:disabled{cursor:not-allowed;opacity:.38}
