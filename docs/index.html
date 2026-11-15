@@ -9,7 +9,7 @@
 <meta property="og:description" content="選出你心中的 60 人契約保留名單，看看其他球迷怎麼選。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#111214">
-<script>try{var t=localStorage.getItem("rl-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>(function(){try{var t=localStorage.getItem("rl-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}})()</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Rajdhani:wght@500;600;700&display=swap">
@@ -21,7 +21,7 @@
   <div class="in">
     <div class="herotools">
       <label class="teamsw" id="teamSwBox" hidden><select id="teamSw" aria-label="切換球隊"></select></label>
-      <button type="button" class="themebtn" id="themeBtn"></button>
+      <button type="button" class="themebtn" id="themeBtn" aria-label="配色"></button>
     </div>
     <div class="kicker" id="kicker">CPBL · 2027 Reserve List</div>
     <h1 id="h1">排出你的 60 人契約保留名單</h1>
