@@ -9,6 +9,27 @@ const $=id=>document.getElementById(id);
 function el(tag,attrs={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else e.setAttribute(k,v)}for(const k of kids)if(k!=null)e.append(k);return e}
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 
+// Colour mode: auto (no data-theme) / light / dark, persisted as "rl-theme" (absent = auto).
+const MODE_UI={
+  auto:{label:"自動（跟隨系統）",svg:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg>'},
+  light:{label:"淺色",svg:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg>'},
+  dark:{label:"深色",svg:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg>'},
+};
+function setMode(m){
+  const r=document.documentElement,b=$("themeBtn");
+  if(m==="auto")delete r.dataset.theme;else r.dataset.theme=m;
+  const u=MODE_UI[m],txt="配色："+u.label;
+  b.innerHTML=u.svg;b.setAttribute("aria-label",txt);b.title=txt;b.dataset.mode=m;
+}
+function initMode(){
+  setMode(normMode(store("rl-theme")));
+  $("themeBtn").addEventListener("click",()=>{
+    const m=nextMode($("themeBtn").dataset.mode);
+    setMode(m);
+    try{if(m==="auto")localStorage.removeItem("rl-theme");else localStorage.setItem("rl-theme",m)}catch(e){}
+  });
+}
+
 let DATA=null, AVAIL=[], T=null, ROSTER=[], BY={};
 let sel=new Set(), saved=null, savedAt=null, stats=null, online=false, saving=false, statsT=0;
 let pos="all", st="all", q="", tab="pick";
@@ -324,6 +345,7 @@ $("mkImg").onclick=async()=>{
 };
 
 // ---------- boot ----------
+initMode();
 (async()=>{
   try{DATA=await (await fetch("data/teams.json",{cache:"no-cache"})).json()}catch(e){document.body.append(el("p",{class:"in",text:"名單載入失敗，請重新整理頁面。"}));return}
   const [yy,mm,dd]=String(DATA.updated||"").split("-");
