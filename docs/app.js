@@ -1,6 +1,6 @@
 "use strict";
 const LOCAL_HOSTS=["localhost","127.0.0.1"];
-const API=LOCAL_HOSTS.includes(location.hostname)?"http://localhost:8787":"https://cpbl-reserve-api.brienjohn.workers.dev";
+const API=LOCAL_HOSTS.includes(location.hostname)?"http://localhost:8787":"https://cpbl-reserve-2026-api.cpbl-status.workers.dev";
 const LIMIT=60, GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",C:"Catchers",I:"Infielders",O:"Outfielders"}, GORD="PCIO";
 // TEAMS, NEUTRAL, deriveTheme(), themeDecls() come from theme.js (loaded first).
 // statLine(), statsShown(), tileTitle(), playerHead() come from stats.js (loaded first).
