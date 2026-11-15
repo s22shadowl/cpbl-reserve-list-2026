@@ -135,10 +135,12 @@
 - 聯盟公告實際保留名單後，手動整理成 `scraper/official/2027.json`，再併入 teams.json 的 `official` 欄位。
 - 統計頁顯示球迷共識和球團實際名單的差異，例如「球迷保留、球團沒保留」和「球迷放生、球團保留」。也列出爆冷名單，也就是共識度高卻和球團決定相反的球員。
 - 個人命中率：前端用自己的名單和官方名單比對，不需要後端。
-- 公布後鎖定送出：Worker 讀環境變數 `LOCKED=1`，`POST /picks` 回 423，統計仍可讀。
+- 公布後**不鎖定**送出：仍可填寫，性質從預測轉為單純表達意見，文案需配合調整。
 
-### P1-4 Worker 自動化測試
-- 使用 vitest 與 `@cloudflare/vitest-pool-workers`，涵蓋輸入驗證、tally 增減（新增、覆蓋、撤回）、IP 限流與 LOCKED 狀態。
+### P1-4 Worker 自動化測試（已完成）
+- 使用 vitest 4.1.12 與 `@cloudflare/vitest-pool-workers` 0.23.0（`cd worker && npm test`），涵蓋輸入驗證、CORS、tally 增減（新增、覆蓋、撤回、重送）、隨機操作序列與全量重算比對、`/stats` 快取與 `fresh=1`、IP 限流。
+- 測試用的 workerd 較舊，只支援到 2026-08-22 的 compatibility date，所以 `vitest.config.mjs` 內覆寫為 2026-08-01；`wrangler.toml` 不變。
+- 不做 LOCKED：官方名單公布後仍開放送出，改為表達意見（見 P1-3）。
 
 ### P1-5 一鍵全選各類別球員（已完成）
 - 在每個守位分組（投手、捕手、內野手、外野手）的標題列加上一個切換按鈕：分組內目前顯示的球員還沒全選時為「全選」，已全選時為「全部取消」。
