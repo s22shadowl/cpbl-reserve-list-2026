@@ -197,7 +197,7 @@ P0、P2 全部完成；P1 剩 P1-6 上線前功能補強（未實作）與 P1-3 
 ### P1-7 程式碼整理與效能（2026-11-16 審查後決定，未實作）
 - **字型**：Noto Sans TC 拿掉 300 字重（只用在頁首說明與分組標題，改 400），約省 450KB。
 - **選人格**：`renderGroups` 拆成卡片、全選鈕、焦點還原三個函式；維持整格重建（慢速手機約 70ms，焦點與捲動行為曾出 bug，不改局部更新）。
-- **照片**：裁成偏上方的正方形並改輸出 WebP（`scraper/photos.py`、`check.py`、前端副檔名），清掉沒用到的照片。
+- **照片**（已完成）：`scraper/photos.py` 裁成正方形（水平置中、垂直取多出部分的 10%，與卡片原本 `object-position:50% 10%` 看到的範圍相同），最大 240×240、不放大，輸出 WebP quality 75（全部照片 q75 平均約 3.6KB、PSNR 37.6dB；q80 多 23% 位元組只多 1.3dB）。既有照片在本機轉檔、不重抓；刪除 3 張沒有球員使用的照片，`check.py` 改為警告這種孤兒照片。`docs/photos` 由 453 張 5.28MB 降到 450 張 1.64MB（每張平均 11.7KB → 3.6KB）。前端 `<img>` 加 `decoding="async"`。
 - **命名與死碼**：「off」同時指官方名單與未列入，分開命名（例如 `OFF→clubKept`、`OFFICIAL→officialList`、`offList→droppedPlayers`、`st→showFilter`、`statsT→statsTimer`）；刪除死規則與錯位註解。
 - **CSS**：手機版覆寫放回各區塊旁、名字欄寬度改用變數、寫死的顏色收成 token；畫面不變。
 - **常數與儲存**：前端 60 人上限合一；爬蟲兩個 `SEASON` 改名區分（名單年度 vs 成績年度）；localStorage 一律走 `store()`。
