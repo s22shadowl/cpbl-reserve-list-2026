@@ -26,12 +26,13 @@
 ```
 docs/                 GitHub Pages 靜態網站（純 HTML/CSS/JS，無建置步驟）
   index.html, app.js, style.css
+  limit.js            60 人上限常數 LIMIT（最先載入，其他檔案共用）
   flags.js            功能開關與本機判斷（FLAGS、IS_LOCAL）
   theme.js            六隊與共通頁面的配色推導（TEAMS、deriveTheme）
   stats.js            卡片成績行與樣本量層級
   card.js             卡片角標（新人／FA／選秀年份）、年齡與說明文字
   bulk.js             一鍵全選／全部取消的判斷
-  status.js           送出按鈕狀態
+  status.js           送出按鈕狀態、統計資料是否有變（沒變就不重繪）
   official.js         對答案計算（重疊、球迷平均、共識差異、爆冷）
   mine.js             你和多數球迷不同的決定
   focus.js            重新繪製後的鍵盤焦點落點
