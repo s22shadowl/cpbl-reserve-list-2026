@@ -249,10 +249,9 @@ function clubMark(id){
 function plist(items,rate){ // [{p,r}] -> inline chips
   return el("span",{class:"pl"},...items.map(x=>el("span",{class:"pi"},el("b",{text:x.p.no}),x.p.n,rate?el("small",{text:Math.round(x.r*100)+"%"}):null)));
 }
-function group(title,items,rate,open){
+function group(title,items,rate){
   if(!items.length)return el("div",{class:"ag none"},el("b",{text:title}),el("span",{text:"沒有"}));
-  const shown=items.slice(0,12),more=items.slice(12);
-  return el("div",{class:"ag"},el("b",{text:title+" "+items.length+" 人"}),plist(shown,rate),more.length?el("details",{},el("summary",{text:"其餘 "+more.length+" 人"}),plist(more,rate)):null);
+  return el("div",{class:"ag"},el("b",{text:title+" "+items.length+" 人"}),plist(items,rate));
 }
 function answerBlock(a,N){
   const box=el("section",{class:"ans","aria-label":"對答案"});
@@ -276,7 +275,7 @@ function answerBlock(a,N){
     const row=(x,k)=>el("li",{},el("span",{class:"pct",text:Math.round(x.r*100)+"%"}),k===0?"球迷保留，球團放生 ":"球迷放生，球團保留 ",el("b",{text:x.p.no+" "+x.p.n}));
     box.append(el("div",{class:"upset"},el("h3",{},"爆冷"),el("ul",{},...u.dropped.map(x=>row(x,0)),...u.kept.map(x=>row(x,1)))));
   }
-  const col=(title,items)=>el("div",{class:"dc"},el("h3",{text:title+" "+items.length+" 人"}),items.length?el("ol",{},...items.slice(0,10).map(x=>el("li",{},el("span",{class:"n2",text:x.p.no}),x.p.n,el("small",{text:Math.round(x.r*100)+"%"})))):el("p",{class:"hint",text:"沒有"}),items.length>10?el("p",{class:"hint",text:"另有 "+(items.length-10)+" 人"}):null);
+  const col=(title,items)=>el("div",{class:"dc"},el("h3",{text:title+" "+items.length+" 人"}),items.length?el("ol",{},...items.map(x=>el("li",{},el("span",{class:"n2",text:x.p.no}),x.p.n,el("small",{text:Math.round(x.r*100)+"%"})))):el("p",{class:"hint",text:"沒有"}));
   box.append(el("div",{class:"dcs"},col("球迷保留、球團放生",a.diff.fanKeepClubDrop),col("球迷放生、球團保留",a.diff.fanDropClubKeep)),el("p",{class:"hint",text:"球迷保留 = 保留率排在全隊前 60 名；百分比為球迷保留率。"}));
   return box;
 }
