@@ -85,7 +85,7 @@ def test_run_end_to_end(tmp_path):
     assert sum(p["ph"] for p in aeo["players"]) == 1
     roster = json.loads(roster_path.read_text(encoding="utf-8"))
     assert roster["AEO"] == sorted(ids)
-    assert (tmp_path / "photos/0000005479.jpg").exists()
+    assert (tmp_path / "photos/0000005479.webp").exists()
 
     calls = fake.person_calls
     run(fake, ["AEO"], False, "2026-11-15", **kwargs)

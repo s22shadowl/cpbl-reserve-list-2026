@@ -36,8 +36,9 @@ def test_check_reports_problems():
 
 def test_check_warns_missing_photo():
     teams_json, roster, photos = valid()
-    teams_json["teams"]["AEO"]["players"][0]["ph"] = 0
-    errors, warnings = check(teams_json, roster, photos)
+    first = teams_json["teams"]["AEO"]["players"][0]
+    first["ph"] = 0
+    errors, warnings = check(teams_json, roster, photos - {first["id"]})
     assert errors == [] and len(warnings) == 1
 
 
@@ -93,3 +94,9 @@ def test_check_overrides_ids_must_be_selectable():
     bad = {"rookie": {"0000009999": {"name": "甲"}}, "draft": {"0000009998": {"name": "乙"}}}
     errors, _ = check(teams_json, roster, photos, bad)
     assert len(errors) == 2 and "0000009999" in errors[0] and "0000009998" in errors[1]
+
+
+def test_check_warns_orphan_photos():
+    teams_json, roster, photos = valid()
+    errors, warnings = check(teams_json, roster, photos | {"0000099999"})
+    assert errors == [] and warnings == ["docs/photos 有 1 張沒有球員使用的照片：['0000099999']"]

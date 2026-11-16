@@ -48,7 +48,7 @@ def load_person(client: CpblClient, acnt: str, cache: Path, refresh: bool) -> Pe
 
 def ensure_photo(client: CpblClient, entry: RosterEntry, photos: Path, refresh: bool) -> bool:
     """Download and shrink a player's photo; False (and a warning) when unavailable."""
-    path = photos / f"{entry.id}.jpg"
+    path = photos / f"{entry.id}.webp"
     if path.exists() and not refresh:
         return True
     if not entry.photo_url:
