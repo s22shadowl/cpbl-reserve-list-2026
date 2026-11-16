@@ -2,13 +2,15 @@
 // Team palettes + whole-page colour derivation. Classic script loaded before app.js (TEAMS, NEUTRAL, deriveTheme are
 // globals there); scripts/theme.test.mjs loads it with node:vm. Each team gives 5 base colours:
 // band (hero/top bar), acc (accent fill), on (text on acc), ink (accent text, light mode), hi (accent text, dark mode).
+// acc = the club's official primary colour; band = its official dark colour or a dark shade of the primary (roadmap P2-6).
+// Secondary colours are deliberately not used.
 const TEAMS=[
-  {code:"ACN",slug:"brothers",cardSwap:true,name:"中信兄弟",short:"兄弟",en:"CTBC Brothers",band:"#16161A",acc:"#FFC72C",on:"#16161A",ink:"#8C6500",hi:"#FFC72C"},
-  {code:"ADD",slug:"lions",cardSwap:true,name:"統一7-ELEVEn獅",short:"統一獅",en:"Uni-President Lions",band:"#2B1A0E",acc:"#F28C28",on:"#1E1206",ink:"#B5530B",hi:"#F9A54C"},
-  {code:"AJL",slug:"monkeys",name:"樂天桃猿",short:"桃猿",en:"Rakuten Monkeys",band:"#3D0A14",acc:"#BF0D3E",on:"#FFFFFF",ink:"#B00C39",hi:"#FF6B8B"},
+  {code:"ACN",slug:"brothers",cardSwap:true,name:"中信兄弟",short:"兄弟",en:"CTBC Brothers",band:"#0B1B3D",acc:"#FCCF00",on:"#08132B",ink:"#7E6800",hi:"#FCCF00"},
+  {code:"ADD",slug:"lions",cardSwap:true,name:"統一7-ELEVEn獅",short:"統一獅",en:"Uni-President Lions",band:"#3F1E04",acc:"#E26A10",on:"#2C1503",ink:"#AA500C",hi:"#E76C10"},
+  {code:"AJL",slug:"monkeys",name:"樂天桃猿",short:"桃猿",en:"Rakuten Monkeys",band:"#490615",acc:"#850B26",on:"#FFFFFF",ink:"#850B26",hi:"#F04D71"},
   {code:"AEO",slug:"guardians",name:"富邦悍將",short:"悍將",en:"Fubon Guardians",band:"#002255",acc:"#004B90",on:"#FFFFFF",ink:"#004B90",hi:"#4FA3FF"},
-  {code:"AAA",slug:"dragons",name:"味全龍",short:"味全龍",en:"Wei Chuan Dragons",band:"#5E0A12",acc:"#D7192D",on:"#FFFFFF",ink:"#C3172A",hi:"#FF7D88"},
-  {code:"AKP",slug:"hawks",name:"台鋼雄鷹",short:"雄鷹",en:"TSG Hawks",band:"#0B3326",acc:"#127A55",on:"#FFFFFF",ink:"#0F6E4C",hi:"#5FD3A2"},
+  {code:"AAA",slug:"dragons",name:"味全龍",short:"味全龍",en:"Wei Chuan Dragons",band:"#360104",acc:"#C1020E",on:"#FFFFFF",ink:"#C1020E",hi:"#FD2C39"},
+  {code:"AKP",slug:"hawks",name:"台鋼雄鷹",short:"雄鷹",en:"TSG Hawks",band:"#04271E",acc:"#074737",on:"#FFFFFF",ink:"#074737",hi:"#109F7B"},
 ];
 // Shared pages (team picker): monochrome, colour only on the team cards.
 const NEUTRAL={band:"#111214",acc:"#4A4D52",on:"#FFFFFF",ink:"#4A4D52",hi:"#C4C7CC"};
