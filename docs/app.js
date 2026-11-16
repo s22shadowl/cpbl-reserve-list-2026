@@ -301,14 +301,14 @@ function renderStats(){
   const kp=el("div",{class:"kpis"});
   for(const[v,k]of[[N,"份名單已送出"],[(tot/N).toFixed(1),"平均保留人數"],[rows.filter(x=>x.r===1).length,"全員一致保留"],[N>=3?split:"—","意見分歧（35–65%）"]])kp.append(el("div",{class:"kpi"},el("div",{class:"v",text:v}),el("div",{class:"k",text:k})));
   box.append(kp);
-  const list=el("div",{class:"rank"+(OFF?" off":"")});
+  const list=el("div",{class:"rank"+(OFF?" off":""),style:"--cd:"+String(N).length}); // --cd = digits of N, sizes the count column
   for(const x of rows.filter(x=>pos==="all"||x.p.g===pos)){
     if(pos==="all"&&x.rank===LIMIT+1)list.append(el("div",{class:"cut"},"▲ 共識 60 人保留線",el("span",{text:"以下為多數人未列入"})));
     const cls=["rk"];if(sel.has(x.p.id))cls.push("mine");if(N>=3&&x.r>=.35&&x.r<=.65)cls.push("split");
     list.append(el("div",{class:cls.join(" ")},el("div",{class:"r",text:x.rank}),photo(x.p,"av"),
       el("div",{class:"nm"},el("span",{class:"n2",text:x.p.no}),x.p.n,nameTag(x.p)?el("span",{class:"tag",text:nameTag(x.p)}):null,clubMark(x.p.id)?.node,el("small",{text:posLabel(x.p)})),
       el("div",{class:"track"},el("i",{style:`width:${(x.r*100).toFixed(1)}%`})),
-      el("div",{class:"pc"},Math.round(x.r*100)+"%",el("small",{text:`${x.c}/${N}`}))));
+      el("div",{class:"pc"},el("span",{text:Math.round(x.r*100)+"%"}),el("small",{text:`${x.c}/${N}`}))));
   }
   box.append(list);
   box.append(el("p",{class:"note",text:"依保留率排序，名次為全隊排名。● 表示你目前的名單有保留這位球員；虛線為 50%；橘色百分比代表意見分歧（至少 3 份名單時才標示）。每台裝置每隊計一份，重新送出會覆蓋舊的名單。"+(OFF?"✓／✗ 為球團公布的決定。":"")}));
