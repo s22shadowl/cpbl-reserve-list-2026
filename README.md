@@ -39,7 +39,7 @@ docs/                 GitHub Pages 靜態網站（純 HTML/CSS/JS，無建置步
   prefs.js            配色模式（自動／淺色／深色）
   data/teams.json     各隊可選球員、排除名單、本季成績、新人標記（由 scraper 產生）
   data/official.sample.json  開發用假官方名單（正式名單公布後另產生 official.json）
-  photos/             球員照片（由 scraper 下載）
+  photos/             球員照片（由 scraper 下載，裁成偏上方的 240×240 WebP）
 worker/               Cloudflare Worker API + D1
   src/index.js
   src/roster.json     各隊允許送出的球員 ID（由 scraper 產生，必須與 teams.json 一致）

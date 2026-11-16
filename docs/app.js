@@ -75,7 +75,7 @@ function photo(p,cls){
   const b=el("span",{class:cls});
   const fail=()=>{b.classList.add("nopic");b.prepend(el("span",{class:"ph-no",text:p.no}))};
   if(p.ph){
-    const i=el("img",{src:"photos/"+p.id+".jpg",alt:"",loading:"lazy"});
+    const i=el("img",{src:"photos/"+p.id+".webp",alt:"",loading:"lazy",decoding:"async"});
     i.onerror=()=>{i.remove();fail()};
     b.append(i);
   }else fail();

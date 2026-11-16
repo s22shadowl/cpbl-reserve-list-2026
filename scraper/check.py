@@ -65,6 +65,10 @@ def check(teams_json: dict, roster_json: dict, photo_ids: frozenset,
         for pid, rule in (overrides or {}).get(key, {}).items():
             if pid not in selectable:
                 errors.append(f"overrides {key} 的 {pid} {rule.get('name', '')} 不在可選球員中")
+    used = {p["id"] for t in teams.values() for p in t.get("players", []) if p.get("ph")}
+    orphans = sorted(photo_ids - used)
+    if orphans:
+        warnings.append(f"docs/photos 有 {len(orphans)} 張沒有球員使用的照片：{orphans}")
     extra = set(roster_json) - set(TEAM_CODES)
     if extra:
         errors.append(f"roster.json 有未知球隊 {sorted(extra)}")
@@ -94,7 +98,7 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     teams_json = json.loads((REPO / "docs/data/teams.json").read_text(encoding="utf-8"))
     roster_json = json.loads((REPO / "worker/src/roster.json").read_text(encoding="utf-8"))
-    photo_ids = frozenset(p.stem for p in (REPO / "docs/photos").glob("*.jpg"))
+    photo_ids = frozenset(p.stem for p in (REPO / "docs/photos").glob("*.webp"))
     overrides = load_overrides(REPO / "scraper/overrides.json")
     errors, warnings = check(teams_json, roster_json, photo_ids, overrides)
     for name in ("official.json", "official.sample.json"):
