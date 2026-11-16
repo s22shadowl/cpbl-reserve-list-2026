@@ -46,6 +46,7 @@ scraper/              Python 爬蟲，從中職官網產生上述資料
   overrides.json      手動排除（引退、國內 FA）、強制納入、標籤（旅外FA）、新人（rookie）、選秀補正（draft）
   official.py         官方名單轉檔與開發用假名單
 scripts/*.test.mjs    前端純函式測試（node --test）
+e2e/                  Playwright 煙霧測試（選人、送出、撤回、草稿、對答案），使用獨立的本機 D1
 roadmap.md            開發規劃（P0–P3）
 .impeccable.md        設計脈絡（使用者、風格、原則）
 ```
@@ -61,6 +62,7 @@ poetry run python -m scraper.check            # 驗證資料，失敗時不要 c
 poetry run pytest                             # scraper 測試
 node --test scripts/*.test.mjs                # 前端測試
 cd worker && npm test                         # Worker 測試
+cd e2e && npm test                            # E2E 煙霧測試（需先停掉 npm run dev）
 ```
 
 自動排除規則：國籍非中華民國且沒有選秀順位的判為洋將，名字有 `◎` 前綴的判為自主／自行培訓。引退、國內 FA 等無法自動判斷的情況，在 `scraper/overrides.json` 手動維護，每筆註明依據；旅外 FA 不排除，只加標籤。新人為 2026 年選秀，加上 `rookie` 中今年自培轉正的球員。更新 `roster.json` 後需要重新部署 Worker（`cd worker && npm run deploy`）。
@@ -93,6 +95,19 @@ npm run db:seed     # 寫入假球迷名單（看對答案、共識與爆冷）
 # 2. 前端（另開一個終端機，在 repo 根目錄）
 python3 -m http.server -d docs 8080 --bind 127.0.0.1    # http://localhost:8080/
 ```
+
+### E2E 煙霧測試
+
+改動前端流程（`docs/app.js` 的按鈕、分頁、送出、統計讀取）或 Worker 後，以及開啟對答案上線前，都要跑一次：
+
+```bash
+cd e2e
+npm install
+npm run install-browser   # 第一次：下載 Chromium
+npm test                  # 每次重建 e2e/.state 的本機 D1 並寫入假名單，自動啟動 Worker（8787）與前端（8081）
+```
+
+前端固定連 `localhost:8787`，所以執行前要先停掉 `npm run dev`；8080 的預覽伺服器可以繼續開著。
 
 ## 部署
 

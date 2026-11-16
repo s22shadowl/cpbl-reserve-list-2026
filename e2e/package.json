@@ -1,0 +1,12 @@
+{
+  "name": "cpbl-reserve-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node setup.mjs && playwright test",
+    "install-browser": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1"
+  }
+}

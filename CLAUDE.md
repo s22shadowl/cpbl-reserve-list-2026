@@ -39,7 +39,9 @@
 - 本機預覽：`cd worker && npm run dev` 加 `python3 -m http.server -d docs 8080`；http.server 會讓瀏覽器快取舊的 JS／CSS，預覽與 Playwright 檢查前要強制重新整理（Ctrl+Shift+R 或停用快取）。
 - 停背景伺服器用 PID，不要用 `pkill -f <pattern>`：pattern 會比對到執行中的 shell 指令本身而把 shell 殺掉。subagent 回報「已停止」後要用 `ps` 確認，曾有 wrangler dev／workerd 殘留。
 - Cloudflare 會對 Python 預設 User-Agent 回 403；用 curl 加瀏覽器 UA 驗證 API。
-- 測試：`poetry run pytest`（scraper）、`node --test scripts/*.test.mjs`（前端；Node 24 不接受只給目錄）、`cd worker && npm test`（Worker，vitest + workerd）。
+- 測試：`poetry run pytest`（scraper）、`node --test scripts/*.test.mjs`（前端；Node 24 不接受只給目錄）、`cd worker && npm test`（Worker，vitest + workerd）、`cd e2e && npm test`（E2E，Playwright）。
+- **E2E 必跑**：改動前端流程（`docs/app.js` 的按鈕、分頁、送出、撤回、統計讀取、localStorage）或 Worker 後，以及 P1-3 開啟對答案上線前，一律跑 `cd e2e && npm test` 並全數通過才合併。單元測試只涵蓋純函式，串接層的 bug（撤回、統計快取）只有 E2E 抓得到。執行前先停掉 `npm run dev`（前端固定連 8787）；E2E 用獨立的 `e2e/.state`，不影響 `worker/.wrangler` 的開發資料。
+- 統計讀取的 `fresh=1` 請求要同時加 `cache:"no-store"`：Worker 回應帶 `max-age=60`，否則瀏覽器會在 60 秒內對同一網址回舊結果（E2E 抓到：送出後一分鐘內撤回，份數不更新）。
 
 ## 中職官網爬取（www.cpbl.com.tw）
 
