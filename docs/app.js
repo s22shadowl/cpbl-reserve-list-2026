@@ -2,7 +2,7 @@
 const API=IS_LOCAL?"http://localhost:8787":"https://cpbl-reserve-2026-api.cpbl-status.workers.dev";
 const LIMIT=60, GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",C:"Catchers",I:"Infielders",O:"Outfielders"}, GORD="PCIO";
 // TEAMS, NEUTRAL, deriveTheme(), themeDecls() come from theme.js (loaded first).
-// ageOn(), cornerBadge(), cardNote(), isRookie() come from card.js (loaded first).
+// ageOn(), cornerBadge(), cardNote(), isRookie() come from card.js (loaded first); mineVsFans() from mine.js.
 // FLAGS comes from flags.js; offAnswer() etc. from official.js (both loaded first).
 // statLine(), statTier(), statsShown(), tileTitle(), playerHead() come from stats.js (loaded first).
 const EXEMPT=[["foreign","洋將（不需列入）"],["training","自主／自行培訓（不需列入）"],["fa","行使自由球員（不需列入）"],["expansion","擴編選秀被選走（不需列入）"],["removed","已非球員"]];
@@ -280,6 +280,18 @@ function answerBlock(a,N){
   return box;
 }
 
+// ---------- you vs most fans (P2-2) ----------
+function mineBlock(m){
+  const box=el("section",{class:"ans mvf","aria-label":"你和多數球迷不同的決定"});
+  box.append(el("div",{class:"ans-h"},el("h2",{text:"你和多數球迷不同"}),el("span",{text:"依你已送出的名單；百分比為其他球迷的保留率，不含你自己"})));
+  if(m.state==="unsent"){box.append(el("p",{class:"hint",text:"送出名單後，這裡會列出你和多數球迷意見不同的球員。"}));return box}
+  if(m.state==="few"){box.append(el("p",{class:"hint",text:"其他球迷的名單滿 "+MINE_MIN_OTHERS+" 份後才會顯示（目前 "+m.others+" 份）。"}));return box}
+  if(!m.keptLow.length&&!m.droppedHigh.length){box.append(el("p",{class:"hint",text:"你的名單沒有和多數球迷明顯不同的決定。"}));return box}
+  box.append(el("div",{class:"ags"},group("你保留、球迷多半放生",m.keptLow,true),group("你放生、球迷多半保留",m.droppedHigh,true)));
+  box.append(el("p",{class:"hint",text:"球迷多半 = 其他球迷保留率 "+Math.round(MINE_LOW*100)+"% 以下或 "+Math.round(MINE_HIGH*100)+"% 以上。"}));
+  return box;
+}
+
 // ---------- stats ----------
 async function loadStats(fresh){
   const code=T.code;fresh=fresh||Date.now()<freshUntil;
@@ -301,6 +313,7 @@ function renderStats(){
   const kp=el("div",{class:"kpis"});
   for(const[v,k]of[[N,"份名單已送出"],[(tot/N).toFixed(1),"平均保留人數"],[rows.filter(x=>x.r===1).length,"全員一致保留"],[N>=3?split:"—","意見分歧（35–65%）"]])kp.append(el("div",{class:"kpi"},el("div",{class:"v",text:v}),el("div",{class:"k",text:k})));
   box.append(kp);
+  box.append(mineBlock(mineVsFans({roster:ROSTER,counts:cnt,N,saved,cmp:sortP})));
   const list=el("div",{class:"rank"+(OFF?" off":""),style:"--cd:"+String(N).length}); // --cd = digits of N, sizes the count column
   for(const x of rows.filter(x=>pos==="all"||x.p.g===pos)){
     if(pos==="all"&&x.rank===LIMIT+1)list.append(el("div",{class:"cut"},"▲ 共識 60 人保留線",el("span",{text:"以下為多數人未列入"})));

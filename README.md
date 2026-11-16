@@ -32,6 +32,7 @@ docs/                 GitHub Pages 靜態網站（純 HTML/CSS/JS，無建置步
   bulk.js             一鍵全選／全部取消的判斷
   status.js           送出按鈕狀態
   official.js         對答案計算（重疊、球迷平均、共識差異、爆冷）
+  mine.js             你和多數球迷不同的決定（P2-2）
   data/teams.json     各隊可選球員、排除名單、本季成績、新人標記（由 scraper 產生）
   data/official.sample.json  開發用假官方名單（正式名單公布後另產生 official.json）
   photos/             球員照片（由 scraper 下載）
