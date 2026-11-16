@@ -180,6 +180,35 @@ describe("picks and tally", () => {
     expect(nonZero).toEqual(truth.counts);
   });
 
+  it("replacing a 60-player list with the largest possible diff keeps the tally exact", async () => {
+    // The roster has fewer than 120 players, so the new list shares as few ids as it can (the rest are all deltas).
+    const all = roster();
+    const before = all.slice(0, 60);
+    const after = all.slice(-60);
+    const shared = before.filter((id) => after.includes(id));
+    expect(shared.length).toBe(Math.max(0, 120 - all.length));
+    await submit(TEAM, uuid(1), before);
+    await submit(TEAM, uuid(2), all.slice(0, 5));
+    expect((await submit(TEAM, uuid(1), after)).status).toBe(200);
+
+    const s = await getStats(TEAM);
+    expect(s.n).toBe(2);
+    for (const id of all) {
+      const expected = (after.includes(id) ? 1 : 0) + (all.slice(0, 5).includes(id) ? 1 : 0);
+      expect(s.counts[id] ?? 0, id).toBe(expected);
+    }
+    const nonZero = Object.fromEntries(Object.entries(s.counts).filter(([, c]) => c > 0));
+    expect(nonZero).toEqual((await recount(TEAM)).counts);
+
+    // And back again, then a full withdrawal (60 decrements in one UPDATE).
+    await submit(TEAM, uuid(1), before);
+    expect((await getStats(TEAM)).counts[before[0]]).toBe(2);
+    await submit(TEAM, uuid(1), []);
+    const end = await getStats(TEAM);
+    expect(end.n).toBe(1);
+    expect(Object.fromEntries(Object.entries(end.counts).filter(([, c]) => c > 0))).toEqual((await recount(TEAM)).counts);
+  });
+
   it("rebuilds the tally from picks when the tally row is missing", async () => {
     const [a, b] = roster();
     await submit(TEAM, uuid(1), [a, b]);

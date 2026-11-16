@@ -23,6 +23,9 @@ async function sha256(text) {
 
 // Rebuilds a team's totals from every pick. Expensive (reads every stored id),
 // so it only runs when the tally row is missing.
+// Not atomic with submits: a submit landing between the reads and the INSERT OR REPLACE below can be lost from the
+// rebuilt row (its own tally UPDATE found no row to change). Rare in practice (only right after the tally table is
+// emptied); the next rebuild, after deleting the row again, fixes it.
 async function rebuildTally(env, team) {
   const n = await env.DB.prepare("SELECT count(*) AS n FROM picks WHERE team = ?").bind(team).first("n");
   const { results } = await env.DB.prepare(
