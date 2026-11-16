@@ -45,6 +45,9 @@
 - 本機預覽：`cd worker && npm run dev` 加 `python3 -m http.server -d docs 8080`；http.server 會讓瀏覽器快取舊的 JS／CSS，預覽與 Playwright 檢查前要強制重新整理（Ctrl+Shift+R 或停用快取）。
 - 停背景伺服器用 PID，不要用 `pkill -f <pattern>`：pattern 會比對到執行中的 shell 指令本身而把 shell 殺掉。subagent 回報「已停止」後要用 `ps` 確認，曾有 wrangler dev／workerd 殘留。
 - Cloudflare 會對 Python 預設 User-Agent 回 403；用 curl 加瀏覽器 UA 驗證 API。
+- ECC 的 block-no-verify hook 會把同一行指令裡的 `grep -n`、`--no-edit` 或含「略過鉤子」旗標字樣的文字誤判為略過鉤子的提交而擋下：`git commit` 單獨一行執行，含這類字樣的文件改用編輯工具寫入。
+- rtk 改寫後的 `git log`／`git commit` 輸出可能不完整（曾看起來像合併沒建立）：要確認就用 `git --no-pager log --format=...` 或 `git reflog`。
+- Playwright MCP 只能寫入啟動目錄；從 `~/dev/cpbl-reserve-list` 啟動時，截圖改用 `e2e/node_modules/@playwright/test` 的 node 腳本存到本 repo 的 `.playwright-mcp/`（已在 `.git/info/exclude`），不要寫進原作者 repo。
 
 ## 灌票檢查（手動，原 P3-1）
 

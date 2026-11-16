@@ -11,13 +11,13 @@
 
 ## 目前狀態（2026-11-16）
 
-P0、P2 全部完成；P1 剩 P1-3 對答案（已實作，正式站開關關閉中，等聯盟 11/30 公布名單後上線）。P3 目前沒有項目。
+P0、P2 全部完成；P1 除 P1-3 外皆已完成（含 P1-6 上線前功能補強、P1-7 程式碼整理，2026-11-16 合併）。P1-3 對答案已實作，正式站開關關閉中，等聯盟 11/30 公布名單後上線。P3 目前沒有項目。
 
 ### 待辦
 
-- **P1-7 程式碼整理與效能**：除「照片」外已完成（分支 `refactor/p1-7`）；照片裁切與 WebP 另行處理。
-- **P1-6 上線前功能補強**：已完成（分支 `feat/p1-6`）；Worker（`LOCKED` 變數、IP 上限 50）需使用者部署。
-- **P1-3 上線**：步驟見 P1-3「上線步驟」；開啟前先跑 `cd e2e && npm test`。
+- **部署 Worker**（使用者執行）：P1-6 的 IP 上限 50 與 `/mine` 回傳 `locked` 需要 `cd worker && npm run deploy` 才會生效（`LOCKED` 維持 `"false"`）。前端已推上 main，舊 Worker 不回 `locked` 時前端視為未鎖定。
+- **使用者測試 P1-6／P1-7**（下個 session）：本機預覽 `cd worker && npm run db:init && npm run db:seed && npm run dev` 加 `python3 -m http.server -d docs 8080`；鎖定狀態可暫時把 `worker/wrangler.toml` 的 `LOCKED` 改 `"true"` 檢視（不要提交）。上線後在 LINE／Threads／FB 內建瀏覽器實機測試存圖。
+- **P1-3 上線**：步驟見 P1-3「上線步驟」（先鎖定 Worker 再推前端）；開啟前先跑 `cd e2e && npm test`。
 - **11/30 前後手動灌票檢查**：指令在 CLAUDE.md「灌票檢查」。
 - **待討論（未排定）**：「全選 2026 新人」捷徑（原列在 P1-5，前提 P1-1 已完成）。
 
