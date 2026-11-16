@@ -20,7 +20,7 @@
 | 不需列入的球員 | 洋將、行使 FA、擴編選秀被選走、自主／自行培訓、已非球員。由手動維護的 `scraper/overrides.json` 標記，從可選名單與 Worker 允許清單中排除，頁首顯示「不需列入」 |
 | 後端 | Worker API 與 D1 schema 沿用，不需修改即可支援六隊 |
 | 費用 | 全部使用免費方案（Cloudflare Workers/D1、GitHub Pages）。瓶頸是 Workers 每日 10 萬次請求，約可承受每日 7 千到 2 萬名活躍使用者；超過時當日 API 失敗，前端已有錯誤提示 |
-| 不做 | 排除新人時跳提醒、簽約金顯示（無官方來源）、「認賠」模擬器 |
+| 不做 | 排除新人時跳提醒、簽約金顯示（無官方來源）、「認賠」模擬器、跨隊「釋出市場」頁（原 P2-4：官方 11/30 公布後即無參考價值，各隊統計頁的共識保留線已涵蓋，且需新增 Worker API） |
 
 ## 主要風險
 
@@ -184,11 +184,6 @@
   - 打者 `POST /team/getbattingscore`、投手 `POST /team/getpitchscore`，參數 `acnt` 加上 `kindCode`（A 一軍、D 二軍），header 帶個人頁內的 `RequestVerificationToken`，回傳 JSON（`BattingScore` 或 `PitchScore` 字串）。
   - 逐人抓約多 700～900 次請求，爬一次多約 20 分鐘。
 - 先探測較省的路徑：`/team/teamscore?ClubNo=X` 能否一次取得整隊球員的成績（BE 已用 Playwright 抓這頁）。要確認是否含二軍、是否需要 JS。
-
-### P2-4 跨隊「釋出市場」頁
-- 新增 `#market` 頁：列出六隊中最常被球迷放在 60 人外的球員，可以依守位篩選。對應推文「爪會簽嗎？」這類討論。
-- Worker 新增 `GET /stats/all`，一次讀六列 tally，同樣有邊緣快取，避免前端打六次 API。
-- 每隊至少要有 10 份名單才列入。
 
 ### P2-5 E2E 測試
 - 用 Playwright 測關鍵流程：選隊、選人、送出、看統計。Worker 改用本機 `wrangler dev`。
