@@ -14,7 +14,9 @@
 - 「大家的統計」：保留率排行與共識 60 人保留線；送出後列出「你和多數球迷不同」的決定（其他球迷保留率 ≤30% 卻被你保留、≥70% 卻被你放生）。
 - 各隊頁面使用該隊官方主色，可切換淺色、深色或跟隨系統。
 - 複製文字、存成圖片分享。
-- 對答案（官方名單公布後開放，目前只在本機開啟）：你和球團的重疊人數、球迷平均、共識差異與爆冷。
+- 對答案（官方名單公布後開放，目前只在本機開啟）：你**已送出**的名單和球團的重疊人數、球迷平均、共識差異與爆冷。
+- 官方名單公布後鎖定送出（Worker `LOCKED`）：仍可排自己的版本、複製文字與存圖，草稿存在本機。
+- 不滿 60 人送出要按兩次確認；清空已送出的名單後按鈕變成「撤回名單」。
 
 ## 規則重點
 
@@ -76,10 +78,12 @@ cd e2e && npm test                            # E2E 煙霧測試（需先停掉 
 | 方法 | 路徑 | 說明 |
 |---|---|---|
 | GET | `/stats?team=AEO` | 該隊送出份數 `n` 與每位球員被保留次數 `counts`（邊緣快取 60 秒，`&fresh=1` 略過快取） |
-| GET | `/mine?team=AEO&voter=<uuid>` | 此裝置送出的名單 |
-| POST | `/picks` | `{team, voter, ids}` 送出或覆蓋名單；空陣列為撤回 |
+| GET | `/mine?team=AEO&voter=<uuid>` | 此裝置送出的名單 `{ids, at, locked}`（沒送出時 `ids: null`）；`locked` 為是否已鎖定送出 |
+| POST | `/picks` | `{team, voter, ids}` 送出或覆蓋名單；空陣列為撤回。錯誤碼：`rate_limited`（429）、`bad_ids`（400）、`locked`（403，`LOCKED = "true"` 時） |
 
-統計實作：每台裝置以 `localStorage` 中的 UUID 作為投票者，每隊一份。送出時計算新舊名單差異，於同一個 D1 batch 中寫入 `picks` 並以 `json_set` 增減 `tally` 表的每隊累計值；讀取統計只讀 `tally` 一列。新投票者每 IP（雜湊）每隊每日上限 20 份。
+統計實作：每台裝置以 `localStorage` 中的 UUID 作為投票者，每隊一份。送出時計算新舊名單差異，於同一個 D1 batch 中寫入 `picks` 並以 `json_set` 增減 `tally` 表的每隊累計值；讀取統計只讀 `tally` 一列。新投票者每 IP（雜湊）每隊每日上限 50 份。
+
+`worker/wrangler.toml` 的 `[vars] LOCKED`：`"true"` 時鎖定所有送出、修改與撤回（官方名單公布後使用），讀取照常。
 
 隊伍代碼：`ACN` 中信兄弟、`ADD` 統一獅、`AJL` 樂天桃猿、`AEO` 富邦悍將、`AAA` 味全龍、`AKP` 台鋼雄鷹。
 
@@ -118,7 +122,7 @@ npm test                  # 每次重建 e2e/.state 的本機 D1 並寫入假名
 - 前端：GitHub Pages，從 `main` 分支的 `docs/` 發布。
 - 後端：Cloudflare Worker `cpbl-reserve-2026-api` 與 D1 `cpbl-reserve-2026`，以 `cd worker && npm run deploy` 部署。
 - 可選球員減少時，先推前端、等 Pages 更新後再部署 Worker。
-- 對答案上線：見 roadmap P1-3 的上線步驟。
+- 對答案上線：見 roadmap P1-3 的上線步驟（先部署 `LOCKED = "true"` 的 Worker，再推前端開關）。
 
 若要 fork 成自己的服務：建立自己的 D1（`wrangler d1 create`）、更新 `worker/wrangler.toml` 的 `name` 與 `database_id`、執行 `wrangler d1 execute DB --remote --file=schema.sql`、以 `wrangler secret put IP_SALT` 設定隨機鹽值，最後把 `docs/app.js` 的 `API` 改成自己的 Worker 網址。
 

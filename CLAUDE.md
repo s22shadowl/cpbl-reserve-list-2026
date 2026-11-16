@@ -29,12 +29,12 @@
 
 - `docs/flags.js`：`LOCAL_HOSTS`／`IS_LOCAL` 是判斷本機的唯一來源；`FLAGS.official` 目前只在本機開啟。
 - 本機開啟時讀 `docs/data/official.sample.json`（`poetry run python -m scraper.official --sample` 產生，刻意 commit），正式站開啟後讀 `docs/data/official.json`。
-- 上線步驟見 roadmap P1-3。公布後鎖定送出（2026-11-16 使用者改變決定，實作見 roadmap P1-6）。
+- 上線步驟見 roadmap P1-3。公布後鎖定送出（roadmap P1-6）：`worker/wrangler.toml` 的 `[vars] LOCKED` 改為 `"true"` 並部署 Worker 後，`POST /picks` 回 403 `locked`，`/mine` 回傳 `locked`，前端據此停用送出（Worker 是唯一來源）。**上線時先部署鎖定的 Worker，再推開啟 `FLAGS.official` 的前端**。
 
 ## 測試
 
 - 測試：`poetry run pytest`（scraper）、`node --test scripts/*.test.mjs`（前端；Node 24 不接受只給目錄）、`cd worker && npm test`（Worker，vitest + workerd）、`cd e2e && npm test`（E2E，Playwright）。
-- **E2E 必跑**：改動前端流程（`docs/app.js` 的按鈕、分頁、送出、撤回、統計讀取、localStorage）或 Worker 後，以及 P1-3 開啟對答案上線前，一律跑 `cd e2e && npm test` 並全數通過才合併。單元測試只涵蓋純函式，串接層的 bug（撤回、統計快取）只有 E2E 抓得到。執行前先停掉 `npm run dev`（前端固定連 8787）；E2E 用獨立的 `e2e/.state`，不影響 `worker/.wrangler` 的開發資料。
+- **E2E 必跑**（Worker 固定以 `--var LOCKED:false` 啟動，鎖定流程用 `page.route` 模擬）：改動前端流程（`docs/app.js` 的按鈕、分頁、送出、撤回、統計讀取、localStorage）或 Worker 後，以及 P1-3 開啟對答案上線前，一律跑 `cd e2e && npm test` 並全數通過才合併。單元測試只涵蓋純函式，串接層的 bug（撤回、統計快取）只有 E2E 抓得到。執行前先停掉 `npm run dev`（前端固定連 8787）；E2E 用獨立的 `e2e/.state`，不影響 `worker/.wrangler` 的開發資料。
 - 統計讀取的 `fresh=1` 請求要同時加 `cache:"no-store"`：Worker 回應帶 `max-age=60`，否則瀏覽器會在 60 秒內對同一網址回舊結果（E2E 抓到：送出後一分鐘內撤回，份數不更新）。
 
 ## 本機環境
@@ -54,7 +54,7 @@
 cd worker
 # 每隊每日新增名單數，看有沒有異常暴增
 ./node_modules/.bin/wrangler d1 execute DB --remote --command "SELECT team, substr(created_at,1,10) AS day, count(*) AS new_lists FROM picks GROUP BY team, day ORDER BY day DESC, team LIMIT 40"
-# 同一 IP 雜湊送出 5 份以上的隊伍（Worker 上限是每隊每 IP 每天 20 份新名單）
+# 同一 IP 雜湊送出 5 份以上的隊伍（Worker 上限是每隊每 IP 每天 50 份新名單）
 ./node_modules/.bin/wrangler d1 execute DB --remote --command "SELECT team, substr(ip_hash,1,8) AS ip, count(*) AS lists FROM picks WHERE ip_hash IS NOT NULL GROUP BY team, ip_hash HAVING count(*) >= 5 ORDER BY lists DESC LIMIT 20"
 ```
 
