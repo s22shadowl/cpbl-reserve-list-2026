@@ -6,7 +6,7 @@ import vm from "node:vm";
 
 const ctx = vm.createContext({});
 vm.runInContext(readFileSync(new URL("../docs/card.js", import.meta.url), "utf8"), ctx, { filename: "card.js" });
-const { ageOn, cornerBadge, cardNote, nameTag, isRookie } = vm.runInContext("({ageOn,cornerBadge,cardNote,nameTag,isRookie})", ctx);
+const { ageOn, cornerBadge, cardNote, isRookie } = vm.runInContext("({ageOn,cornerBadge,cardNote,isRookie})", ctx);
 const plain = o => JSON.parse(JSON.stringify(o));
 const REF = "2026-11-15";
 
@@ -62,10 +62,7 @@ test("cardNote: missing pieces are skipped", () => {
   assert.equal(cardNote({ rk: "d", dy: 2026 }, REF), "新人：2026 年選秀");
 });
 
-test("nameTag and isRookie", () => {
-  assert.equal(nameTag({ rk: "c", tag: "FA" }), "新人");
-  assert.equal(nameTag({ tag: "FA" }), "FA");
-  assert.equal(nameTag({}), null);
+test("isRookie", () => {
   assert.equal(isRookie({ rk: "d" }), true);
   assert.equal(isRookie({}), false);
 });

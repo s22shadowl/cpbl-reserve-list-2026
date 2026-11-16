@@ -26,4 +26,3 @@ function cardNote(p,ref){
   return parts.join(" · ");
 }
 // Tag beside the name where the layout has room (stats ranking).
-function nameTag(p){return isRookie(p)?"新人":p.tag||null}

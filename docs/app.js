@@ -2,7 +2,7 @@
 const API=IS_LOCAL?"http://localhost:8787":"https://cpbl-reserve-2026-api.cpbl-status.workers.dev";
 const LIMIT=60, GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",C:"Catchers",I:"Infielders",O:"Outfielders"}, GORD="PCIO";
 // TEAMS, NEUTRAL, deriveTheme(), themeDecls() come from theme.js (loaded first).
-// ageOn(), cornerBadge(), cardNote(), nameTag(), isRookie() come from card.js (loaded first).
+// ageOn(), cornerBadge(), cardNote(), isRookie() come from card.js (loaded first).
 // FLAGS comes from flags.js; offAnswer() etc. from official.js (both loaded first).
 // statLine(), statTier(), statsShown(), tileTitle(), playerHead() come from stats.js (loaded first).
 const EXEMPT=[["foreign","洋將（不需列入）"],["training","自主／自行培訓（不需列入）"],["fa","行使自由球員（不需列入）"],["expansion","擴編選秀被選走（不需列入）"],["removed","已非球員"]];
@@ -306,7 +306,7 @@ function renderStats(){
     if(pos==="all"&&x.rank===LIMIT+1)list.append(el("div",{class:"cut"},"▲ 共識 60 人保留線",el("span",{text:"以下為多數人未列入"})));
     const cls=["rk"];if(sel.has(x.p.id))cls.push("mine");if(N>=3&&x.r>=.35&&x.r<=.65)cls.push("split");
     list.append(el("div",{class:cls.join(" ")},el("div",{class:"r",text:x.rank}),photo(x.p,"av"),
-      el("div",{class:"nm"},el("span",{class:"n2",text:x.p.no}),x.p.n,nameTag(x.p)?el("span",{class:"tag",text:nameTag(x.p)}):null,clubMark(x.p.id)?.node,el("small",{text:posLabel(x.p)})),
+      el("div",{class:"nm"},el("span",{class:"n2",text:x.p.no}),x.p.n,clubMark(x.p.id)?.node,el("small",{text:posLabel(x.p)})),
       el("div",{class:"track"},el("i",{style:`width:${(x.r*100).toFixed(1)}%`})),
       el("div",{class:"pc"},el("span",{text:Math.round(x.r*100)+"%"}),el("small",{text:`${x.c}/${N}`}))));
   }

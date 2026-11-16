@@ -131,8 +131,6 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .tile .nm{font-size:15px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35}
 .tile .nmr{display:flex;align-items:center;gap:5px;min-width:0}
 .tile .nmr .nm{min-width:0}
-.tag{flex:none;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:999px;background:var(--acc);color:var(--on-acc);letter-spacing:.04em}
-.rk .nm .tag{margin-left:6px;vertical-align:2px}
 .tile .sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tile .stat{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 /* sample-size tiers (roadmap P2-7): low .7 keeps >=3:1 on --paper in light and dark */
@@ -156,7 +154,7 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .kpi .v{font-family:var(--f-num);font-weight:700;font-size:38px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
 .kpi .k{font-size:12px;color:var(--muted);margin-top:6px}
 .rank{background:var(--paper);border:1px solid var(--line);--cw:calc(var(--cd,2)*12px + 7px)} /* --cw fits "N/N" in the count font */
-.rk{display:grid;grid-template-columns:34px 36px minmax(110px,180px) 1fr calc(46px + var(--cw));gap:10px;align-items:center;padding:7px 14px;border-top:1px solid var(--line);font-size:14px}
+.rk{display:grid;grid-template-columns:34px 36px minmax(110px,230px) 1fr calc(46px + var(--cw));gap:10px;align-items:center;padding:7px 14px;border-top:1px solid var(--line);font-size:14px}
 .rk:first-child{border-top:0}
 .rk .r{font-family:var(--f-num);font-weight:600;color:var(--muted);text-align:right;font-size:16px}
 .rk .av{width:36px;height:36px;border-radius:50%;overflow:hidden;background:var(--tile);display:flex;align-items:center;justify-content:center;font-family:var(--f-num);font-weight:700;font-size:14px;color:var(--muted)}
@@ -228,7 +226,11 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
   .tile .nm{font-size:13px}
   .tile .sub{font-size:10px}
   .kpis{grid-template-columns:repeat(2,1fr)}
-  .rk{grid-template-columns:24px 32px 1fr calc(46px + var(--cw));padding:7px 10px;gap:8px}
+  .rank{--cw:calc(var(--cd,2)*11px + 6px)}
+  .rk{grid-template-columns:24px 32px 1fr calc(40px + var(--cw));padding:7px 10px;gap:8px}
+  .rk .nm{white-space:normal;line-height:1.7} /* long names wrap instead of ellipsis */
+  .rk .pc{font-size:17px;column-gap:3px}
+  .rk .pc small{font-size:12px}
   .rk .av{width:32px;height:32px}
   .rk .track{grid-column:2 / -1;grid-row:2}
 }
@@ -290,5 +292,5 @@ a.btn{text-decoration:none}
 .dc .hint{margin:2px 0 0}
 .ans>.hint{margin:10px 0 0}
 @media (max-width:640px){.ags,.dcs{grid-template-columns:1fr}.hit .big b{font-size:34px}.ans{padding-inline:12px}}
-.rank.off .rk{grid-template-columns:34px 36px minmax(220px,270px) 1fr calc(46px + var(--cw))}
-@media (max-width:640px){.rank.off .rk{grid-template-columns:24px 32px 1fr calc(46px + var(--cw))}.rank.off .rk .nm{white-space:normal;line-height:1.7}.rank.off .rk .nm small{display:none}}
+.rank.off .rk{grid-template-columns:34px 36px minmax(220px,290px) 1fr calc(46px + var(--cw))}
+@media (max-width:640px){.rank.off .rk{grid-template-columns:24px 32px 1fr calc(40px + var(--cw))}.rank.off .rk .nm small{display:none}}
