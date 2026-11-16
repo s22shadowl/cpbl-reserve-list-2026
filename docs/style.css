@@ -39,7 +39,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .kicker{font-family:var(--f-num);font-weight:600;letter-spacing:.22em;font-size:13px;color:var(--band-muted);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:420px){.kicker{letter-spacing:.1em}}
 .hero h1{font-weight:700;font-size:clamp(26px,4.6vw,38px);line-height:1.2;margin:4px 0 10px;text-wrap:balance}
-.hero p{margin:0;max-width:62ch;font-size:14px;color:var(--band-muted);font-weight:300}
+.hero p{margin:0;max-width:62ch;font-size:14px;color:var(--band-muted);font-weight:400}
 .hero p b{color:var(--on-band);font-weight:500}
 .hero .ex{margin-top:12px;font-size:12.5px;display:flex;flex-direction:column;gap:2px}
 .hero .ex span b{color:var(--on-band);font-weight:500;margin-right:6px}
@@ -101,7 +101,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 main{padding-block:18px 40px}
 section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .gh{display:flex;align-items:baseline;gap:12px;margin:0 0 8px;border-bottom:1px solid var(--line);padding-bottom:6px}
-.gh h2{margin:0;font-size:18px;font-weight:300;color:var(--ink)}
+.gh h2{margin:0;font-size:18px;font-weight:400;color:var(--ink)}
 .gh h2 .en{font-family:var(--f-num);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-right:8px}
 .gh .k{font-size:13px;color:var(--muted)}
 .gh .bulk{margin-left:auto;align-self:center;border:1px solid var(--line);background:var(--paper);color:var(--acc-ink);border-radius:4px;padding:3px 10px;font-size:13px;white-space:nowrap;cursor:pointer;flex:none}
