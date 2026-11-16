@@ -295,7 +295,8 @@ function mineBlock(m){
 // ---------- stats ----------
 async function loadStats(fresh){
   const code=T.code;fresh=fresh||Date.now()<freshUntil;
-  try{const j=await api("/stats?team="+code+(fresh?"&fresh=1":""));if(!T||T.code!==code)return;stats=j;online=true}catch(e){if(!stats)stats={error:true}}
+  // fresh: also skip the browser HTTP cache, or a second fresh read within max-age=60 returns the first response.
+  try{const j=await api("/stats?team="+code+(fresh?"&fresh=1":""),fresh?{cache:"no-store"}:undefined);if(!T||T.code!==code)return;stats=j;online=true}catch(e){if(!stats)stats={error:true}}
   if(tab==="stats")renderStats();subCount();
 }
 function renderStats(){
