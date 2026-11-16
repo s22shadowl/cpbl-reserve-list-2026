@@ -236,3 +236,19 @@ test("two tabs: a draft change in one shows up in the other", async ({ context }
   await expect(b.locator("#selN")).toHaveText("2");
   await expect(b.locator('.tile[aria-pressed="true"]')).toHaveCount(2);
 });
+
+test("slow /mine answering after a submit does not undo it (still 已送出)", async ({ page }) => {
+  let release;
+  const held = new Promise(r => { release = r; });
+  // First /mine is held until after the submit, then answers "nothing submitted" (its stale view).
+  await page.route(`${API}/mine?**`, async r => { await held; await r.fulfill({ json: { ids: null, locked: false }, headers: CORS }); });
+  await page.goto(TEAM);
+  await expect(page.locator(".tile").first()).toBeVisible();
+  await pick60(page);
+  await page.locator("#save").click();
+  await expect(page.locator("#status")).toHaveText(/已送出/);
+  release();
+  await page.waitForTimeout(500);
+  await expect(page.locator("#status")).toHaveText(/已送出/);
+  await expect(page.locator("#save")).toBeDisabled();
+});

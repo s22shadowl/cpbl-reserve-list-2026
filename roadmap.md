@@ -171,7 +171,7 @@ P0、P2 全部完成；P1 剩 P1-3 對答案（已實作，正式站開關關閉
 - 命中率暫不加入「複製文字」與「存成圖片」。
 - **差異名單一律全部顯示**：「你保留、球團放生」「你放生、球團保留」與球迷共識兩欄都列出全部球員，不截斷、不收合。
 - **上線步驟**：聯盟公布後
-  1. **先鎖定 Worker**：`worker/wrangler.toml` 的 `[vars] LOCKED = "false"` 改為 `"true"` → `cd worker && npm run deploy`（使用者執行）→ 用 curl（瀏覽器 UA）確認 `POST /picks` 回 403 `locked`、`/mine` 回 `"locked":true`。鎖定後正式站舊頁面也立即停止送出（狀態列顯示送出已截止）。
+  1. **先鎖定 Worker**：`worker/wrangler.toml` 的 `[vars] LOCKED = "false"` 改為 `"true"` → `cd worker && npm run deploy`（使用者執行）→ 用 curl（瀏覽器 UA）確認 `POST /picks` 回 403 `locked`、`/mine` 回 `"locked":true`。鎖定後 Worker 立即拒收所有送出；但還沒載入新前端的舊頁面不讀 `locked`，按送出只會顯示一般的送出失敗訊息，狀態列不會變（不會寫入，只是提示不精確），所以前端要盡快推上。
   2. 整理 `scraper/official/2027.json` → `poetry run python -m scraper.official` 產生 `docs/data/official.json` → `scraper.check`。
   3. 把 `docs/flags.js` 的 `FLAGS={official:IS_LOCAL}` 改為 `official:true`（本機仍讀 sample，正式站讀 `official.json`）。
   4. 跑 `cd e2e && npm test` 全數通過（E2E 的 Worker 以 `--var LOCKED:false` 啟動，不受 wrangler.toml 影響；鎖定流程以 `page.route` 模擬）。

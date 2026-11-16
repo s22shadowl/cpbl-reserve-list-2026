@@ -55,6 +55,11 @@ let officialList=null, clubKept=null;
 // locked = the Worker says the official lists are out (single source: /mine). statsAt = last successful /stats read.
 let sel=new Set(), saved=null, savedAt=null, stats=null, saving=false, statsTimer=0;
 let locked=false, mineFailed=false, statsAt=0;
+// lockKnown: /mine has answered at least once (until then the hero must not promise that submitting still works).
+// mineSeq/statsSeq: only the latest request may write its answer; saveEpoch: a /mine that started before a
+// successful submit must not overwrite it. mineRetries: timed retries after a failed /mine (online/visibility also retry).
+let lockKnown=false, mineSeq=0, statsSeq=0, saveEpoch=0, mineRetries=0, mineRetryTimer=0;
+const MINE_RETRY_MS=10000, MINE_RETRY_MAX=3;
 // showFilter = the 顯示 select: all / kept / dropped / new
 let pos="all", showFilter="all", q="", tab="pick";
 // After our own submit, cached /stats (edge + browser, max-age 60s) is older than what we just wrote; bypass it for a while.
@@ -106,7 +111,7 @@ function route(){
   try{const d=JSON.parse(store("rl-draft-"+t.code)||"null");if(Array.isArray(d))sel=new Set(d.filter(id=>BY[id]))}catch(e){}
   const clubIds=officialList&&officialList.teams[t.code];
   clubKept=Array.isArray(clubIds)?new Set(clubIds):null;
-  saved=null;savedAt=null;mineFailed=false;stats=null;statsAt=0;pos="all";showFilter="all";q="";$("q").value="";
+  saved=null;savedAt=null;mineFailed=false;mineRetries=0;clearTimeout(mineRetryTimer);stats=null;statsAt=0;pos="all";showFilter="all";q="";$("q").value="";
   disarmSave();
   applyTheme(t);
   document.title=t.short+"契約保留名簿｜中職 60 人名單模擬";
@@ -300,18 +305,24 @@ async function api(path,opts){
 // 無法確認送出狀態) and is retried when the connection or the page comes back; a known list is kept.
 async function loadMine(){
   if(!T)return;
-  const code=T.code;
+  const code=T.code,seq=++mineSeq,epoch=saveEpoch;
+  clearTimeout(mineRetryTimer);
+  const stale=()=>!T||T.code!==code||seq!==mineSeq;
   try{
     const j=await api(`/mine?team=${code}&voter=${VOTER}`);
-    if(!T||T.code!==code)return;
-    mineFailed=false;locked=j.locked===true;
+    if(stale())return;
+    mineFailed=false;mineRetries=0;locked=j.locked===true;lockKnown=true;
+    if(epoch!==saveEpoch){showOfficialCopy();renderAll();return} // a submit finished meanwhile: its list is newer
     if(Array.isArray(j.ids)){
       saved=new Set(j.ids.filter(id=>BY[id]));savedAt=j.at;
       if(!store("rl-draft-"+code)){sel=new Set(saved);keepDraft()}
     }else{saved=new Set();savedAt=null}
   }catch(e){
-    if(!T||T.code!==code)return;
-    if(saved===null)mineFailed=true;
+    if(stale())return;
+    if(saved===null){
+      mineFailed=true;
+      if(mineRetries<MINE_RETRY_MAX){mineRetries++;mineRetryTimer=setTimeout(retryMine,MINE_RETRY_MS*mineRetries)}
+    }
   }
   showOfficialCopy();renderAll();
 }
@@ -319,7 +330,7 @@ const retryMine=()=>{if(T&&saved===null&&mineFailed)loadMine()};
 window.addEventListener("online",retryMine);
 async function save(){
   if(saving||locked)return;
-  const code=T.code,ids=[...sel].sort();
+  const code=T.code,name=T.name,ids=[...sel].sort();
   if(needsConfirm(ids.length,LIMIT)&&!saveArmed){armSave(ids.length);return}
   disarmSave();
   saving=true;renderStatus();
@@ -327,11 +338,13 @@ async function save(){
     const body=JSON.stringify({team:code,voter:VOTER,ids});
     const j=await api("/picks",{method:"POST",headers:{"Content-Type":"application/json"},body});
     // The team may have changed while waiting: never record this answer as the new team's list.
-    if(T&&T.code===code){saved=new Set(ids);savedAt=j.at;mineFailed=false;stats=null;freshUntil=Date.now()+FRESH_MS}
-    toast(ids.length?"已送出 "+ids.length+" 人名單":"已撤回你的名單");
+    const here=!!T&&T.code===code;
+    if(here){saveEpoch++;saved=new Set(ids);savedAt=j.at;mineFailed=false;stats=null;freshUntil=Date.now()+FRESH_MS}
+    // Switched teams while waiting: say which team the result belongs to.
+    toast((here?"":name+"：")+(ids.length?"已送出 "+ids.length+" 人名單":"已撤回你的名單"));
   }catch(e){
     toast(submitError(e.code,e.status));
-    if(e.code==="locked"){locked=true;showOfficialCopy();loadMine()}
+    if(e.code==="locked"){locked=true;lockKnown=true;showOfficialCopy();loadMine()}
   }
   saving=false;renderAll();loadStats(true);
 }
@@ -425,16 +438,17 @@ function mineBlock(m){
 // ---------- stats ----------
 async function loadStats(fresh){
   if(!T)return;
-  const code=T.code;fresh=fresh||Date.now()<freshUntil;
+  const code=T.code,seq=++statsSeq;fresh=fresh||Date.now()<freshUntil;
+  const stale=()=>!T||T.code!==code||seq!==statsSeq; // an older request (poll, visibility, tab) answered late
   // fresh: also skip the browser HTTP cache, or a second fresh read within max-age=60 returns the first response.
   // Polling usually returns the same totals; skip rebuilding the ranking then (first load, team change and errors still render).
   let changed=true;
   try{
     const j=await api("/stats?team="+code+(fresh?"&fresh=1":""),fresh?{cache:"no-store"}:undefined);
-    if(!T||T.code!==code)return;
+    if(stale())return;
     changed=!sameTally(stats,j);
     stats=j;statsAt=Date.now();
-  }catch(e){if(!T||T.code!==code)return;if(!stats)stats={error:true}}
+  }catch(e){if(stale())return;if(!stats)stats={error:true}}
   if(tab==="stats"&&changed)renderStats();
   else{const at=$("statsAt");if(at)at.textContent=statsAtText()}
   subCount();
@@ -634,7 +648,8 @@ function showOfficialCopy(){
   const what=club?`球團的 ${officialList.season||2027} 年度保留名單${d?"（"+d+"）":""}已公布`:"官方名單已公布";
   h.textContent=locked
     ?`${what}，送出已截止。你仍可排自己的版本、複製文字或存成圖片${club?"，也可以到「大家的統計」對答案":""}。`
-    :`${what}，現在送出的名單代表你的意見，不再是預測。到「大家的統計」對答案，看看你和球團、其他球迷差在哪。`;
+    :lockKnown?`${what}，現在送出的名單代表你的意見，不再是預測。到「大家的統計」對答案，看看你和球團、其他球迷差在哪。`
+    :`${what}。到「大家的統計」對答案，看看你和球團、其他球迷差在哪。`; // lock state not known yet
   h.hidden=false;
 }
 
