@@ -2,13 +2,17 @@ import ROSTER from "./roster.json";
 
 const ALLOWED = Object.fromEntries(Object.entries(ROSTER).map(([t, ids]) => [t, new Set(ids)]));
 const LIMIT = 60;
-const NEW_VOTERS_PER_IP_PER_DAY = 20;
+const NEW_VOTERS_PER_IP_PER_DAY = 50;
 const VOTER = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
+
+// LOCKED = "true" (wrangler.toml [vars]) once the official lists are out: submits, changes and withdrawals stop,
+// reads keep working so the frozen stats can be compared with the official lists.
+const isLocked = (env) => env.LOCKED === "true";
 
 const json = (data, status = 200, extra = {}) =>
   new Response(JSON.stringify(data), {
@@ -53,6 +57,7 @@ function tallyUpdate(env, team, deltas, dn, now) {
 }
 
 async function savePicks(req, env) {
+  if (isLocked(env)) return json({ error: "locked" }, 403);
   let body;
   try { body = await req.json(); } catch { return json({ error: "bad_json" }, 400); }
   const { team, voter, ids } = body || {};
@@ -116,7 +121,8 @@ export default {
         const voter = url.searchParams.get("voter") || "";
         if (!ALLOWED[team] || !VOTER.test(voter)) return json({ error: "bad_request" }, 400);
         const row = await env.DB.prepare("SELECT ids, updated_at FROM picks WHERE team = ? AND voter = ?").bind(team, voter).first();
-        return json(row ? { ids: JSON.parse(row.ids), at: row.updated_at } : { ids: null });
+        const locked = isLocked(env);
+        return json(row ? { ids: JSON.parse(row.ids), at: row.updated_at, locked } : { ids: null, locked });
       }
       if (url.pathname === "/picks" && req.method === "POST") return await savePicks(req, env);
       return json({ error: "not_found" }, 404);

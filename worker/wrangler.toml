@@ -2,6 +2,10 @@ name = "cpbl-reserve-2026-api"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 
+# Set LOCKED = "true" and redeploy once the official lists are published (roadmap P1-6): POST /picks then answers 403 locked.
+[vars]
+LOCKED = "false"
+
 [observability]
 enabled = true
 

@@ -142,7 +142,7 @@ describe("picks and tally", () => {
     expect(s.n).toBe(1);
     expect(s.counts[a]).toBe(1);
     expect(s.counts[b]).toBe(0);
-    expect(await (await call(`/mine?team=${TEAM}&voter=${uuid(1)}`)).json()).toEqual({ ids: null });
+    expect(await (await call(`/mine?team=${TEAM}&voter=${uuid(1)}`)).json()).toEqual({ ids: null, locked: false });
 
     await submit(TEAM, uuid(1), [b]);
     s = await getStats(TEAM);
@@ -221,7 +221,7 @@ describe("picks and tally", () => {
 describe("/mine", () => {
   it("returns ids and at, or null", async () => {
     const ids = roster().slice(0, 2);
-    expect(await (await call(`/mine?team=${TEAM}&voter=${uuid(1)}`)).json()).toEqual({ ids: null });
+    expect(await (await call(`/mine?team=${TEAM}&voter=${uuid(1)}`)).json()).toEqual({ ids: null, locked: false });
     const { at } = await (await submit(TEAM, uuid(1), ids)).json();
     const mine = await (await call(`/mine?team=${TEAM}&voter=${uuid(1)}`)).json();
     expect(mine.ids.sort()).toEqual([...ids].sort());
@@ -251,27 +251,74 @@ describe("/stats cache", () => {
 describe("IP rate limit", () => {
   const ip = "203.0.113.7";
 
-  it("blocks the 21st new voter from one IP, but not existing voters or other IPs", async () => {
+  it("blocks the 51st new voter from one IP, but not existing voters or other IPs", async () => {
     const ids = [roster()[0]];
-    for (let i = 1; i <= 20; i++) expect((await submit(TEAM, uuid(i), ids, { ip })).status).toBe(200);
-    const blocked = await submit(TEAM, uuid(21), ids, { ip });
+    for (let i = 1; i <= 50; i++) expect((await submit(TEAM, uuid(i), ids, { ip })).status).toBe(200);
+    const blocked = await submit(TEAM, uuid(51), ids, { ip });
     expect(blocked.status).toBe(429);
     expect(await blocked.json()).toEqual({ error: "rate_limited" });
-    expect((await getStats(TEAM)).n).toBe(20);
+    expect((await getStats(TEAM)).n).toBe(50);
 
     // Existing voter may still update, even withdraw.
     expect((await submit(TEAM, uuid(1), [roster()[1]], { ip })).status).toBe(200);
     expect((await submit(TEAM, uuid(2), [], { ip })).status).toBe(200);
     // A different IP and a different team are unaffected.
-    expect((await submit(TEAM, uuid(21), ids, { ip: "203.0.113.8" })).status).toBe(200);
-    expect((await submit(OTHER_TEAM, uuid(22), [roster(OTHER_TEAM)[0]], { ip })).status).toBe(200);
+    expect((await submit(TEAM, uuid(51), ids, { ip: "203.0.113.8" })).status).toBe(200);
+    expect((await submit(OTHER_TEAM, uuid(52), [roster(OTHER_TEAM)[0]], { ip })).status).toBe(200);
   });
 
   it("only counts new voters from the last 24 hours", async () => {
     const ids = [roster()[0]];
-    for (let i = 1; i <= 20; i++) await submit(TEAM, uuid(i), ids, { ip });
+    for (let i = 1; i <= 50; i++) await submit(TEAM, uuid(i), ids, { ip });
+    expect((await submit(TEAM, uuid(60), ids, { ip })).status).toBe(429);
     const old = new Date(Date.now() - 2 * 86400000).toISOString();
     await env.DB.prepare("UPDATE picks SET created_at = ?").bind(old).run();
     expect((await submit(TEAM, uuid(30), ids, { ip })).status).toBe(200);
+  });
+});
+
+describe("LOCKED (official lists published)", () => {
+  const locked = { overrides: { LOCKED: "true" } };
+
+  it("defaults to unlocked from wrangler.toml", async () => {
+    expect(env.LOCKED).toBe("false");
+    expect((await submit(TEAM, uuid(1), [roster()[0]])).status).toBe(200);
+  });
+
+  it("rejects submit, change and withdraw with 403 locked and writes nothing", async () => {
+    const [a, b] = roster();
+    await submit(TEAM, uuid(1), [a]);
+    const before = await getStats(TEAM);
+    for (const [voter, ids] of [[uuid(2), [a, b]], [uuid(1), [b]], [uuid(1), []]]) {
+      const res = await submit(TEAM, voter, ids, locked);
+      expect(res.status).toBe(403);
+      expect(await res.json()).toEqual({ error: "locked" });
+    }
+    expect(await getStats(TEAM)).toEqual(before);
+    expect(await recount(TEAM)).toEqual(before);
+  });
+
+  it("rejects before reading the body", async () => {
+    const res = await post(null, { raw: "{not json", ...locked });
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: "locked" });
+  });
+
+  it("keeps /stats and /mine working and reports the lock on /mine", async () => {
+    const ids = roster().slice(0, 2);
+    await submit(TEAM, uuid(1), ids);
+    const stats = await (await call(`/stats?team=${TEAM}&fresh=1`, {}, { LOCKED: "true" })).json();
+    expect(stats.n).toBe(1);
+    const mine = await (await call(`/mine?team=${TEAM}&voter=${uuid(1)}`, {}, { LOCKED: "true" })).json();
+    expect(mine.ids.sort()).toEqual([...ids].sort());
+    expect(mine.locked).toBe(true);
+    const none = await (await call(`/mine?team=${TEAM}&voter=${uuid(2)}`, {}, { LOCKED: "true" })).json();
+    expect(none).toEqual({ ids: null, locked: true });
+  });
+
+  it("only the exact string \"true\" locks", async () => {
+    for (const LOCKED of ["false", "TRUE", "1", undefined]) {
+      expect((await submit(TEAM, uuid(1), [roster()[0]], { overrides: { LOCKED } })).status).toBe(200);
+    }
   });
 });
