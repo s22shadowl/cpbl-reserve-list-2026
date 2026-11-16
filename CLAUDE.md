@@ -43,6 +43,20 @@
 - **E2E 必跑**：改動前端流程（`docs/app.js` 的按鈕、分頁、送出、撤回、統計讀取、localStorage）或 Worker 後，以及 P1-3 開啟對答案上線前，一律跑 `cd e2e && npm test` 並全數通過才合併。單元測試只涵蓋純函式，串接層的 bug（撤回、統計快取）只有 E2E 抓得到。執行前先停掉 `npm run dev`（前端固定連 8787）；E2E 用獨立的 `e2e/.state`，不影響 `worker/.wrangler` 的開發資料。
 - 統計讀取的 `fresh=1` 請求要同時加 `cache:"no-store"`：Worker 回應帶 `max-age=60`，否則瀏覽器會在 60 秒內對同一網址回舊結果（E2E 抓到：送出後一分鐘內撤回，份數不更新）。
 
+## 灌票檢查（手動，原 P3-1）
+
+不做定期機制，11/30 前後流量高峰時手動查一次正式 D1（`--remote` 需 wrangler 已登入；時間為 UTC；撤回的名單已刪除，不會出現）：
+
+```bash
+cd worker
+# 每隊每日新增名單數，看有沒有異常暴增
+./node_modules/.bin/wrangler d1 execute DB --remote --command "SELECT team, substr(created_at,1,10) AS day, count(*) AS new_lists FROM picks GROUP BY team, day ORDER BY day DESC, team LIMIT 40"
+# 同一 IP 雜湊送出 5 份以上的隊伍（Worker 上限是每隊每 IP 每天 20 份新名單）
+./node_modules/.bin/wrangler d1 execute DB --remote --command "SELECT team, substr(ip_hash,1,8) AS ip, count(*) AS lists FROM picks WHERE ip_hash IS NOT NULL GROUP BY team, ip_hash HAVING count(*) >= 5 ORDER BY lists DESC LIMIT 20"
+```
+
+異常時再考慮 Cloudflare Turnstile。
+
 ## 中職官網爬取（www.cpbl.com.tw）
 
 - 只用 `requests.Session` 即可：HiNet CDN 首次回 308 並發 `__chtcdn` cookie，Session 保存 cookie 後正常。不需要 Playwright。
