@@ -11,7 +11,9 @@ export default defineConfig({
   use: { baseURL: "http://localhost:8081", viewport: { width: 390, height: 900 } },
   webServer: [
     {
-      command: "./node_modules/.bin/wrangler dev --port 8787 --persist-to ../e2e/.state",
+      // --var LOCKED:false: submit flows need an unlocked Worker even after wrangler.toml is set to LOCKED = "true";
+      // the locked flow is mocked with page.route.
+      command: "./node_modules/.bin/wrangler dev --port 8787 --persist-to ../e2e/.state --var LOCKED:false",
       cwd: "../worker",
       url: "http://localhost:8787/stats?team=AEO",
       reuseExistingServer: false,
