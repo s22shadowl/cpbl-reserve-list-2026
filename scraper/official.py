@@ -14,10 +14,9 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from scraper.models import TEAM_CODES
+from scraper.models import LIMIT, PLAYER_ID, TEAM_CODES
 
-LIMIT = 60
-SEASON = 2027
+LIST_SEASON = 2027  # year of the reserve list; models.SEASON (2026) is the stats/rookie season
 SEED = 2027
 REPO = Path(__file__).resolve().parent.parent
 log = logging.getLogger(__name__)
@@ -55,7 +54,7 @@ def sample_official(teams_json: dict, seed: int = SEED, per_team: int = LIMIT) -
         rng = random.Random(f"{seed}:{code}")
         keyed = sorted(((rng.random() ** (1 / _weight(p)), p["id"]) for p in players), reverse=True)
         out[code] = sorted(pid for _, pid in keyed[:per_team])
-    return {"season": SEASON, "updated": teams_json["updated"], "teams": out}
+    return {"season": LIST_SEASON, "updated": teams_json["updated"], "teams": out}
 
 
 def build_official(src: dict) -> dict:
@@ -70,7 +69,7 @@ def build_official(src: dict) -> dict:
         if code not in TEAM_CODES:
             raise ValueError(f"未知的球隊代碼 {code!r}（可用：{', '.join(TEAM_CODES)}）")
         for pid in ids:
-            if not (isinstance(pid, str) and re.fullmatch(r"\d{10}", pid)):
+            if not (isinstance(pid, str) and PLAYER_ID.fullmatch(pid)):
                 raise ValueError(f"{code} 的球員 ID {pid!r} 必須是 10 碼數字字串")
     return {"season": src["season"], "updated": src["updated"], "teams": {c: sorted(ids) for c, ids in teams.items()}}
 
@@ -89,7 +88,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         teams_json = json.loads((REPO / "docs/data/teams.json").read_text(encoding="utf-8"))
         _write(REPO / "docs/data/official.sample.json", sample_official(teams_json))
         return 0
-    src = REPO / "scraper/official" / f"{SEASON}.json"
+    src = REPO / "scraper/official" / f"{LIST_SEASON}.json"
     if not src.exists():
         log.info("找不到 %s，略過（官方名單公布後再整理）", src)
         return 0

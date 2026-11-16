@@ -1,5 +1,6 @@
-"""Immutable records passed between scraper stages."""
+"""Immutable records passed between scraper stages, plus shared constants."""
 
+import re
 from dataclasses import dataclass
 from typing import Optional
 
@@ -29,4 +30,6 @@ class PersonInfo:
 
 TEAM_CODES = ("ACN", "ADD", "AJL", "AEO", "AAA", "AKP")
 
-SEASON = 2026  # the season whose rookies are flagged and whose stats are shown
+SEASON = 2026  # the season whose rookies are flagged and whose stats are shown (the list itself is for 2027)
+LIMIT = 60  # reserve list cap (規章第 8 章第 10 條)
+PLAYER_ID = re.compile(r"^\d{10}$")  # Acnt

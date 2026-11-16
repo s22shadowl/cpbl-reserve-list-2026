@@ -1,18 +1,16 @@
 """Decide each player's position group and whether they are exempt from the 60-man list."""
 
 import json
-import re
 from dataclasses import replace
 from pathlib import Path
 from typing import Optional, Tuple
 
-from .models import PersonInfo, RosterEntry
+from .models import PLAYER_ID, PersonInfo, RosterEntry
 
 REASONS = ("foreign", "training", "fa", "expansion", "removed")
 DOMESTIC = "中華民國"
 _INFIELD = {"一壘手", "二壘手", "三壘手", "游擊手", "內野手"}
 TAG_MAX = 6
-_ID = re.compile(r"^\d{10}$")
 
 
 def position_group(pos: str) -> Tuple[str, Optional[str]]:
@@ -43,7 +41,7 @@ def load_overrides(path: Path) -> dict:
     rookie = data.get("rookie", {})
     draft = data.get("draft", {})
     for pid in [*include, *exclude, *tags, *rookie, *draft]:
-        if not _ID.match(pid):
+        if not PLAYER_ID.match(pid):
             raise ValueError(f"overrides 球員 ID 格式錯誤：{pid}")
     for pid, rule in exclude.items():
         if rule.get("reason") not in REASONS:

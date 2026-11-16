@@ -8,12 +8,10 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 from .classify import REASONS, load_overrides
-from .models import TEAM_CODES
+from .models import LIMIT, PLAYER_ID, TEAM_CODES
 
 
-LIMIT = 60
 REPO = Path(__file__).resolve().parent.parent
-_ID = re.compile(r"^\d{10}$")
 RK_VALUES = frozenset({"d", "c"})
 STAT_LEVELS = frozenset({"A", "D"})
 
@@ -38,7 +36,7 @@ def check(teams_json: dict, roster_json: dict, photo_ids: frozenset,
             continue
         players = teams[code].get("players", [])
         ids = [p["id"] for p in players]
-        bad = [i for i in ids if not _ID.match(i)]
+        bad = [i for i in ids if not PLAYER_ID.match(i)]
         if bad:
             errors.append(f"{code}：ID 格式錯誤 {bad}")
         if len(set(ids)) != len(ids):
