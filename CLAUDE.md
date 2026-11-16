@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-中職六隊 60 人契約保留名單模擬器。專案說明見 `README.md`，開發規劃與待辦（含已知 bug）見 `roadmap.md`，設計脈絡（使用者、風格、原則）見 `.impeccable.md`。
+中職六隊 60 人契約保留名單模擬器。專案說明見 `README.md`，開發規劃與決策紀錄見 `roadmap.md`，設計脈絡（使用者、風格、原則）見 `.impeccable.md`。
 
 ## 部署
 
@@ -31,17 +31,20 @@
 - 本機開啟時讀 `docs/data/official.sample.json`（`poetry run python -m scraper.official --sample` 產生，刻意 commit），正式站開啟後讀 `docs/data/official.json`。
 - 上線步驟見 roadmap P1-3。公布後不鎖定送出（使用者決定），Worker 沒有 LOCKED。
 
-## 環境注意事項
+## 測試
+
+- 測試：`poetry run pytest`（scraper）、`node --test scripts/*.test.mjs`（前端；Node 24 不接受只給目錄）、`cd worker && npm test`（Worker，vitest + workerd）、`cd e2e && npm test`（E2E，Playwright）。
+- **E2E 必跑**：改動前端流程（`docs/app.js` 的按鈕、分頁、送出、撤回、統計讀取、localStorage）或 Worker 後，以及 P1-3 開啟對答案上線前，一律跑 `cd e2e && npm test` 並全數通過才合併。單元測試只涵蓋純函式，串接層的 bug（撤回、統計快取）只有 E2E 抓得到。執行前先停掉 `npm run dev`（前端固定連 8787）；E2E 用獨立的 `e2e/.state`，不影響 `worker/.wrangler` 的開發資料。
+- 統計讀取的 `fresh=1` 請求要同時加 `cache:"no-store"`：Worker 回應帶 `max-age=60`，否則瀏覽器會在 60 秒內對同一網址回舊結果（E2E 抓到：送出後一分鐘內撤回，份數不更新）。
+
+## 本機環境
 
 - 這台機器的 rtk hook 會改寫 `npx wrangler ...`（曾被改成 `npm run dev` 而失敗）：一律用 `worker/` 的 npm scripts（`dev`、`db:init`、`db:reset`、`deploy`）或 `./node_modules/.bin/wrangler`。
-- 本機假球迷名單：`cd worker && npm run db:seed`（需先 `db:init`），每隊寫入 50 份刻意偏向的名單到**本機** D1 並清空 tally，用來看對答案、共識與爆冷（P1-3）；可重複執行。官方名單開發檔由 `poetry run python -m scraper.official --sample` 產生。
+- 本機假球迷名單：`cd worker && npm run db:seed`（需先 `db:init`），每隊寫入 50 份刻意偏向的名單到**本機** D1 並清空 tally，用來看對答案、共識與爆冷（P1-3）；可重複執行。
 - 換了 D1 後本機資料庫是空的，`npm run dev` 前先 `npm run db:init`。
 - 本機預覽：`cd worker && npm run dev` 加 `python3 -m http.server -d docs 8080`；http.server 會讓瀏覽器快取舊的 JS／CSS，預覽與 Playwright 檢查前要強制重新整理（Ctrl+Shift+R 或停用快取）。
 - 停背景伺服器用 PID，不要用 `pkill -f <pattern>`：pattern 會比對到執行中的 shell 指令本身而把 shell 殺掉。subagent 回報「已停止」後要用 `ps` 確認，曾有 wrangler dev／workerd 殘留。
 - Cloudflare 會對 Python 預設 User-Agent 回 403；用 curl 加瀏覽器 UA 驗證 API。
-- 測試：`poetry run pytest`（scraper）、`node --test scripts/*.test.mjs`（前端；Node 24 不接受只給目錄）、`cd worker && npm test`（Worker，vitest + workerd）、`cd e2e && npm test`（E2E，Playwright）。
-- **E2E 必跑**：改動前端流程（`docs/app.js` 的按鈕、分頁、送出、撤回、統計讀取、localStorage）或 Worker 後，以及 P1-3 開啟對答案上線前，一律跑 `cd e2e && npm test` 並全數通過才合併。單元測試只涵蓋純函式，串接層的 bug（撤回、統計快取）只有 E2E 抓得到。執行前先停掉 `npm run dev`（前端固定連 8787）；E2E 用獨立的 `e2e/.state`，不影響 `worker/.wrangler` 的開發資料。
-- 統計讀取的 `fresh=1` 請求要同時加 `cache:"no-store"`：Worker 回應帶 `max-age=60`，否則瀏覽器會在 60 秒內對同一網址回舊結果（E2E 抓到：送出後一分鐘內撤回，份數不更新）。
 
 ## 灌票檢查（手動，原 P3-1）
 
