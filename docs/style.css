@@ -132,6 +132,7 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .tile .nmr{display:flex;align-items:center;gap:5px;min-width:0}
 .tile .nmr .nm{min-width:0}
 .tile .sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .sub .sep{margin:0 .3em}
 .tile .stat{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 /* sample-size tiers (roadmap P2-7): low .7 keeps >=3:1 on --paper in light and dark */
 .tile .stat.low{opacity:.7}
@@ -225,6 +226,8 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
   .tile .tx{padding:3px 3px 4px}
   .tile .nm{font-size:13px}
   .tile .sub{font-size:10px}
+  .tile .sub{letter-spacing:-.05em}
+  .tile .sub .sep{margin:0}
   .kpis{grid-template-columns:repeat(2,1fr)}
   .rank{--cw:calc(var(--cd,2)*11px + 6px)}
   .rk{grid-template-columns:24px 32px 1fr calc(40px + var(--cw));padding:7px 10px;gap:8px}

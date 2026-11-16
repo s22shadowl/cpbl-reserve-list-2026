@@ -156,7 +156,7 @@ function renderGroups(){
       if(age!=null)pic.append(el("span",{class:"mk-age","aria-hidden":"true"},el("b",{text:age}),el("small",{text:"歲"})));
       const line=show?statLine(p):null,tier=show?statTier(p):null,capped=full&&!on;
       const b=el("button",{class:"tile","data-id":p.id,"aria-pressed":String(on),title:tileTitle(p,show,capped)+(note?"\n"+note:""),"aria-label":`${playerHead(p)} ${posLabel(p)}${note?" "+note:""}${line?" "+line:""}${on?" 已保留":""}`},pic,
-        el("span",{class:"tx"},el("span",{class:"nmr"},el("span",{class:"nm",text:p.n})),el("span",{class:"sub",text:posLabel(p)+" · "+p.l}),line&&el("span",{class:"stat"+(tier?" "+tier:""),text:line})));
+        el("span",{class:"tx"},el("span",{class:"nmr"},el("span",{class:"nm",text:p.n})),el("span",{class:"sub"},posLabel(p),el("span",{class:"sep",text:"·"}),p.l),line&&el("span",{class:"stat"+(tier?" "+tier:""),text:line})));
       if(capped)b.disabled=true;
       b.onclick=()=>toggle(p.id);
       grid.append(b);
