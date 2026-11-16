@@ -1,9 +1,9 @@
 "use strict";
 const API=IS_LOCAL?"http://localhost:8787":"https://cpbl-reserve-2026-api.cpbl-status.workers.dev";
-const LIMIT=60, GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",C:"Catchers",I:"Infielders",O:"Outfielders"}, GORD="PCIO";
+const GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",C:"Catchers",I:"Infielders",O:"Outfielders"}, GORD="PCIO";
 // TEAMS, NEUTRAL, deriveTheme(), themeDecls() come from theme.js (loaded first).
 // ageOn(), cornerBadge(), cardNote(), isRookie() come from card.js (loaded first); mineVsFans() from mine.js.
-// FLAGS comes from flags.js; offAnswer() etc. from official.js (both loaded first).
+// LIMIT comes from limit.js; FLAGS from flags.js; offAnswer() etc. from official.js (both loaded first).
 // statLine(), statTier(), statsShown(), tileTitle(), playerHead() come from stats.js (loaded first).
 const EXEMPT=[["foreign","洋將"],["training","自主／自行培訓"],["fa","行使自由球員"],["expansion","擴編選秀被選走"],["removed","已非球員"]];
 const $=id=>document.getElementById(id);
@@ -129,7 +129,7 @@ function showPicker(){
     const c=cardColors(t);
     const style=`background:${c.bg};color:${c.fg};box-shadow:inset 0 -4px 0 ${c.stripe}`;
     g.append(el("a",{class:"tcard",href:"#"+t.slug,style},
-      el("span",{text:t.en}),el("b",{text:t.name}),el("em",{text:`${n} 名可選球員 · 選出 60 人`})));
+      el("span",{text:t.en}),el("b",{text:t.name}),el("em",{text:`${n} 名可選球員 · 選出 ${LIMIT} 人`})));
   }
 }
 function renderExempt(){
@@ -370,7 +370,7 @@ function answerBlock(a,N){
     items.length?el("ol",{},...items.map(li)):el("p",{class:"hint",text:"沒有"}));
   box.append(
     el("div",{class:"dcs"},col("球迷保留、球團放生",a.diff.fanKeepClubDrop),col("球迷放生、球團保留",a.diff.fanDropClubKeep)),
-    el("p",{class:"hint",text:"球迷保留 = 保留率排在全隊前 60 名；百分比為球迷保留率。"}));
+    el("p",{class:"hint",text:`球迷保留 = 保留率排在全隊前 ${LIMIT} 名；百分比為球迷保留率。`}));
   return box;
 }
 
@@ -425,7 +425,7 @@ function renderStats(){
   box.append(mineBlock(mineVsFans({roster:ROSTER,counts:cnt,N,saved,cmp:sortP})));
   const list=el("div",{class:"rank"+(clubKept?" club":""),style:"--cd:"+String(N).length}); // --cd = digits of N, sizes the count column
   for(const x of rows.filter(x=>pos==="all"||x.p.g===pos)){
-    if(pos==="all"&&x.rank===LIMIT+1)list.append(el("div",{class:"cut"},"▲ 共識 60 人保留線",el("span",{text:"以下未進共識名單"})));
+    if(pos==="all"&&x.rank===LIMIT+1)list.append(el("div",{class:"cut"},`▲ 共識 ${LIMIT} 人保留線`,el("span",{text:"以下未進共識名單"})));
     const cls=["rk"];if(sel.has(x.p.id))cls.push("mine");if(N>=3&&x.r>=.35&&x.r<=.65)cls.push("split");
     list.append(el("div",{class:cls.join(" ")},el("div",{class:"r",text:x.rank}),photo(x.p,"av"),
       el("div",{class:"nm"},el("span",{class:"n2",text:x.p.no}),x.p.n,clubMark(x.p.id)?.node,el("small",{text:posLabel(x.p)})),
@@ -454,7 +454,7 @@ function groupsOf(){return GORD.split("").map(g=>({g,on:ROSTER.filter(p=>p.g===g
 function droppedPlayers(){return ROSTER.filter(p=>!sel.has(p.id)).sort(sortP)}
 function listText(){
   const gs=groupsOf(),dropped=droppedPlayers();
-  const L=[T.name+" 2027 年度契約保留球員名單（我的版本）","保留 "+sel.size+" / 60 人｜"+gs.map(x=>GN[x.g]+" "+x.on.length).join("、"),""];
+  const L=[T.name+" 2027 年度契約保留球員名單（我的版本）","保留 "+sel.size+" / "+LIMIT+" 人｜"+gs.map(x=>GN[x.g]+" "+x.on.length).join("、"),""];
   for(const x of gs){if(!x.on.length)continue;L.push("【"+GN[x.g]+" "+x.on.length+"】",x.on.map(p=>p.no+" "+p.n).join("、"),"")}
   if(dropped.length)L.push("【未列入 "+dropped.length+"】",dropped.map(p=>p.no+" "+p.n).join("、"),"");
   L.push("— 排你的名單："+location.href.split("#")[0]+"#"+T.slug);
@@ -500,7 +500,7 @@ async function drawCard(){
   c.fillStyle=C.white;c.font="700 64px "+SANS;c.fillText("我的 60 人名單",P,164);
   c.font="400 24px "+SANS;c.fillStyle=C.soft;
   c.fillText(GORD.split("").map(g=>GN[g]+" "+keptIn(g)).join("　")+"　未列入 "+dropped.length,P,214);
-  c.textAlign="right";c.font="500 48px "+NUM;c.fillStyle=C.soft;c.fillText("/ 60",W-P,164);const sW=c.measureText("/ 60").width;
+  c.textAlign="right";c.font="500 48px "+NUM;c.fillStyle=C.soft;c.fillText("/ "+LIMIT,W-P,164);const sW=c.measureText("/ "+LIMIT).width;
   c.font="700 132px "+NUM;c.fillStyle=C.white;c.fillText(String(sel.size),W-P-sW-10,164);
   c.textAlign="left";
   let y=HEAD+40;const cw=IW/COLS;

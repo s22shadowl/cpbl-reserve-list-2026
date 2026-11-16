@@ -4,9 +4,9 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const ctx = vm.createContext({});
-vm.runInContext(readFileSync(new URL("../docs/official.js", import.meta.url), "utf8"), ctx, { filename: "official.js" });
-const { offOverlap, offFanAverage, offConsensus, offUpsets, offAnswer, OFF_MIN_N, OFF_LIMIT } =
-  vm.runInContext("({offOverlap,offFanAverage,offConsensus,offUpsets,offAnswer,OFF_MIN_N,OFF_LIMIT})", ctx);
+for (const f of ["limit.js", "official.js"]) vm.runInContext(readFileSync(new URL("../docs/" + f, import.meta.url), "utf8"), ctx, { filename: f });
+const { offOverlap, offFanAverage, offConsensus, offUpsets, offAnswer, OFF_MIN_N, LIMIT } =
+  vm.runInContext("({offOverlap,offFanAverage,offConsensus,offUpsets,offAnswer,OFF_MIN_N,LIMIT})", ctx);
 const plain = o => JSON.parse(JSON.stringify(o));
 
 // roster p1..p6, position order = id order
@@ -16,7 +16,7 @@ const ids = list => list.map(x => x.p.id);
 
 test("constants", () => {
   assert.equal(OFF_MIN_N, 10);
-  assert.equal(OFF_LIMIT, 60);
+  assert.equal(LIMIT, 60);
 });
 
 test("overlap counts shared ids and lists both kinds of difference", () => {

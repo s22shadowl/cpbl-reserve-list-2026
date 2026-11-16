@@ -1,11 +1,12 @@
 "use strict";
 // Official-list answer key (roadmap P1-3): pure logic, no DOM. Players are {id,...}; counts = {id: keeps}; N = lists submitted.
-const OFF_MIN_N=10, OFF_LIMIT=60, OFF_UPSET=.7, OFF_UPSET_MAX=3;
-// mine/official: id arrays. x = shared, denom = min(60, my count). null when I have no list.
+// LIMIT comes from limit.js (loaded first).
+const OFF_MIN_N=10, OFF_UPSET=.7, OFF_UPSET_MAX=3;
+// mine/official: id arrays. x = shared, denom = min(LIMIT, my count). null when I have no list.
 function offOverlap(mine,official){
   const m=new Set(mine||[]);if(!m.size)return null;
   const o=new Set(official||[]);
-  return{x:[...m].filter(id=>o.has(id)).length,denom:Math.min(OFF_LIMIT,m.size),mineOnly:[...m].filter(id=>!o.has(id)),officialOnly:[...o].filter(id=>!m.has(id))};
+  return{x:[...m].filter(id=>o.has(id)).length,denom:Math.min(LIMIT,m.size),mineOnly:[...m].filter(id=>!o.has(id)),officialOnly:[...o].filter(id=>!m.has(id))};
 }
 // average number of club-kept players a fan also kept
 function offFanAverage(counts,N,official){
@@ -25,7 +26,7 @@ function offUpsets(roster,counts,N,official){
     kept:rows.filter(x=>o.has(x.p.id)&&x.r<=1-OFF_UPSET+1e-9).sort(byRate(-1)).slice(0,OFF_UPSET_MAX),
   };
 }
-function offAnswer({roster,counts,N,mine,official,limit=OFF_LIMIT,cmp}){
+function offAnswer({roster,counts,N,mine,official,limit=LIMIT,cmp}){
   const out={mine:offOverlap(mine,official),fanAvg:null,diff:null,upsets:null};
   if(N<OFF_MIN_N)return out;
   const o=new Set(official),{top,rest}=offConsensus(roster,counts,N,limit,cmp);

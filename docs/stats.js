@@ -1,7 +1,7 @@
 "use strict";
 // Season stats line for player tiles. p.s = {A:{…},D:{…}} with only the levels played (see roadmap P0-10):
 // batters {g,pa,avg,ops,hr}, pitchers {g,ip,era,whip,so}; rates/innings are display strings, e.g. "0.282", "36.1".
-const STAT_LEVELS=[["A","一軍"],["D","二軍"]], NO_GAMES="本季未出賽", NO_VALUE="–", CAP_MSG="已達 60 人上限，先移除一位才能再加入";
+const STAT_LEVELS=[["A","一軍"],["D","二軍"]], NO_GAMES="本季未出賽", NO_VALUE="–", CAP_MSG=`已達 ${LIMIT} 人上限，先移除一位才能再加入`; // LIMIT from limit.js
 // a key is missing when the site showed a blank or dash cell
 function val(v){return v==null?NO_VALUE:String(v)}
 
