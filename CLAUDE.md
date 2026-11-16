@@ -29,7 +29,7 @@
 
 - `docs/flags.js`：`LOCAL_HOSTS`／`IS_LOCAL` 是判斷本機的唯一來源；`FLAGS.official` 目前只在本機開啟。
 - 本機開啟時讀 `docs/data/official.sample.json`（`poetry run python -m scraper.official --sample` 產生，刻意 commit），正式站開啟後讀 `docs/data/official.json`。
-- 上線步驟見 roadmap P1-3。公布後不鎖定送出（使用者決定），Worker 沒有 LOCKED。
+- 上線步驟見 roadmap P1-3。公布後鎖定送出（2026-11-16 使用者改變決定，實作見 roadmap P1-6）。
 
 ## 測試
 
