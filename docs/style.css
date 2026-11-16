@@ -198,7 +198,7 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .kpi .k{font-size:12px;color:var(--muted);margin-top:6px}
 /* --cw fits "N/N" in the count font; --name-col widens when club decision pills (.cd) sit in the name column */
 .rank{background:var(--paper);border:1px solid var(--line);--cw:calc(var(--cd,2)*12px + 7px);--name-col:minmax(110px,230px)}
-.rank.off{--name-col:minmax(220px,290px)}
+.rank.club{--name-col:minmax(220px,290px)}
 .rk{display:grid;grid-template-columns:34px 36px var(--name-col) 1fr calc(46px + var(--cw));gap:10px;align-items:center;padding:7px 14px;border-top:1px solid var(--line);font-size:14px}
 .rk:first-child{border-top:0}
 .rk .r{font-family:var(--f-num);font-weight:600;color:var(--muted);text-align:right;font-size:16px}
@@ -301,4 +301,4 @@ a.btn{text-decoration:none}
 .dc li small{margin-left:auto}
 .dc .hint{margin:2px 0 0}
 .ans>.hint{margin:10px 0 0}
-@media (max-width:640px){.ags,.dcs{grid-template-columns:1fr}.hit .big b{font-size:34px}.ans{padding-inline:12px}.rank.off .rk .nm small{display:none}}
+@media (max-width:640px){.ags,.dcs{grid-template-columns:1fr}.hit .big b{font-size:34px}.ans{padding-inline:12px}.rank.club .rk .nm small{display:none}}
