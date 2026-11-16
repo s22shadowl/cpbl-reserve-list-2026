@@ -69,7 +69,8 @@ function block(re) {
   for (const [, k, v] of m[1].matchAll(/(--[a-z-]+)\s*:\s*([^;]+?)\s*(?:;|$)/g)) out[k] = v;
   return out;
 }
-const SKIP = new Set(["--warn", "--over", "--f-body", "--f-num"]);
+// Not derived from the team palette: status colours, colours on the (always dark) band, fonts.
+const SKIP = new Set(["--warn", "--over", "--band-over", "--band-warn", "--band-dot", "--f-body", "--f-num"]);
 const strip = (o) => Object.fromEntries(Object.entries(o).filter(([k]) => !SKIP.has(k)).map(([k, v]) => [k, v.toLowerCase()]));
 const lower = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, v.toLowerCase()]));
 const N = deriveTheme(NEUTRAL);

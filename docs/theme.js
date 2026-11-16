@@ -59,7 +59,7 @@ function deriveTheme(base){
   };
   return{light,dark};
 }
-// CSS for one token map, e.g. "--page:#F7F7F7;--paper:#FFFFFF;…"
 // Picker card: band background with an accent stripe, or (cardSwap) accent background, on-accent text and a band stripe.
 function cardColors(t){return t.cardSwap?{bg:t.acc,fg:t.on,stripe:t.band}:{bg:t.band,fg:WHITE,stripe:t.acc}}
+// CSS for one token map, e.g. "--page:#F7F7F7;--paper:#FFFFFF;…"
 function themeDecls(m){return Object.entries(m).map(([k,v])=>k+":"+v).join(";")}

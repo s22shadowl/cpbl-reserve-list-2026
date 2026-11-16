@@ -10,6 +10,8 @@ img{max-width:100%}
   --hi:#C4C7CC; --band:#111214; --on-band:#FFFFFF; --band-muted:#C9CACB; --tile:#DBDBDC; --soft:#EDEDEE;
   --pri-hover:#E9EAEA; --shade-rgb:12,13,14; --scrim:rgba(10,11,12,.6);
   --warn:#C2611B; --over:#D0342C;
+  /* on the team-colour band, which stays dark in both modes, so these are not redefined for dark mode */
+  --band-over:#FF8A84; --band-warn:#FFB37A; --band-dot:#FF9F43;
   --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
   --f-num:"Rajdhani","Arial Narrow",sans-serif;
 }
@@ -58,18 +60,18 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .total{display:flex;align-items:baseline;gap:10px;min-width:0}
 .num{font-family:var(--f-num);font-weight:700;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;color:#fff}
 .num small{font-size:20px;color:var(--band-muted);font-weight:600;margin-left:2px}
-.top.over .num{color:#FF8A84}
+.top.over .num{color:var(--band-over)}
 .total .lbl{display:flex;flex-direction:column;font-size:12px;line-height:1.35;color:var(--band-muted);min-width:0}
 .total .lbl b{color:var(--on-band);font-weight:500;font-size:13px}
-.st .warn{color:#FFB37A}
+.st .warn{color:var(--band-warn)}
 .acts{display:flex;gap:6px;flex:none}
 .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.38);background:transparent;color:#fff;border-radius:6px;padding:7px 12px;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;position:relative}
 .btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .btn:hover:not(:disabled){background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.6)}
 .btn.pri{background:#fff;color:var(--band);border-color:#fff;font-weight:700;padding-inline:16px}
 .btn.pri:hover:not(:disabled){background:var(--pri-hover)}
-.btn.pri.dirty::after{content:"";position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:50%;background:#FF9F43;box-shadow:0 0 0 2px var(--band)}
-.btn.arm{border-color:#FF8A84;color:#FF8A84}
+.btn.pri.dirty::after{content:"";position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:50%;background:var(--band-dot);box-shadow:0 0 0 2px var(--band)}
+.btn.arm{border-color:var(--band-over);color:var(--band-over)}
 .btn:disabled{opacity:.35;cursor:not-allowed}
 .views{display:flex;flex:none}
 .views button{background:none;border:0;padding:4px 12px 6px 0;margin-right:12px;font-weight:700;font-size:15px;color:var(--band-muted);cursor:pointer;position:relative}
@@ -96,6 +98,30 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .top .bar{height:3px;background:rgba(255,255,255,.12)}
 .top .bar i{display:block;height:100%;background:var(--hi);transition:width .2s}
 .top.over .bar i{background:var(--over)}
+@media (prefers-reduced-motion:reduce){.top .bar i{transition:none}}
+@media (max-width:640px){
+  .num{font-size:32px}
+  .total{flex:1 1 auto;gap:8px}
+  .total .lbl{overflow:hidden}
+  .total .lbl>*{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .sp{display:none}
+  .acts{gap:4px}
+  .acts .btn .lb{display:none}
+  .acts .btn{padding:7px 8px}
+  .acts .btn.pri .lb{display:inline}
+  .acts .btn.pri svg{display:none}
+  .acts .btn.pri{padding-inline:10px}
+  .search{flex:1 1 auto}
+  .views button{font-size:14px;margin-right:6px;padding-right:6px}
+  .views button[aria-selected="true"]::after{right:6px}
+  .show select{padding:6px 22px 6px 8px}
+  .search input{padding-left:28px}
+  .pc-tab{padding:4px 2px}
+  .pc-tab>span{flex-direction:column;align-items:center;gap:0}
+  .pc-tab .l{font-size:12px;line-height:1.3}
+  .pc-tab .k{font-size:19px}
+  .pc-tab .t{font-size:12.5px}
+}
 
 /* groups + compact tiles */
 main{padding-block:18px 40px}
@@ -148,14 +174,32 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .tile:disabled{cursor:not-allowed;opacity:.38}
 .empty{background:var(--paper);border:1px dashed var(--line);padding:36px 20px;text-align:center;color:var(--muted)}
 .empty b{display:block;color:var(--ink);font-size:18px;margin-bottom:6px;font-weight:500}
+@media (max-width:640px){
+  .grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+  .tile .no{font-size:18px;left:4px}
+  .tile .mk-age b{font-size:15px}
+  .tile .mk-tag{top:4px;left:4px;height:15px;padding:0 4px;font-size:9px;letter-spacing:-.02em}
+  .tile .mk-tag.dy small{margin-left:0}
+  /* Narrow tiles: 3px text padding (.tx below) and proportional digits so 「二軍 ERA 12.96」 fits from 360px up. */
+  .tile .stat{font-size:10px;font-variant-numeric:normal;letter-spacing:-.02em}
+  .tile .ck{width:19px;height:19px;top:4px;right:4px;font-size:11px}
+  .tile .tx{padding:3px 3px 4px}
+  .tile .nm{font-size:13px}
+  .tile .sub{font-size:10px;letter-spacing:-.05em}
+  .tile .sub .sep{margin:0}
+}
+/* Very narrow phones: drop 選秀 so the year badge clears the check circle (full text stays in title/aria). */
+@media (max-width:374px){.tile .mk-tag.dy small{display:none}.tile .stat{font-size:9.5px}}
 
 /* stats */
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:20px}
 .kpi{background:var(--paper);padding:14px 16px}
 .kpi .v{font-family:var(--f-num);font-weight:700;font-size:38px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
 .kpi .k{font-size:12px;color:var(--muted);margin-top:6px}
-.rank{background:var(--paper);border:1px solid var(--line);--cw:calc(var(--cd,2)*12px + 7px)} /* --cw fits "N/N" in the count font */
-.rk{display:grid;grid-template-columns:34px 36px minmax(110px,230px) 1fr calc(46px + var(--cw));gap:10px;align-items:center;padding:7px 14px;border-top:1px solid var(--line);font-size:14px}
+/* --cw fits "N/N" in the count font; --name-col widens when club decision pills (.cd) sit in the name column */
+.rank{background:var(--paper);border:1px solid var(--line);--cw:calc(var(--cd,2)*12px + 7px);--name-col:minmax(110px,230px)}
+.rank.off{--name-col:minmax(220px,290px)}
+.rk{display:grid;grid-template-columns:34px 36px var(--name-col) 1fr calc(46px + var(--cw));gap:10px;align-items:center;padding:7px 14px;border-top:1px solid var(--line);font-size:14px}
 .rk:first-child{border-top:0}
 .rk .r{font-family:var(--f-num);font-weight:600;color:var(--muted);text-align:right;font-size:16px}
 .rk .av{width:36px;height:36px;border-radius:50%;overflow:hidden;background:var(--tile);display:flex;align-items:center;justify-content:center;font-family:var(--f-num);font-weight:700;font-size:14px;color:var(--muted)}
@@ -177,6 +221,16 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .note{font-size:12px;color:var(--muted);margin:10px 0 0}
 .src{font-size:12px;color:var(--muted);margin-top:28px;border-top:1px solid var(--line);padding-top:12px}
 .src a{color:var(--acc-ink)}
+@media (max-width:640px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .rank{--cw:calc(var(--cd,2)*11px + 6px)}
+  .rk{grid-template-columns:24px 32px 1fr calc(40px + var(--cw));padding:7px 10px;gap:8px}
+  .rk .nm{white-space:normal;line-height:1.7} /* long names wrap instead of ellipsis */
+  .rk .pc{font-size:17px;column-gap:3px}
+  .rk .pc small{font-size:12px}
+  .rk .av{width:32px;height:32px}
+  .rk .track{grid-column:2 / -1;grid-row:2}
+}
 
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--page);padding:8px 16px;font-size:13px;z-index:20;max-width:calc(100% - 32px);border-radius:6px}
 
@@ -193,51 +247,6 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .hint{font-size:12.5px;color:var(--muted);margin:0}
 .ta{width:100%;min-height:260px;font:inherit;font-size:13px;line-height:1.6;padding:10px;border:1px solid var(--line);background:var(--page);color:var(--text);resize:vertical}
 
-@media (max-width:640px){
-  .num{font-size:32px}
-  .total{flex:1 1 auto;gap:8px}
-  .total .lbl{overflow:hidden}
-  .total .lbl>*{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .row .sp{display:none}
-  .acts{gap:4px}
-  .acts .btn .lb{display:none}
-  .acts .btn{padding:7px 8px}
-  .acts .btn.pri .lb{display:inline}
-  .acts .btn.pri svg{display:none}
-  .acts .btn.pri{padding-inline:10px}
-  .search{flex:1 1 auto}
-  .views button{font-size:14px;margin-right:6px;padding-right:6px}
-  .views button[aria-selected="true"]::after{right:6px}
-  .show select{padding:6px 22px 6px 8px}
-  .search input{padding-left:28px}
-  .pc-tab{padding:4px 2px}
-  .pc-tab>span{flex-direction:column;align-items:center;gap:0}
-  .pc-tab .l{font-size:12px;line-height:1.3}
-  .pc-tab .k{font-size:19px}
-  .pc-tab .t{font-size:12.5px}
-  .grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
-  .tile .no{font-size:18px;left:4px}
-  .tile .mk-age b{font-size:15px}
-  .tile .mk-tag{top:4px;left:4px;height:15px;padding:0 4px;font-size:9px;letter-spacing:-.02em}
-  .tile .mk-tag.dy small{margin-left:0}
-  /* Narrow tiles: 3px text padding (.tx below) and proportional digits so 「二軍 ERA 12.96」 fits from 360px up. */
-  .tile .stat{font-size:10px;font-variant-numeric:normal;letter-spacing:-.02em}
-  .tile .ck{width:19px;height:19px;top:4px;right:4px;font-size:11px}
-  .tile .tx{padding:3px 3px 4px}
-  .tile .nm{font-size:13px}
-  .tile .sub{font-size:10px}
-  .tile .sub{letter-spacing:-.05em}
-  .tile .sub .sep{margin:0}
-  .kpis{grid-template-columns:repeat(2,1fr)}
-  .rank{--cw:calc(var(--cd,2)*11px + 6px)}
-  .rk{grid-template-columns:24px 32px 1fr calc(40px + var(--cw));padding:7px 10px;gap:8px}
-  .rk .nm{white-space:normal;line-height:1.7} /* long names wrap instead of ellipsis */
-  .rk .pc{font-size:17px;column-gap:3px}
-  .rk .pc small{font-size:12px}
-  .rk .av{width:32px;height:32px}
-  .rk .track{grid-column:2 / -1;grid-row:2}
-}
-@media (prefers-reduced-motion:reduce){.top .bar i{transition:none}}
 /* team picker + team switch */
 .herotools{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .teamsw{position:relative;display:inline-flex;align-items:center;gap:6px}
@@ -250,17 +259,13 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .picker{padding-block:28px 60px}
 .picker h2{font-size:20px;font-weight:500;color:var(--ink);margin:0 0 14px}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
-.tcard{display:flex;flex-direction:column;gap:4px;padding:18px 18px 16px;color:#fff;text-decoration:none;border-radius:6px;position:relative;overflow:hidden;min-height:110px}
-.tcard::after{content:"";position:absolute;right:-30px;top:0;bottom:0;width:120px;transform:skewX(-14deg);opacity:.55}
-.tcard b{font-size:22px;font-weight:700;position:relative;z-index:1}
-.tcard span{font-family:var(--f-num);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px;opacity:.8;position:relative;z-index:1}
-.tcard em{font-style:normal;font-size:13px;opacity:.85;margin-top:auto;position:relative;z-index:1}
+.tcard{display:flex;flex-direction:column;gap:4px;padding:18px 18px 16px;color:#fff;text-decoration:none;border-radius:6px;overflow:hidden;min-height:110px}
+.tcard b{font-size:22px;font-weight:700}
+.tcard span{font-family:var(--f-num);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px;opacity:.8}
+.tcard em{font-style:normal;font-size:13px;opacity:.85;margin-top:auto}
 .tcard:hover{filter:brightness(1.08)}
 .tcard:focus-visible{outline:3px solid var(--text);outline-offset:2px}
 a.btn{text-decoration:none}
-/* Very narrow phones: drop 選秀 so the year badge clears the check circle (full text stays in title/aria). */
-@media (max-width:374px){.tile .mk-tag.dy small{display:none}.tile .stat{font-size:9.5px}}
-
 /* official-list answer key (P1-3) */
 .hero .hero-off{margin-top:10px;font-weight:500;color:var(--on-band);border-left:3px solid var(--hi);padding-left:10px}
 .cd{flex:none;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;line-height:1;white-space:nowrap}
@@ -296,6 +301,4 @@ a.btn{text-decoration:none}
 .dc li small{margin-left:auto}
 .dc .hint{margin:2px 0 0}
 .ans>.hint{margin:10px 0 0}
-@media (max-width:640px){.ags,.dcs{grid-template-columns:1fr}.hit .big b{font-size:34px}.ans{padding-inline:12px}}
-.rank.off .rk{grid-template-columns:34px 36px minmax(220px,290px) 1fr calc(46px + var(--cw))}
-@media (max-width:640px){.rank.off .rk{grid-template-columns:24px 32px 1fr calc(40px + var(--cw))}.rank.off .rk .nm small{display:none}}
+@media (max-width:640px){.ags,.dcs{grid-template-columns:1fr}.hit .big b{font-size:34px}.ans{padding-inline:12px}.rank.off .rk .nm small{display:none}}
