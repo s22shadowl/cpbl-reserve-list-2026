@@ -5,7 +5,7 @@ const LIMIT=60, GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"
 // ageOn(), cornerBadge(), cardNote(), isRookie() come from card.js (loaded first); mineVsFans() from mine.js.
 // FLAGS comes from flags.js; offAnswer() etc. from official.js (both loaded first).
 // statLine(), statTier(), statsShown(), tileTitle(), playerHead() come from stats.js (loaded first).
-const EXEMPT=[["foreign","洋將（不需列入）"],["training","自主／自行培訓（不需列入）"],["fa","行使自由球員（不需列入）"],["expansion","擴編選秀被選走（不需列入）"],["removed","已非球員"]];
+const EXEMPT=[["foreign","洋將"],["training","自主／自行培訓"],["fa","行使自由球員"],["expansion","擴編選秀被選走"],["removed","已非球員"]];
 const $=id=>document.getElementById(id);
 function el(tag,attrs={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else e.setAttribute(k,v)}for(const k of kids)if(k!=null)e.append(k);return e}
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
@@ -171,7 +171,7 @@ function renderGroups(){
     box.append(el("section",{class:"grp",id:"g-"+g},
       el("div",{class:"gh"},el("h2",{},el("span",{class:"en",text:GEN[g]}),GN[g]),el("span",{class:"k"},"已保留 ",el("b",{text:keptIn(g)})," / "+all.length),bulk),grid));
   }
-  if(!any)box.append(el("div",{class:"empty"},el("b",{text:"沒有符合條件的球員"}),"換個守位或顯示條件，或清除搜尋字。"));
+  if(!any)box.append(el("div",{class:"empty"},el("b",{text:"沒有符合條件的球員"}),"試試換個守位、篩選條件或搜尋文字。"));
   if(had){const id=nextFocusId(prev,tileIds(box,true),had),t=id&&box.querySelector(`.tile[data-id="${id}"]`);if(t)t.focus({preventScroll:true})}
   if(hadG){const b=box.querySelector(`.bulk[data-g="${hadG}"]`);if(b)b.focus({preventScroll:true})}
 }
@@ -258,21 +258,21 @@ function answerBlock(a,N){
   box.append(el("div",{class:"ans-h"},el("h2",{text:"對答案"}),el("span",{text:"球團名單 "+(OFFICIAL.updated||"")+" 公布"})));
   const hit=el("div",{class:"hit"});
   if(a.mine){
-    hit.append(el("div",{class:"big"},"你的名單和球團重疊 ",el("b",{text:a.mine.x}),el("small",{text:" / "+a.mine.denom}),"人"));
-    if(a.fanAvg!=null)hit.append(el("div",{class:"big"},"球迷平均重疊 ",el("b",{text:a.fanAvg.toFixed(1)}),"人"));
+    hit.append(el("div",{class:"big"},"你的名單和球團重疊 ",el("b",{text:a.mine.x}),el("small",{text:" / "+a.mine.denom})," 人"));
+    if(a.fanAvg!=null)hit.append(el("div",{class:"big"},"球迷平均重疊 ",el("b",{text:a.fanAvg.toFixed(1)})," 人"));
   }else{
-    hit.append(el("div",{class:"hint",text:"先到「我的名單」排出你的名單，就能看和球團差在哪。"}));
-    if(a.fanAvg!=null)hit.append(el("div",{class:"big"},"球迷平均重疊 ",el("b",{text:a.fanAvg.toFixed(1)}),"人"));
+    hit.append(el("div",{class:"hint",text:"先到「我的名單」選好球員，就能看你和球團差在哪。"}));
+    if(a.fanAvg!=null)hit.append(el("div",{class:"big"},"球迷平均重疊 ",el("b",{text:a.fanAvg.toFixed(1)})," 人"));
   }
   box.append(hit);
   if(a.mine){
     const by=ids=>ids.map(id=>({p:BY[id]})).filter(x=>x.p).sort((x,y)=>sortP(x.p,y.p));
     box.append(el("div",{class:"ags"},group("你保留、球團放生",by(a.mine.mineOnly)),group("你放生、球團保留",by(a.mine.officialOnly))));
   }
-  if(!a.diff){box.append(el("p",{class:"hint",text:"這隊要有至少 10 份名單才會顯示球迷共識與爆冷（目前 "+N+" 份）。"}));return box}
+  if(!a.diff){box.append(el("p",{class:"hint",text:"這隊至少要有 10 份名單，才會顯示球迷共識與爆冷（目前 "+N+" 份）。"}));return box}
   const u=a.upsets;
   if(u.dropped.length||u.kept.length){
-    const row=(x,k)=>el("li",{},el("span",{class:"pct",text:Math.round(x.r*100)+"%"}),k===0?"球迷保留，球團放生 ":"球迷放生，球團保留 ",el("b",{text:x.p.no+" "+x.p.n}));
+    const row=(x,k)=>el("li",{},el("span",{class:"pct",text:Math.round(x.r*100)+"%"}),k===0?"球迷保留、球團放生 ":"球迷放生、球團保留 ",el("b",{text:x.p.no+" "+x.p.n}));
     box.append(el("div",{class:"upset"},el("h3",{},"爆冷"),el("ul",{},...u.dropped.map(x=>row(x,0)),...u.kept.map(x=>row(x,1)))));
   }
   const col=(title,items)=>el("div",{class:"dc"},el("h3",{text:title+" "+items.length+" 人"}),items.length?el("ol",{},...items.map(x=>el("li",{},el("span",{class:"n2",text:x.p.no}),x.p.n,el("small",{text:Math.round(x.r*100)+"%"})))):el("p",{class:"hint",text:"沒有"}));
@@ -283,10 +283,10 @@ function answerBlock(a,N){
 // ---------- you vs most fans (P2-2) ----------
 function mineBlock(m){
   const box=el("section",{class:"ans mvf","aria-label":"你和多數球迷不同的決定"});
-  box.append(el("div",{class:"ans-h"},el("h2",{text:"你和多數球迷不同"}),el("span",{text:"依你已送出的名單；百分比為其他球迷的保留率，不含你自己"})));
+  box.append(el("div",{class:"ans-h"},el("h2",{text:"你和多數球迷不同"}),el("span",{text:"依你已送出的名單；百分比為其他球迷的保留率"})));
   if(m.state==="unsent"){box.append(el("p",{class:"hint",text:"送出名單後，這裡會列出你和多數球迷意見不同的球員。"}));return box}
   if(m.state==="few"){box.append(el("p",{class:"hint",text:"其他球迷的名單滿 "+MINE_MIN_OTHERS+" 份後才會顯示（目前 "+m.others+" 份）。"}));return box}
-  if(!m.keptLow.length&&!m.droppedHigh.length){box.append(el("p",{class:"hint",text:"你的名單沒有和多數球迷明顯不同的決定。"}));return box}
+  if(!m.keptLow.length&&!m.droppedHigh.length){box.append(el("p",{class:"hint",text:"你的名單和多數球迷沒有明顯不同。"}));return box}
   box.append(el("div",{class:"ags"},group("你保留、球迷多半放生",m.keptLow,true),group("你放生、球迷多半保留",m.droppedHigh,true)));
   box.append(el("p",{class:"hint",text:"球迷多半 = 其他球迷保留率 "+Math.round(MINE_LOW*100)+"% 以下或 "+Math.round(MINE_HIGH*100)+"% 以上。"}));
   return box;
@@ -302,7 +302,7 @@ async function loadStats(fresh){
 function renderStats(){
   const box=$("statsBody");box.replaceChildren();
   if(!stats){box.append(el("div",{class:"empty"},el("b",{text:"載入中…"})));return}
-  if(stats.error){box.append(el("div",{class:"empty"},el("b",{text:"暫時讀不到統計"}),"請檢查網路，稍後再切換到這一頁。"));return}
+  if(stats.error){box.append(el("div",{class:"empty"},el("b",{text:"暫時讀不到統計"}),"請檢查網路，稍後會自動重新讀取。"));return}
   const N=stats.n||0,cnt=stats.counts||{};
   const ans=OFF?offAnswer({roster:ROSTER,counts:cnt,N,mine:[...sel],official:[...OFF],cmp:sortP}):null;
   if(ans)box.append(answerBlock(ans,N));
@@ -312,12 +312,12 @@ function renderStats(){
   rows.forEach((x,i)=>x.rank=i+1);
   const split=rows.filter(x=>N>=3&&x.r>=.35&&x.r<=.65).length;
   const kp=el("div",{class:"kpis"});
-  for(const[v,k]of[[N,"份名單已送出"],[(tot/N).toFixed(1),"平均保留人數"],[rows.filter(x=>x.r===1).length,"全員一致保留"],[N>=3?split:"—","意見分歧（35–65%）"]])kp.append(el("div",{class:"kpi"},el("div",{class:"v",text:v}),el("div",{class:"k",text:k})));
+  for(const[v,k]of[[N,"份名單已送出"],[(tot/N).toFixed(1),"平均保留人數"],[rows.filter(x=>x.r===1).length,"全票保留"],[N>=3?split:"—","意見分歧（35–65%）"]])kp.append(el("div",{class:"kpi"},el("div",{class:"v",text:v}),el("div",{class:"k",text:k})));
   box.append(kp);
   box.append(mineBlock(mineVsFans({roster:ROSTER,counts:cnt,N,saved,cmp:sortP})));
   const list=el("div",{class:"rank"+(OFF?" off":""),style:"--cd:"+String(N).length}); // --cd = digits of N, sizes the count column
   for(const x of rows.filter(x=>pos==="all"||x.p.g===pos)){
-    if(pos==="all"&&x.rank===LIMIT+1)list.append(el("div",{class:"cut"},"▲ 共識 60 人保留線",el("span",{text:"以下為多數人未列入"})));
+    if(pos==="all"&&x.rank===LIMIT+1)list.append(el("div",{class:"cut"},"▲ 共識 60 人保留線",el("span",{text:"以下未進共識名單"})));
     const cls=["rk"];if(sel.has(x.p.id))cls.push("mine");if(N>=3&&x.r>=.35&&x.r<=.65)cls.push("split");
     list.append(el("div",{class:cls.join(" ")},el("div",{class:"r",text:x.rank}),photo(x.p,"av"),
       el("div",{class:"nm"},el("span",{class:"n2",text:x.p.no}),x.p.n,clubMark(x.p.id)?.node,el("small",{text:posLabel(x.p)})),
@@ -325,7 +325,7 @@ function renderStats(){
       el("div",{class:"pc"},el("span",{text:Math.round(x.r*100)+"%"}),el("small",{text:`${x.c}/${N}`}))));
   }
   box.append(list);
-  box.append(el("p",{class:"note",text:"依保留率排序，名次為全隊排名。● 表示你目前的名單有保留這位球員；虛線為 50%；橘色百分比代表意見分歧（至少 3 份名單時才標示）。每台裝置每隊計一份，重新送出會覆蓋舊的名單。"+(OFF?"✓／✗ 為球團公布的決定。":"")}));
+  box.append(el("p",{class:"note",text:"依保留率排序，名次為全隊排名。● 為你目前名單中保留的球員；虛線為 50%；橘色百分比代表意見分歧（至少 3 份名單時才標示）。每台裝置每隊計一份，重新送出會覆蓋舊的名單。"+(OFF?"✓／✗ 為球團公布的決定。":"")}));
 }
 function subCount(){$("subN").textContent=stats&&stats.n?stats.n:""}
 
@@ -345,9 +345,9 @@ function groupsOf(){return GORD.split("").map(g=>({g,on:ROSTER.filter(p=>p.g===g
 function offList(){return ROSTER.filter(p=>!sel.has(p.id)).sort(sortP)}
 function listText(){
   const gs=groupsOf(),off=offList();
-  const L=[T.name+" 2027 年度契約保留球員名單（我的版本）","保留 "+sel.size+" / 60 人｜"+gs.map(x=>GN[x.g]+" "+x.on.length).join("・"),""];
+  const L=[T.name+" 2027 年度契約保留球員名單（我的版本）","保留 "+sel.size+" / 60 人｜"+gs.map(x=>GN[x.g]+" "+x.on.length).join("、"),""];
   for(const x of gs){if(!x.on.length)continue;L.push("【"+GN[x.g]+" "+x.on.length+"】",x.on.map(p=>p.no+" "+p.n).join("、"),"")}
-  if(off.length)L.push("【不列入 "+off.length+"】",off.map(p=>p.no+" "+p.n).join("、"),"");
+  if(off.length)L.push("【未列入 "+off.length+"】",off.map(p=>p.no+" "+p.n).join("、"),"");
   L.push("— 排你的名單："+location.href.split("#")[0]+"#"+T.slug);
   return L.join("\n");
 }
@@ -372,7 +372,7 @@ async function drawCard(){
   const TH=deriveTheme(T).light;
   const C={bg:TH["--page"],band:T.band,ink:TH["--ink"],muted:TH["--muted"],line:TH["--line"],white:"#FFFFFF",soft:"rgba(255,255,255,.72)",acc:TH["--acc-ink"]};
   const SANS='"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif',NUM='"Rajdhani","Arial Narrow",sans-serif';
-  const all=T.name+T.short+"年度契約保留球員我的人名單不列入依中職聯盟規章第章條簿投手捕手內野外・｜/"+ROSTER.map(p=>p.n).join("");
+  const all=T.name+T.short+"年度契約保留球員我的人名單未列入依中職聯盟規章第章條簿投手捕手內野外・｜/"+ROSTER.map(p=>p.n).join("");
   try{await Promise.all([document.fonts.load("700 60px "+SANS,all),document.fonts.load("500 24px "+SANS,all),document.fonts.load("400 22px "+SANS,all),document.fonts.load("700 30px "+NUM,"0123456789/")])}catch(e){}
   const HEAD=250;let H=HEAD+40;
   for(const x of gs)H+=60+Math.ceil(x.on.length/COLS)*RH+28;
@@ -385,7 +385,7 @@ async function drawCard(){
   c.fillStyle=C.soft;c.font="500 24px "+SANS;c.fillText(T.name+" · 2027 年度契約保留球員",P,84);
   c.fillStyle=C.white;c.font="700 64px "+SANS;c.fillText("我的 60 人名單",P,164);
   c.font="400 24px "+SANS;c.fillStyle=C.soft;
-  c.fillText(GORD.split("").map(g=>GN[g]+" "+keptIn(g)).join("　")+"　不列入 "+off.length,P,214);
+  c.fillText(GORD.split("").map(g=>GN[g]+" "+keptIn(g)).join("　")+"　未列入 "+off.length,P,214);
   c.textAlign="right";c.font="500 48px "+NUM;c.fillStyle=C.soft;c.fillText("/ 60",W-P,164);const sW=c.measureText("/ 60").width;
   c.font="700 132px "+NUM;c.fillStyle=C.white;c.fillText(String(sel.size),W-P-sW-10,164);
   c.textAlign="left";
@@ -400,7 +400,7 @@ async function drawCard(){
     y+=Math.ceil(x.on.length/COLS)*RH+28;
   }
   if(off.length){
-    c.fillStyle=C.muted;c.font="700 26px "+SANS;c.fillText("不列入（"+off.length+" 人）",P,y+28);
+    c.fillStyle=C.muted;c.font="700 26px "+SANS;c.fillText("未列入（"+off.length+" 人）",P,y+28);
     c.fillStyle=C.line;c.fillRect(P,y+42,IW,1);y+=56;const ow=IW/OCOLS;
     off.forEach((p,i)=>{const cx=P+(i%OCOLS)*ow,cy=y+Math.floor(i/OCOLS)*ORH+26;
       c.fillStyle=C.muted;c.font="400 21px "+SANS;c.fillText(p.no+" "+p.n,cx,cy,ow-12)});
@@ -420,10 +420,10 @@ $("mkImg").onclick=async()=>{
     const file=new File([blob],fname,{type:"image/png"});
     if(navigator.canShare&&navigator.canShare({files:[file]})){
       const sh=el("button",{class:"btn"},el("span",{text:"分享"}));
-      sh.onclick=async()=>{try{await navigator.share({files:[file],title:T.name+" 契約保留名單"})}catch(e){}};row.append(sh);
+      sh.onclick=async()=>{try{await navigator.share({files:[file],title:T.name+"契約保留名單"})}catch(e){}};row.append(sh);
     }
     row.append(el("span",{class:"hint",text:"也可以右鍵或長按圖片另存。"}));
-    openSheet("名單圖片",[el("img",{class:"shot",src:sheetUrl,alt:"我的契約保留球員名單圖片"}),row]);
+    openSheet("名單圖片",[el("img",{class:"shot",src:sheetUrl,alt:"我的契約保留球員名單"}),row]);
   }catch(e){toast("圖片產生失敗，請再試一次")}
   b.disabled=sel.size===0;lb.textContent="存成圖片";
 };
@@ -432,7 +432,7 @@ function showOfficialCopy(){
   const h=$("heroOff");
   if(!OFFICIAL||!OFF||!T){h.hidden=true;return}
   const d=String(OFFICIAL.updated||"").split("-");
-  h.textContent=`球團的 ${OFFICIAL.season||2027} 年度保留名單${d[2]?"（"+(+d[1])+"/"+(+d[2])+"）":""}已經公布，現在送出的名單是你的意見、不再是預測。到「大家的統計」對答案，看你和球團、和其他球迷差在哪。`;
+  h.textContent=`球團的 ${OFFICIAL.season||2027} 年度保留名單${d[2]?"（"+(+d[1])+"/"+(+d[2])+"）":""}已公布，現在送出的名單代表你的意見，不再是預測。到「大家的統計」對答案，看看你和球團、其他球迷差在哪。`;
   h.hidden=false;
 }
 

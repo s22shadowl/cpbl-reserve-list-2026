@@ -25,4 +25,3 @@ function cardNote(p,ref){
   else if(p.dy)parts.push(draftText(p));
   return parts.join(" · ");
 }
-// Tag beside the name where the layout has room (stats ranking).
