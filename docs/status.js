@@ -9,3 +9,11 @@ function saveState({saving,online,saved,sel}){
   if(!sameSet(saved||new Set(),sel))return{kind:had?"changed":"unsent",disabled:false};
   return{kind:"sent",disabled:true};
 }
+// Same /stats payload ({n, counts}) as the one already shown? null or an error placeholder never matches.
+function sameTally(a,b){
+  if(!a||!b||a.error||b.error||a.n!==b.n)return false;
+  const x=a.counts||{},y=b.counts||{},keys=Object.keys(x);
+  if(keys.length!==Object.keys(y).length)return false;
+  for(const k of keys)if(x[k]!==y[k])return false;
+  return true;
+}

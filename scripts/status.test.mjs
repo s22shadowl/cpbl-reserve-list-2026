@@ -6,7 +6,7 @@ import vm from "node:vm";
 
 const ctx = vm.createContext({});
 vm.runInContext(readFileSync(new URL("../docs/status.js", import.meta.url), "utf8"), ctx, { filename: "status.js" });
-const { saveState } = vm.runInContext("({saveState})", ctx);
+const { saveState, sameTally } = vm.runInContext("({saveState,sameTally})", ctx);
 const S = (...ids) => new Set(ids);
 const plain = o => JSON.parse(JSON.stringify(o));
 const st = o => plain(saveState({ saving: false, online: true, saved: S(), sel: S(), ...o }));
@@ -36,4 +36,17 @@ test("regression: cleared after submitting while offline still allows withdrawin
 });
 test("matches what was submitted: locked", () => {
   assert.deepEqual(st({ saved: S("a", "b"), sel: S("b", "a") }), { kind: "sent", disabled: true });
+});
+
+// loadStats() skips re-rendering when /stats returns what is already shown.
+test("sameTally: equal n and counts regardless of key order", () => {
+  assert.equal(sameTally({ n: 2, counts: { a: 1, b: 2 } }, { n: 2, counts: { b: 2, a: 1 } }), true);
+  assert.equal(sameTally({ n: 0, counts: {} }, { n: 0, counts: {} }), true);
+});
+test("sameTally: any difference, a missing side or an error placeholder means changed", () => {
+  assert.equal(sameTally({ n: 2, counts: { a: 1 } }, { n: 3, counts: { a: 1 } }), false);
+  assert.equal(sameTally({ n: 2, counts: { a: 1 } }, { n: 2, counts: { a: 2 } }), false);
+  assert.equal(sameTally({ n: 2, counts: { a: 1 } }, { n: 2, counts: { a: 1, b: 0 } }), false);
+  assert.equal(sameTally(null, { n: 0, counts: {} }), false);
+  assert.equal(sameTally({ error: true }, { n: 0, counts: {} }), false);
 });

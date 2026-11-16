@@ -4,7 +4,7 @@ const GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",
 // TEAMS, NEUTRAL, deriveTheme(), themeDecls() come from theme.js (loaded first).
 // ageOn(), cornerBadge(), cardNote(), isRookie() come from card.js (loaded first); mineVsFans() from mine.js.
 // LIMIT comes from limit.js; FLAGS from flags.js; offAnswer() etc. from official.js (both loaded first).
-// statLine(), statTier(), statsShown(), tileTitle(), playerHead() come from stats.js (loaded first).
+// statLine(), statTier(), statsShown(), tileTitle(), playerHead() come from stats.js; saveState(), sameTally() from status.js (loaded first).
 const EXEMPT=[["foreign","洋將"],["training","自主／自行培訓"],["fa","行使自由球員"],["expansion","擴編選秀被選走"],["removed","已非球員"]];
 const $=id=>document.getElementById(id);
 function el(tag,attrs={},...kids){
@@ -390,12 +390,16 @@ function mineBlock(m){
 async function loadStats(fresh){
   const code=T.code;fresh=fresh||Date.now()<freshUntil;
   // fresh: also skip the browser HTTP cache, or a second fresh read within max-age=60 returns the first response.
+  // Polling usually returns the same totals; skip rebuilding the ranking then (first load, team change and errors still render).
+  let changed=true;
   try{
     const j=await api("/stats?team="+code+(fresh?"&fresh=1":""),fresh?{cache:"no-store"}:undefined);
     if(!T||T.code!==code)return;
+    changed=!sameTally(stats,j);
     stats=j;online=true;
   }catch(e){if(!stats)stats={error:true}}
-  if(tab==="stats")renderStats();subCount();
+  if(tab==="stats"&&changed)renderStats();
+  subCount();
 }
 function renderStats(){
   const box=$("statsBody");box.replaceChildren();
