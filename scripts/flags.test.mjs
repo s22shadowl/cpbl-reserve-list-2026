@@ -31,3 +31,28 @@ test("flags.js is the single source of the local host list", () => {
   vm.runInContext(readFileSync(new URL("../docs/flags.js", import.meta.url), "utf8"), ctx);
   assert.equal(vm.runInContext("IS_LOCAL", ctx), true);
 });
+
+test("isInAppBrowser: LINE, Facebook, Instagram and Threads in-app browsers", () => {
+  const ctx = vm.createContext({ location: { hostname: "x" } });
+  vm.runInContext(readFileSync(new URL("../docs/flags.js", import.meta.url), "utf8"), ctx);
+  const isInApp = vm.runInContext("isInAppBrowser", ctx);
+  const ios = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148";
+  const android = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/130.0.0.0 Mobile Safari/537.36";
+  for (const ua of [
+    ios + " Safari Line/14.19.0",
+    android + " Line/14.19.0/IAB",
+    ios + " [FBAN/FBIOS;FBAV/480.0.0.0;FBBV/1;FBDV/iPhone15,2]",
+    android + " [FB_IAB/FB4A;FBAV/480.0.0.0;]",
+    ios + " Instagram 350.0.0.0 (iPhone15,2; iOS 18_0)",
+    ios + " Barcelona 350.0.0.0 (iPhone15,2; iOS 18_0)",
+    android + " Threads 350.0.0.0",
+  ]) assert.equal(isInApp(ua), true, ua);
+  for (const ua of [
+    ios + " Version/18.0 Safari/604.1",
+    android,
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0",
+    "",
+    undefined,
+  ]) assert.equal(isInApp(ua), false, String(ua));
+});

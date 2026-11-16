@@ -56,15 +56,15 @@
       </div>
     </div>
     <div class="row">
-      <div class="views" role="tablist">
+      <div class="views" role="tablist" aria-label="檢視">
         <button role="tab" id="tab-pick" aria-selected="true" aria-controls="view-pick">我的名單</button>
-        <button role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats">大家的統計<span class="cnt" id="subN"></span></button>
+        <button role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats" tabindex="-1">大家的統計<span class="cnt" id="subN"></span></button>
       </div>
       <span class="sp"></span>
       <label class="show" id="showBox"><select id="showSel" aria-label="顯示哪些球員"><option value="all">全部</option><option value="kept">已保留</option><option value="dropped">未列入</option><option value="new">新人</option></select></label>
       <label class="search" id="searchBox"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input type="search" id="q" placeholder="搜尋姓名、背號" aria-label="搜尋姓名或背號"></label>
     </div>
-    <div class="pos5" id="posTabs" aria-label="守備位置"></div>
+    <div class="pos5" id="posTabs" role="group" aria-label="守備位置"></div>
   </div>
   <div class="bar"><i id="selBar" style="width:0"></i></div>
 </div>
@@ -75,7 +75,7 @@
 </main>
 </div>
 
-<footer class="in"><p class="src">球員名單與照片取自<a href="https://www.cpbl.com.tw/" target="_blank" rel="noopener">中華職棒官網</a>各隊球員列表（<span id="srcDate"></span>，一軍與二軍合約球員，已扣除不需列入 60 人的球員）。不需列入的球員類別見<a href="https://sports.ltn.com.tw/news/breakingnews/4506371" target="_blank" rel="noopener">自由時報</a>、<a href="https://tsna.com/article/65534" target="_blank" rel="noopener">TSNA</a> 報導；規章條文見<a href="https://www.cpbl.com.tw/theme/client/download/%E8%81%AF%E7%9B%9F%E8%A6%8F%E7%AB%A0.pdf" target="_blank" rel="noopener">中職聯盟規章</a>第 8 章第 10 條。本網站為球迷模擬，與各球團實際名單無關。每台裝置每隊計一份名單。</p></footer>
+<footer class="in"><p class="src">球員名單與照片取自<a href="https://www.cpbl.com.tw/" target="_blank" rel="noopener">中華職棒官網</a>各隊球員列表（<span id="srcDate"></span>，一軍與二軍合約球員，已扣除不需列入 60 人的球員）。不需列入的球員類別見<a href="https://sports.ltn.com.tw/news/breakingnews/4506371" target="_blank" rel="noopener">自由時報</a>、<a href="https://tsna.com/article/65534" target="_blank" rel="noopener">TSNA</a> 報導；規章條文見<a href="https://www.cpbl.com.tw/theme/client/download/%E8%81%AF%E7%9B%9F%E8%A6%8F%E7%AB%A0.pdf" target="_blank" rel="noopener">中職聯盟規章</a>第 8 章第 10 條。<span id="disclaimer">本網站為球迷模擬，與各球團實際名單無關。</span>每台裝置每隊計一份名單。</p></footer>
 
 <div class="toast" id="toast" role="status" hidden></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetT" hidden>

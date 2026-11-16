@@ -26,12 +26,20 @@ function offUpsets(roster,counts,N,official){
     kept:rows.filter(x=>o.has(x.p.id)&&x.r<=1-OFF_UPSET+1e-9).sort(byRate(-1)).slice(0,OFF_UPSET_MAX),
   };
 }
-function offAnswer({roster,counts,N,mine,official,limit=LIMIT,cmp}){
-  const out={mine:offOverlap(mine,official),fanAvg:null,diff:null,upsets:null};
+// saved: the SUBMITTED list (Set or array; never the current draft, so copying the official list after it is out
+// cannot raise the hit rate), or null while unknown. mineState: ok / none (nothing submitted) / unknown.
+function offAnswer({roster,counts,N,saved,official,limit=LIMIT,cmp}){
+  const mine=saved==null?null:offOverlap([...saved],official);
+  const out={mine,mineState:saved==null?"unknown":mine?"ok":"none",fanAvg:null,diff:null,upsets:null};
   if(N<OFF_MIN_N)return out;
   const o=new Set(official),{top,rest}=offConsensus(roster,counts,N,limit,cmp);
   out.fanAvg=offFanAverage(counts,N,official);
   out.diff={fanKeepClubDrop:top.filter(x=>!o.has(x.p.id)).sort(byRate(1)),fanDropClubKeep:rest.filter(x=>o.has(x.p.id)).sort(byRate(1))};
   out.upsets=offUpsets(roster,counts,N,official);
   return out;
+}
+// "2026-11-30" -> "11/30"; "" when missing or malformed.
+function offDate(ymd){
+  const m=/^\d{4}-(\d{1,2})-(\d{1,2})$/.exec(String(ymd||""));
+  return m?(+m[1])+"/"+(+m[2]):"";
 }

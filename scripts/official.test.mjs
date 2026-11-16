@@ -5,8 +5,8 @@ import vm from "node:vm";
 
 const ctx = vm.createContext({});
 for (const f of ["limit.js", "official.js"]) vm.runInContext(readFileSync(new URL("../docs/" + f, import.meta.url), "utf8"), ctx, { filename: f });
-const { offOverlap, offFanAverage, offConsensus, offUpsets, offAnswer, OFF_MIN_N, LIMIT } =
-  vm.runInContext("({offOverlap,offFanAverage,offConsensus,offUpsets,offAnswer,OFF_MIN_N,LIMIT})", ctx);
+const { offOverlap, offFanAverage, offConsensus, offUpsets, offAnswer, offDate, OFF_MIN_N, LIMIT } =
+  vm.runInContext("({offOverlap,offFanAverage,offConsensus,offUpsets,offAnswer,offDate,OFF_MIN_N,LIMIT})", ctx);
 const plain = o => JSON.parse(JSON.stringify(o));
 
 // roster p1..p6, position order = id order
@@ -62,7 +62,7 @@ test("upsets: fans keep >=70% but club dropped; fans <=30% but club kept; max 3 
 });
 
 test("answer: gate below 10 lists leaves only my overlap", () => {
-  const a = offAnswer({ roster, counts, N: 9, mine: ["p1"], official: ["p1", "p2"], limit: 3, cmp });
+  const a = offAnswer({ roster, counts, N: 9, saved: ["p1"], official: ["p1", "p2"], limit: 3, cmp });
   assert.equal(a.mine.x, 1);
   assert.equal(a.diff, null);
   assert.equal(a.upsets, null);
@@ -70,7 +70,7 @@ test("answer: gate below 10 lists leaves only my overlap", () => {
 });
 test("answer: with N>=10 builds two diff columns sorted by keep rate", () => {
   // club keeps p3 p5 p6; consensus top-3 is p1 p2 p3
-  const a = offAnswer({ roster, counts, N: 10, mine: ["p1", "p5"], official: ["p3", "p5", "p6"], limit: 3, cmp });
+  const a = offAnswer({ roster, counts, N: 10, saved: new Set(["p1", "p5"]), official: ["p3", "p5", "p6"], limit: 3, cmp });
   assert.deepEqual(ids(a.diff.fanKeepClubDrop), ["p1", "p2"]);
   assert.deepEqual(ids(a.diff.fanDropClubKeep), ["p5", "p6"]);
   assert.equal(a.fanAvg, (5 + 2 + 1) / 10);
@@ -79,7 +79,26 @@ test("answer: with N>=10 builds two diff columns sorted by keep rate", () => {
   assert.equal(a.upsets.kept.length, 2); // p5 .2, p6 .1 kept
 });
 test("answer: no list of mine still gives the fan view", () => {
-  const a = offAnswer({ roster, counts, N: 10, mine: [], official: ["p3"], limit: 3, cmp });
+  const a = offAnswer({ roster, counts, N: 10, saved: new Set(), official: ["p3"], limit: 3, cmp });
   assert.equal(a.mine, null);
+  assert.equal(a.mineState, "none");
   assert.ok(a.diff);
+});
+test("answer: hit rate comes only from the submitted list; unknown while /mine has not answered", () => {
+  const ok = offAnswer({ roster, counts, N: 10, saved: new Set(["p3", "p4"]), official: ["p3", "p5"], limit: 3, cmp });
+  assert.equal(ok.mineState, "ok");
+  assert.deepEqual(plain(ok.mine), { x: 1, denom: 2, mineOnly: ["p4"], officialOnly: ["p5"] });
+  const unknown = offAnswer({ roster, counts, N: 10, saved: null, official: ["p3"], limit: 3, cmp });
+  assert.equal(unknown.mineState, "unknown");
+  assert.equal(unknown.mine, null);
+  assert.ok(unknown.diff, "fan view does not depend on my list");
+  // There is no draft parameter: an old `mine` argument is ignored rather than scored.
+  assert.equal(offAnswer({ roster, counts, N: 10, mine: ["p3"], saved: new Set(), official: ["p3"], limit: 3, cmp }).mine, null);
+});
+test("offDate: M/D without leading zeros, empty when missing", () => {
+  assert.equal(offDate("2026-11-30"), "11/30");
+  assert.equal(offDate("2026-12-01"), "12/1");
+  assert.equal(offDate(""), "");
+  assert.equal(offDate(undefined), "");
+  assert.equal(offDate("11/30"), "");
 });

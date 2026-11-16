@@ -4,7 +4,8 @@ const GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",
 // TEAMS, NEUTRAL, deriveTheme(), themeDecls() come from theme.js (loaded first).
 // ageOn(), cornerBadge(), cardNote(), isRookie() come from card.js (loaded first); mineVsFans() from mine.js.
 // LIMIT comes from limit.js; FLAGS from flags.js; offAnswer() etc. from official.js (both loaded first).
-// statLine(), statTier(), statsShown(), tileTitle(), playerHead() come from stats.js; saveState(), sameTally() from status.js (loaded first).
+// statLine(), statTier(), statsShown(), tileTitle(), playerHead(), CAP_MSG come from stats.js; saveState(), needsConfirm(),
+// submitError(), sameTally(), statsStale(), hhmm() from status.js; isInAppBrowser() from flags.js (loaded first).
 const EXEMPT=[["foreign","洋將"],["training","自主／自行培訓"],["fa","行使自由球員"],["expansion","擴編選秀被選走"],["removed","已非球員"]];
 const $=id=>document.getElementById(id);
 function el(tag,attrs={},...kids){
@@ -50,7 +51,10 @@ function initMode(){
 let DATA=null, AVAIL=[], T=null, ROSTER=[], BY={};
 // officialList = parsed official list file (flag on and file found); clubKept = this team's Set of ids the club kept
 let officialList=null, clubKept=null;
-let sel=new Set(), saved=null, savedAt=null, stats=null, online=false, saving=false, statsTimer=0;
+// saved = submitted ids (Set), null while /mine is unknown; mineFailed = the last /mine read failed with saved unknown.
+// locked = the Worker says the official lists are out (single source: /mine). statsAt = last successful /stats read.
+let sel=new Set(), saved=null, savedAt=null, stats=null, saving=false, statsTimer=0;
+let locked=false, mineFailed=false, statsAt=0;
 // showFilter = the 顯示 select: all / kept / dropped / new
 let pos="all", showFilter="all", q="", tab="pick";
 // After our own submit, cached /stats (edge + browser, max-age 60s) is older than what we just wrote; bypass it for a while.
@@ -102,7 +106,8 @@ function route(){
   try{const d=JSON.parse(store("rl-draft-"+t.code)||"null");if(Array.isArray(d))sel=new Set(d.filter(id=>BY[id]))}catch(e){}
   const clubIds=officialList&&officialList.teams[t.code];
   clubKept=Array.isArray(clubIds)?new Set(clubIds):null;
-  saved=null;savedAt=null;stats=null;pos="all";showFilter="all";q="";$("q").value="";
+  saved=null;savedAt=null;mineFailed=false;stats=null;statsAt=0;pos="all";showFilter="all";q="";$("q").value="";
+  disarmSave();
   applyTheme(t);
   document.title=t.short+"契約保留名簿｜中職 60 人名單模擬";
   $("kicker").textContent=t.en+" · 2027 Reserve List";
@@ -116,6 +121,7 @@ function route(){
   loadMine();
 }
 function showPicker(){
+  clearInterval(statsTimer);
   $("heroOff").hidden=true;
   applyTheme(NEUTRAL);
   document.title="中職契約保留名簿｜各隊 60 人名單模擬";
@@ -174,8 +180,8 @@ function match(p){
   if(q){const s=q.trim();if(s&&!p.n.includes(s)&&p.no!==s&&String(+p.no)!==s)return false}
   return true;
 }
-function tileIds(box,enabledOnly){return[...box.querySelectorAll(enabledOnly?".tile:not(:disabled)":".tile")].map(b=>b.dataset.id)}
-// One player tile. full = the list is at the limit (unselected tiles are disabled); show = this team shows stat lines.
+function tileIds(box){return[...box.querySelectorAll(".tile")].map(b=>b.dataset.id)}
+// One player tile. full = the list is at the limit (unselected tiles are dimmed); show = this team shows stat lines.
 function tileEl(p,full,show){
   const on=sel.has(p.id);
   const pic=photo(p,"pic");
@@ -191,7 +197,8 @@ function tileEl(p,full,show){
       el("span",{class:"nmr"},el("span",{class:"nm",text:p.n})),
       el("span",{class:"sub"},posLabel(p),el("span",{class:"sep",text:"·"}),p.l),
       line&&el("span",{class:"stat"+(tier?" "+tier:""),text:line})));
-  if(capped)b.disabled=true;
+  // aria-disabled (not disabled) keeps capped tiles focusable and tappable; toggle() explains the limit in a toast.
+  if(capped)b.setAttribute("aria-disabled","true");
   b.onclick=()=>toggle(p.id);
   return b;
 }
@@ -219,7 +226,7 @@ function focusBefore(box){
 function restoreFocus(box,f){
   if(!f)return;
   if(f.tileId){
-    const id=nextFocusId(f.prevIds,tileIds(box,true),f.tileId),t=id&&box.querySelector(`.tile[data-id="${id}"]`);
+    const id=nextFocusId(f.prevIds,tileIds(box),f.tileId),t=id&&box.querySelector(`.tile[data-id="${id}"]`);
     if(t)t.focus({preventScroll:true});
   }
   if(f.bulkG){const b=box.querySelector(`.bulk[data-g="${f.bulkG}"]`);if(b)b.focus({preventScroll:true})}
@@ -246,14 +253,15 @@ function renderGroups(){
   if(!any)box.append(el("div",{class:"empty"},el("b",{text:"沒有符合條件的球員"}),"試試換個守位、篩選條件或搜尋文字。"));
   restoreFocus(box,focus);
 }
-function keepDraft(){store("rl-draft-"+T.code,JSON.stringify([...sel]))}
+// Every selection change goes through keepDraft(), which also cancels a pending 送出 confirmation (the count changed).
+function keepDraft(){store("rl-draft-"+T.code,JSON.stringify([...sel]));disarmSave()}
 function bulkToggle(ids){
   const bs=bulkState(ids,sel,LIMIT);if(bs.disabled)return;
   const next=new Set(sel);for(const id of ids)bs.mode==="add"?next.add(id):next.delete(id);
   sel=next;keepDraft();renderAll();
 }
 function toggle(id){
-  if(sel.has(id))sel.delete(id);else{if(sel.size>=LIMIT)return;sel.add(id)}
+  if(sel.has(id))sel.delete(id);else{if(sel.size>=LIMIT){toast(CAP_MSG);return}sel.add(id)}
   keepDraft();renderAll();
 }
 
@@ -264,16 +272,21 @@ function renderDock(){
   $("top").classList.toggle("over",n>LIMIT);
   $("copyTxt").disabled=$("mkImg").disabled=$("clear").disabled=n===0;
 }
-function fmt(t){
-  const pad=v=>String(v).padStart(2,"0");
-  try{const d=new Date(t);return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`}catch(e){return""}
-}
+function fmt(t){const d=new Date(t);return isNaN(d)?"":`${d.getMonth()+1}/${d.getDate()} ${hhmm(t)}`}
+const LOCKED_MSG="官方名單已公布，送出已截止";
 function renderStatus(){
   const s=$("status"),btn=$("save");s.replaceChildren();
-  const k=saveState({saving,online,saved,sel});
-  btn.disabled=k.disabled;btn.classList.toggle("dirty",k.kind==="changed"||k.kind==="unsent");
+  const k=saveState({saving,saved,sel,locked,mineFailed}),armed=saveArmed&&!k.disabled;
+  btn.disabled=k.disabled;
+  btn.classList.toggle("dirty",!armed&&(k.kind==="changed"||k.kind==="unsent"));
+  btn.classList.toggle("arm",armed);
+  btn.querySelector(".lb").textContent=armed?"確定送出？":k.label;
+  if(k.kind==="locked")btn.title=LOCKED_MSG;else btn.removeAttribute("title");
+  s.title=k.kind==="locked"?LOCKED_MSG:"";
   if(k.kind==="saving")s.append("送出中…");
   else if(k.kind==="connecting")s.append("連線中…");
+  else if(k.kind==="locked")s.append(el("span",{class:"st-long",text:"官方名單已公布，"}),"送出已截止"); // phones show the short half
+  else if(k.kind==="unknown")s.append(el("span",{class:"warn",text:"無法確認送出狀態"}));
   else if(k.kind==="empty")s.append("點選球員加入名單");
   else if(k.kind==="sent")s.append("已送出"+(savedAt?" "+fmt(savedAt):""));
   else s.append(el("span",{class:"warn",text:k.kind==="changed"?"有未送出的變更":"尚未送出"}));
@@ -283,32 +296,53 @@ async function api(path,opts){
   if(!r.ok){const e=new Error(j.error||("http_"+r.status));e.code=j.error;e.status=r.status;throw e}
   return j;
 }
+// Reads this device's submitted list and the lock flag. On failure an unknown saved list stays null (status shows
+// 無法確認送出狀態) and is retried when the connection or the page comes back; a known list is kept.
 async function loadMine(){
+  if(!T)return;
   const code=T.code;
   try{
     const j=await api(`/mine?team=${code}&voter=${VOTER}`);
     if(!T||T.code!==code)return;
-    online=true;
+    mineFailed=false;locked=j.locked===true;
     if(Array.isArray(j.ids)){
       saved=new Set(j.ids.filter(id=>BY[id]));savedAt=j.at;
       if(!store("rl-draft-"+code)){sel=new Set(saved);keepDraft()}
-    }else saved=new Set();
-  }catch(e){online=false;saved=new Set()}
-  renderAll();
+    }else{saved=new Set();savedAt=null}
+  }catch(e){
+    if(!T||T.code!==code)return;
+    if(saved===null)mineFailed=true;
+  }
+  showOfficialCopy();renderAll();
 }
+const retryMine=()=>{if(T&&saved===null&&mineFailed)loadMine()};
+window.addEventListener("online",retryMine);
 async function save(){
-  if(saving)return;saving=true;renderStatus();
-  const ids=[...sel].sort();
+  if(saving||locked)return;
+  const code=T.code,ids=[...sel].sort();
+  if(needsConfirm(ids.length,LIMIT)&&!saveArmed){armSave(ids.length);return}
+  disarmSave();
+  saving=true;renderStatus();
   try{
-    const body=JSON.stringify({team:T.code,voter:VOTER,ids});
+    const body=JSON.stringify({team:code,voter:VOTER,ids});
     const j=await api("/picks",{method:"POST",headers:{"Content-Type":"application/json"},body});
-    saved=new Set(ids);savedAt=j.at;online=true;stats=null;freshUntil=Date.now()+FRESH_MS;
+    // The team may have changed while waiting: never record this answer as the new team's list.
+    if(T&&T.code===code){saved=new Set(ids);savedAt=j.at;mineFailed=false;stats=null;freshUntil=Date.now()+FRESH_MS}
     toast(ids.length?"已送出 "+ids.length+" 人名單":"已撤回你的名單");
   }catch(e){
-    toast(e.status===429?"這個網路今天送出太多份名單，請明天再試":"送出失敗，請檢查網路後再試一次");
+    toast(submitError(e.code,e.status));
+    if(e.code==="locked"){locked=true;showOfficialCopy();loadMine()}
   }
   saving=false;renderAll();loadStats(true);
 }
+// Submitting fewer than LIMIT players needs two presses, like 清空: the first arms the button for 3 s.
+let saveArmed=false,saveArmTimer=0;
+function armSave(n){
+  saveArmed=true;clearTimeout(saveArmTimer);
+  saveArmTimer=setTimeout(()=>{saveArmed=false;renderStatus()},3000);
+  renderStatus();toast(`只選了 ${n} 人，再按一次送出`);
+}
+function disarmSave(){clearTimeout(saveArmTimer);if(saveArmed){saveArmed=false;if(T)renderStatus()}}
 // 清空 needs two presses: the first arms the button for 3 s.
 let clearArmTimer=0;
 $("clear").onclick=()=>{
@@ -342,17 +376,19 @@ function group(title,items,rate){
   if(!items.length)return el("div",{class:"ag none"},el("b",{text:title}),el("span",{text:"沒有"}));
   return el("div",{class:"ag"},el("b",{text:title+" "+items.length+" 人"}),plist(items,rate));
 }
+// Why there is no hit rate: nothing submitted (before the lock, or still possible to submit), or /mine unknown.
+function mineHint(state){
+  if(state==="unknown")return mineFailed?"無法確認你送出的名單，恢復連線後會自動重試。":"讀取你送出的名單中…";
+  return locked?"公布前沒有送出名單，無法計算命中率。":"送出名單後，就能看你和球團重疊幾人。";
+}
 function answerBlock(a,N){
   const box=el("section",{class:"ans","aria-label":"對答案"});
-  box.append(el("div",{class:"ans-h"},el("h2",{text:"對答案"}),el("span",{text:"球團名單 "+(officialList.updated||"")+" 公布"})));
+  const d=offDate(officialList.updated);
+  box.append(el("div",{class:"ans-h"},el("h2",{text:"對答案"}),el("span",{text:(d?`球團名單 ${d} 公布`:"球團名單已公布")+"；依你送出的名單計算"})));
   const hit=el("div",{class:"hit"});
-  if(a.mine){
-    hit.append(el("div",{class:"big"},"你的名單和球團重疊 ",el("b",{text:a.mine.x}),el("small",{text:" / "+a.mine.denom})," 人"));
-    if(a.fanAvg!=null)hit.append(el("div",{class:"big"},"球迷平均重疊 ",el("b",{text:a.fanAvg.toFixed(1)})," 人"));
-  }else{
-    hit.append(el("div",{class:"hint",text:"先到「我的名單」選好球員，就能看你和球團差在哪。"}));
-    if(a.fanAvg!=null)hit.append(el("div",{class:"big"},"球迷平均重疊 ",el("b",{text:a.fanAvg.toFixed(1)})," 人"));
-  }
+  if(a.mine)hit.append(el("div",{class:"big"},"你的名單和球團重疊 ",el("b",{text:a.mine.x}),el("small",{text:" / "+a.mine.denom})," 人"));
+  else hit.append(el("div",{class:"hint",text:mineHint(a.mineState)}));
+  if(a.fanAvg!=null)hit.append(el("div",{class:"big"},"球迷平均重疊 ",el("b",{text:a.fanAvg.toFixed(1)})," 人"));
   box.append(hit);
   if(a.mine){
     const by=ids=>ids.map(id=>({p:BY[id]})).filter(x=>x.p).sort((x,y)=>sortP(x.p,y.p));
@@ -388,6 +424,7 @@ function mineBlock(m){
 
 // ---------- stats ----------
 async function loadStats(fresh){
+  if(!T)return;
   const code=T.code;fresh=fresh||Date.now()<freshUntil;
   // fresh: also skip the browser HTTP cache, or a second fresh read within max-age=60 returns the first response.
   // Polling usually returns the same totals; skip rebuilding the ranking then (first load, team change and errors still render).
@@ -396,9 +433,10 @@ async function loadStats(fresh){
     const j=await api("/stats?team="+code+(fresh?"&fresh=1":""),fresh?{cache:"no-store"}:undefined);
     if(!T||T.code!==code)return;
     changed=!sameTally(stats,j);
-    stats=j;online=true;
-  }catch(e){if(!stats)stats={error:true}}
+    stats=j;statsAt=Date.now();
+  }catch(e){if(!T||T.code!==code)return;if(!stats)stats={error:true}}
   if(tab==="stats"&&changed)renderStats();
+  else{const at=$("statsAt");if(at)at.textContent=statsAtText()}
   subCount();
 }
 function renderStats(){
@@ -406,7 +444,8 @@ function renderStats(){
   if(!stats){box.append(el("div",{class:"empty"},el("b",{text:"載入中…"})));return}
   if(stats.error){box.append(el("div",{class:"empty"},el("b",{text:"暫時讀不到統計"}),"請檢查網路，稍後會自動重新讀取。"));return}
   const N=stats.n||0,cnt=stats.counts||{};
-  const ans=clubKept?offAnswer({roster:ROSTER,counts:cnt,N,mine:[...sel],official:[...clubKept],cmp:sortP}):null;
+  // Hit rate from the submitted list only (P1-6); fan average, consensus and upsets from the (frozen once locked) stats.
+  const ans=clubKept?offAnswer({roster:ROSTER,counts:cnt,N,saved,official:[...clubKept],cmp:sortP}):null;
   if(ans)box.append(answerBlock(ans,N));
   if(!N){
     box.append(el("div",{class:"empty"},el("b",{text:"還沒有人送出"+T.name+"的名單"}),"在「我的名單」選好球員後按「送出名單」，你的選擇就會出現在這裡。"));
@@ -437,20 +476,40 @@ function renderStats(){
       el("div",{class:"pc"},el("span",{text:Math.round(x.r*100)+"%"}),el("small",{text:`${x.c}/${N}`}))));
   }
   box.append(list);
-  box.append(el("p",{class:"note",text:"依保留率排序，名次為全隊排名。● 為你目前名單中保留的球員；虛線為 50%；橘色百分比代表意見分歧（至少 3 份名單時才標示）。每台裝置每隊計一份，重新送出會覆蓋舊的名單。"+(clubKept?"✓／✗ 為球團公布的決定。":"")}));
+  box.append(el("p",{class:"note"},"依保留率排序，名次為全隊排名。● 為你目前名單中保留的球員；虛線為 50%；橘色百分比代表意見分歧（至少 3 份名單時才標示）。每台裝置每隊計一份，重新送出會覆蓋舊的名單。"+(clubKept?"✓／✗ 為球團公布的決定。":""),
+    el("span",{id:"statsAt",text:statsAtText()})));
 }
+function statsAtText(){return statsAt?"更新於 "+hhmm(statsAt)+"。":""}
 function subCount(){$("subN").textContent=stats&&stats.n?stats.n:""}
 
 function renderAll(){if(!T)return;renderDock();renderStatus();renderRail();subCount();if(tab==="pick")renderGroups();else renderStats()}
 function setTab(t){
   tab=t;
-  for(const k of["pick","stats"]){$("tab-"+k).setAttribute("aria-selected",String(k===t));$("view-"+k).hidden=k!==t}
+  for(const k of["pick","stats"]){const b=$("tab-"+k);b.setAttribute("aria-selected",String(k===t));b.tabIndex=k===t?0:-1;$("view-"+k).hidden=k!==t}
   renderAll();store("rl-tab",t);
   clearInterval(statsTimer);
   if(t==="stats"){loadStats();statsTimer=setInterval(()=>{if(!document.hidden)loadStats()},120000)}
   else if(!stats)loadStats();
 }
 $("tab-pick").onclick=()=>setTab("pick");$("tab-stats").onclick=()=>setTab("stats");
+// WAI-ARIA tabs: Left/Right (and Home/End) move between the two tabs and select them; only the selected one is in the Tab order.
+document.querySelector(".views").addEventListener("keydown",e=>{
+  const order=["pick","stats"],i=order.indexOf(tab);
+  const n=order.length,j=e.key==="ArrowRight"?(i+1)%n:e.key==="ArrowLeft"?(i+n-1)%n:e.key==="Home"?0:e.key==="End"?n-1:-1;
+  if(j<0)return;
+  e.preventDefault();setTab(order[j]);$("tab-"+order[j]).focus();
+});
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden||!T)return;
+  retryMine();
+  if(statsStale(statsAt,Date.now()))loadStats();
+});
+// Another tab edited this team's draft: follow it.
+window.addEventListener("storage",e=>{
+  if(!T||e.key!=="rl-draft-"+T.code)return;
+  let ids=[];try{const d=JSON.parse(e.newValue||"[]");if(Array.isArray(d))ids=d}catch(err){}
+  sel=new Set(ids.filter(id=>BY[id]));disarmSave();renderAll();
+});
 $("q").oninput=e=>{q=e.target.value;renderGroups()};
 
 // ---------- export ----------
@@ -461,21 +520,39 @@ function listText(){
   const L=[T.name+" 2027 年度契約保留球員名單（我的版本）","保留 "+sel.size+" / "+LIMIT+" 人｜"+gs.map(x=>GN[x.g]+" "+x.on.length).join("、"),""];
   for(const x of gs){if(!x.on.length)continue;L.push("【"+GN[x.g]+" "+x.on.length+"】",x.on.map(p=>p.no+" "+p.n).join("、"),"")}
   if(dropped.length)L.push("【未列入 "+dropped.length+"】",dropped.map(p=>p.no+" "+p.n).join("、"),"");
-  L.push("— 排你的名單："+location.href.split("#")[0]+"#"+T.slug);
+  L.push("— 排你的名單："+location.origin+location.pathname+"#"+T.slug); // no query string (fbclid etc.)
   return L.join("\n");
 }
 let toastT=0;
-function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{t.hidden=true},2400)}
-let sheetUrl=null;
-function openSheet(title,kids){$("sheetT").textContent=title;$("sheetBody").replaceChildren(...kids);$("sheet").hidden=false;$("sheetX").focus()}
-function closeSheet(){$("sheet").hidden=true;$("sheetBody").replaceChildren();if(sheetUrl){URL.revokeObjectURL(sheetUrl);sheetUrl=null}}
+// Longer messages stay up longer.
+function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{t.hidden=true},Math.max(2400,msg.length*90))}
+// Modal sheet: focus moves in on open, Tab stays inside, and closing returns focus to the button that opened it.
+let sheetUrl=null,sheetOpener=null;
+function openSheet(title,kids,opener){
+  sheetOpener=opener||null;
+  $("sheetT").textContent=title;$("sheetBody").replaceChildren(...kids);$("sheet").hidden=false;$("sheetX").focus();
+}
+function closeSheet(){
+  $("sheet").hidden=true;$("sheetBody").replaceChildren();if(sheetUrl){URL.revokeObjectURL(sheetUrl);sheetUrl=null}
+  const o=sheetOpener;sheetOpener=null;
+  if(o&&o.isConnected&&!o.disabled)o.focus();
+}
+function sheetFocusables(){return[...$("sheet").querySelectorAll('a[href],button:not([disabled]),textarea,input,select,[tabindex]:not([tabindex="-1"])')].filter(x=>x.offsetParent!==null)}
 $("sheetX").onclick=closeSheet;
 $("sheet").addEventListener("click",e=>{if(e.target.id==="sheet")closeSheet()});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("sheet").hidden)closeSheet()});
+document.addEventListener("keydown",e=>{
+  if($("sheet").hidden)return;
+  if(e.key==="Escape"){closeSheet();return}
+  if(e.key!=="Tab")return;
+  const f=sheetFocusables();if(!f.length)return;
+  const first=f[0],last=f[f.length-1],inside=$("sheet").contains(document.activeElement);
+  if(e.shiftKey&&(!inside||document.activeElement===first)){e.preventDefault();last.focus()}
+  else if(!e.shiftKey&&(!inside||document.activeElement===last)){e.preventDefault();first.focus()}
+});
 $("copyTxt").onclick=()=>{
   const t=listText();
   const fb=()=>{const ta=el("textarea",{class:"ta",readonly:"","aria-label":"名單文字"});ta.value=t;
-    openSheet("複製名單文字",[el("p",{class:"hint",text:"無法自動複製。文字已全選，請按 Ctrl+C（Mac 按 ⌘C），手機請長按後選「複製」。"}),ta]);
+    openSheet("複製名單文字",[el("p",{class:"hint",text:"無法自動複製。文字已全選，請按 Ctrl+C（Mac 按 ⌘C），手機請長按後選「複製」。"}),ta],$("copyTxt"));
     setTimeout(()=>{ta.focus();ta.select()},0)};
   try{navigator.clipboard.writeText(t).then(()=>toast("已複製 "+sel.size+" 人名單到剪貼簿"),fb)}catch(e){fb()}
 };
@@ -525,12 +602,13 @@ async function drawCard(){
   }
   c.fillStyle=C.line;c.fillRect(P,H-70,IW,1);
   c.fillStyle=C.muted;c.font="400 20px "+SANS;c.fillText("依中職聯盟規章第 8 章第 10 條 · "+location.host+location.pathname,P,H-34,IW);
-  return new Promise(r=>cv.toBlob(r,"image/png"));
+  return cv;
 }
 $("mkImg").onclick=async()=>{
   const b=$("mkImg"),lb=b.querySelector(".lb");b.disabled=true;lb.textContent="產生中…";
   try{
-    const blob=await drawCard();if(!blob)throw 0;
+    const cv=await drawCard();
+    const blob=await new Promise(r=>cv.toBlob(r,"image/png"));if(!blob)throw 0;
     if(sheetUrl)URL.revokeObjectURL(sheetUrl);sheetUrl=URL.createObjectURL(blob);
     const fname=T.short+"契約保留名單.png";
     const row=el("div",{class:"sheet-a"});
@@ -541,16 +619,22 @@ $("mkImg").onclick=async()=>{
       sh.onclick=async()=>{try{await navigator.share({files:[file],title:T.name+"契約保留名單"})}catch(e){}};row.append(sh);
     }
     row.append(el("span",{class:"hint",text:"也可以右鍵或長按圖片另存。"}));
-    openSheet("名單圖片",[el("img",{class:"shot",src:sheetUrl,alt:"我的契約保留球員名單"}),row]);
+    // The preview is a data: URL (not the blob URL): some in-app browsers cannot long-press-save blob images.
+    const kids=[el("img",{class:"shot",src:cv.toDataURL("image/png"),alt:"我的契約保留球員名單"}),row];
+    if(isInAppBrowser(navigator.userAgent))kids.push(el("p",{class:"hint inapp",text:"若無法儲存，請從右上角選單改用 Safari／Chrome 開啟。"}));
+    openSheet("名單圖片",kids,b);
   }catch(e){toast("圖片產生失敗，請再試一次")}
   b.disabled=sel.size===0;lb.textContent="存成圖片";
 };
 
 function showOfficialCopy(){
-  const h=$("heroOff");
-  if(!officialList||!clubKept||!T){h.hidden=true;return}
-  const d=String(officialList.updated||"").split("-");
-  h.textContent=`球團的 ${officialList.season||2027} 年度保留名單${d[2]?"（"+(+d[1])+"/"+(+d[2])+"）":""}已公布，現在送出的名單代表你的意見，不再是預測。到「大家的統計」對答案，看看你和球團、其他球迷差在哪。`;
+  const h=$("heroOff"),club=!!(officialList&&clubKept);
+  if(!T||(!club&&!locked)){h.hidden=true;return}
+  const d=club?offDate(officialList.updated):"";
+  const what=club?`球團的 ${officialList.season||2027} 年度保留名單${d?"（"+d+"）":""}已公布`:"官方名單已公布";
+  h.textContent=locked
+    ?`${what}，送出已截止。你仍可排自己的版本、複製文字或存成圖片${club?"，也可以到「大家的統計」對答案":""}。`
+    :`${what}，現在送出的名單代表你的意見，不再是預測。到「大家的統計」對答案，看看你和球團、其他球迷差在哪。`;
   h.hidden=false;
 }
 
@@ -566,6 +650,7 @@ initMode();
       const r=await fetch(IS_LOCAL?"data/official.sample.json":"data/official.json",{cache:"no-cache"});
       if(r.ok){const j=await r.json();if(j&&j.teams)officialList=j}
     }catch(e){}
+    if(officialList)$("disclaimer").textContent="對答案的球團名單依中華職棒公告整理；球迷排出的名單僅為模擬。";
   }
   AVAIL=TEAMS.filter(t=>DATA.teams[t.code]);
   for(const t of AVAIL)$("teamSw").append(el("option",{value:t.code,text:t.name}));

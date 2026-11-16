@@ -72,6 +72,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .btn.pri:hover:not(:disabled){background:var(--pri-hover)}
 .btn.pri.dirty::after{content:"";position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:50%;background:var(--band-dot);box-shadow:0 0 0 2px var(--band)}
 .btn.arm{border-color:var(--band-over);color:var(--band-over)}
+.btn.pri.arm,.btn.pri.arm:hover{background:transparent}
 .btn:disabled{opacity:.35;cursor:not-allowed}
 .views{display:flex;flex:none}
 .views button{background:none;border:0;padding:4px 12px 6px 0;margin-right:12px;font-weight:700;font-size:15px;color:var(--band-muted);cursor:pointer;position:relative}
@@ -104,6 +105,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
   .total{flex:1 1 auto;gap:8px}
   .total .lbl{overflow:hidden}
   .total .lbl>*{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* phones: the status gets the 已保留 line too (two lines), so 無法確認送出狀態 etc. are not cut to three characters */
+  .total .lbl>b{display:none}
+  .total .lbl{min-height:2.7em;justify-content:center}
+  .total .lbl>.st{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .st .st-long{display:none}
   .row .sp{display:none}
   .acts{gap:4px}
   .acts .btn .lb{display:none}
@@ -170,8 +176,10 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .tile[aria-pressed="true"] .stat.low{opacity:.65}
 .tile[aria-pressed="true"] .stat.core{opacity:1}
 .tile[aria-pressed="true"] .ck{background:var(--acc);border-color:#fff;color:var(--on-acc)}
-.tile:not([aria-pressed="true"]):not(:disabled):hover{border-color:var(--acc)}
-.tile:disabled{cursor:not-allowed;opacity:.38}
+.tile:not([aria-pressed="true"]):not([aria-disabled="true"]):hover{border-color:var(--acc)}
+/* full at 60: unselected tiles stay focusable (aria-disabled), dimmed; a click explains the limit */
+.tile[aria-disabled="true"]{cursor:not-allowed;opacity:.38}
+.tile[aria-disabled="true"]:focus-visible{opacity:.7}
 .empty{background:var(--paper);border:1px dashed var(--line);padding:36px 20px;text-align:center;color:var(--muted)}
 .empty b{display:block;color:var(--ink);font-size:18px;margin-bottom:6px;font-weight:500}
 @media (max-width:640px){
