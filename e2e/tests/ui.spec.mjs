@@ -164,6 +164,7 @@ test("position rail: counts follow the 顯示 filter and the search, matching th
   for (const g of ["P", "P", "C", "I"]) await page.locator(`#g-${g} .tile[aria-pressed="false"]`).first().click();
   const kept = 4, n = AEO.length;
   await expect(page.locator("#selN")).toHaveText(String(kept));
+  const keptIds = await page.locator('.tile[aria-pressed="true"]').evaluateAll(ts => ts.map(t => t.dataset.id));
 
   const show = page.locator("#showSel"), q = page.locator("#q");
   expect(await expectRailMatchesCards(page)).toEqual([kept, n]);
@@ -184,7 +185,7 @@ test("position rail: counts follow the 顯示 filter and the search, matching th
   await q.fill(SURNAME);
   await show.selectOption("dropped"); // filter and search together
   const [, both] = await expectRailMatchesCards(page);
-  expect(both).toBeLessThanOrEqual(AEO.filter(p => p.n.includes(SURNAME)).length);
+  expect(both).toBe(AEO.filter(p => p.n.includes(SURNAME) && !keptIds.includes(p.id)).length);
 
   // The stats tab counts the whole roster, whatever the picker filters say.
   await page.locator("#tab-stats").click();
