@@ -2,36 +2,7 @@
 // Each test gets a fresh browser context = a new voter. setup.mjs seeds 50 fake lists per team; earlier tests
 // may leave lists behind, so counts are compared with a baseline read at the start of each test.
 import { test, expect } from "@playwright/test";
-import { readFileSync } from "node:fs";
-
-const TEAM = "/#guardians";
-const API = "http://localhost:8787";
-const CORS = { "Access-Control-Allow-Origin": "*" };
-const data = file => JSON.parse(readFileSync(new URL("../../docs/data/" + file, import.meta.url), "utf8"));
-
-async function open(page) {
-  await page.goto(TEAM);
-  await expect(page.locator(".tile").first()).toBeVisible();
-  await expect(page.locator("#status")).not.toHaveText(/連線中/);
-}
-
-async function pick60(page) {
-  const next = page.locator('.tile[aria-pressed="false"]:not([aria-disabled="true"])').first();
-  while (Number(await page.locator("#selN").textContent()) < 60) await next.click();
-  await expect(page.locator("#selN")).toHaveText("60");
-}
-
-async function listsSubmitted(page) {
-  await page.locator("#tab-stats").click();
-  const v = page.locator(".kpi .v").first();
-  await expect(v).toBeVisible();
-  return Number(await v.textContent());
-}
-
-async function submit(page) {
-  await page.locator("#save").click();
-  await expect(page.locator("#status")).toHaveText(/已送出/);
-}
+import { TEAM, API, CORS, data, open, pick60, listsSubmitted, submit } from "./helpers.mjs";
 
 test("pick 60, submit, stats count +1 and 'you vs most fans' shows", async ({ page }) => {
   await open(page);
