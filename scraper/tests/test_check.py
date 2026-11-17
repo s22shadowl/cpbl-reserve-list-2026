@@ -100,3 +100,39 @@ def test_check_warns_orphan_photos():
     teams_json, roster, photos = valid()
     errors, warnings = check(teams_json, roster, photos | {"0000099999"})
     assert errors == [] and warnings == ["docs/photos 有 1 張沒有球員使用的照片：['0000099999']"]
+
+
+def test_check_validates_updated_date():
+    for bad in ["2026/11/15", "2026-11-5", "", None]:
+        teams_json, roster, photos = valid()
+        teams_json["updated"] = bad
+        assert check(teams_json, roster, photos)[0] == ["updated 必須是 YYYY-MM-DD"]
+    teams_json, roster, photos = valid()
+    del teams_json["updated"]
+    assert check(teams_json, roster, photos)[0] == ["updated 必須是 YYYY-MM-DD"]
+
+
+def test_check_validates_player_id_format():
+    teams_json, roster, photos = valid()
+    first = teams_json["teams"]["AEO"]["players"][0]
+    roster["AEO"] = ["12345" if i == first["id"] else i for i in roster["AEO"]]
+    first["id"] = "12345"
+    errors, _ = check(teams_json, roster, photos | {"12345"})
+    assert errors == ["AEO：ID 格式錯誤 ['12345']"]
+
+
+def test_check_rejects_duplicate_player_ids():
+    teams_json, roster, photos = valid()
+    players = teams_json["teams"]["AEO"]["players"]
+    players.append({**players[0], "n": "重複"})
+    roster["AEO"] = roster["AEO"] + [players[0]["id"]]
+    errors, _ = check(teams_json, roster, photos)
+    assert errors == ["AEO：球員 ID 重複"]
+
+
+def test_check_validates_exempt_keys():
+    teams_json, roster, photos = valid()
+    teams_json["teams"]["AEO"]["exempt"] = {r: [] for r in list(REASONS)[:-1]}
+    teams_json["teams"]["ACN"]["exempt"] = {**EMPTY_EXEMPT, "other": []}
+    errors, _ = check(teams_json, roster, photos)
+    assert sorted(errors) == sorted([f"AEO：exempt 欄位必須剛好是 {REASONS}", f"ACN：exempt 欄位必須剛好是 {REASONS}"])
