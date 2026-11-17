@@ -2,9 +2,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { fileURLToPath } from "node:url";
+
+const root = new URL("../../docs/", import.meta.url);
 
 const ctx = vm.createContext({});
-for (const f of ["limit.js", "official.js"]) vm.runInContext(readFileSync(new URL("../../docs/" + f, import.meta.url), "utf8"), ctx, { filename: f });
+for (const f of ["limit.js", "official.js"]) vm.runInContext(readFileSync(new URL(f, root), "utf8"), ctx, { filename: fileURLToPath(new URL(f, root)) });
 const { offOverlap, offFanAverage, offConsensus, offUpsets, offAnswer, offDate, OFF_MIN_N, LIMIT } =
   vm.runInContext("({offOverlap,offFanAverage,offConsensus,offUpsets,offAnswer,offDate,OFF_MIN_N,LIMIT})", ctx);
 const plain = o => JSON.parse(JSON.stringify(o));

@@ -3,9 +3,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { fileURLToPath } from "node:url";
+
+const src = new URL("../../docs/rank.js", import.meta.url);
 
 const ctx = vm.createContext({});
-vm.runInContext(readFileSync(new URL("../../docs/rank.js", import.meta.url), "utf8"), ctx, { filename: "rank.js" });
+vm.runInContext(readFileSync(src, "utf8"), ctx, { filename: fileURLToPath(src) });
 const { RANK_PREVIEW, rankParts, rankToggleText } = vm.runInContext("({RANK_PREVIEW,rankParts,rankToggleText})", ctx);
 const rows = n => Array.from({ length: n }, (_, i) => ({ rank: i + 1 }));
 const ranks = a => a.map(x => x.rank);

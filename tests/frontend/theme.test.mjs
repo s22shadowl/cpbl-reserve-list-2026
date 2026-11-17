@@ -3,10 +3,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { fileURLToPath } from "node:url";
 
 const root = new URL("../../docs/", import.meta.url);
 const ctx = vm.createContext({});
-vm.runInContext(readFileSync(new URL("theme.js", root), "utf8"), ctx, { filename: "theme.js" });
+vm.runInContext(readFileSync(new URL("theme.js", root), "utf8"), ctx, { filename: fileURLToPath(new URL("theme.js", root)) });
 const { TEAMS, NEUTRAL, deriveTheme, cardColors } = vm.runInContext("({TEAMS,NEUTRAL,deriveTheme,cardColors})", ctx);
 
 function lum(hex) {

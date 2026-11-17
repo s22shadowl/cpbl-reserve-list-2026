@@ -2,9 +2,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { fileURLToPath } from "node:url";
+
+const src = new URL("../../docs/mine.js", import.meta.url);
 
 const ctx = vm.createContext({});
-vm.runInContext(readFileSync(new URL("../../docs/mine.js", import.meta.url), "utf8"), ctx, { filename: "mine.js" });
+vm.runInContext(readFileSync(src, "utf8"), ctx, { filename: fileURLToPath(src) });
 const { mineVsFans, MINE_MIN_OTHERS, MINE_LOW, MINE_HIGH } =
   vm.runInContext("({mineVsFans,MINE_MIN_OTHERS,MINE_LOW,MINE_HIGH})", ctx);
 const plain = o => JSON.parse(JSON.stringify(o));

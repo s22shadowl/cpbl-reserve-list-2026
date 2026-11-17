@@ -3,9 +3,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { fileURLToPath } from "node:url";
+
+const src = new URL("../../docs/prefs.js", import.meta.url);
 
 const ctx = vm.createContext({});
-vm.runInContext(readFileSync(new URL("../../docs/prefs.js", import.meta.url), "utf8"), ctx, { filename: "prefs.js" });
+vm.runInContext(readFileSync(src, "utf8"), ctx, { filename: fileURLToPath(src) });
 const { nextMode, normMode } = vm.runInContext("({nextMode,normMode})", ctx);
 
 test("cycles auto -> light -> dark -> auto", () => {

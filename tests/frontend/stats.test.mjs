@@ -2,10 +2,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { fileURLToPath } from "node:url";
 
 const root = new URL("../../docs/", import.meta.url);
 const ctx = vm.createContext({});
-for (const f of ["limit.js", "stats.js"]) vm.runInContext(readFileSync(new URL(f, root), "utf8"), ctx, { filename: f });
+for (const f of ["limit.js", "stats.js"]) vm.runInContext(readFileSync(new URL(f, root), "utf8"), ctx, { filename: fileURLToPath(new URL(f, root)) });
 const { statLevel, statLine, statTier, statTitle, statsShown, tileTitle, playerHead } = vm.runInContext("({statLevel,statLine,statTier,statTitle,statsShown,tileTitle,playerHead})", ctx);
 
 const BAT_A = { g: 113, pa: 436, avg: "0.282", ops: "0.771", hr: 13 };

@@ -67,6 +67,7 @@ poetry run python -m scraper.build            # 六隊；可加 --team AEO 只�
 poetry run python -m scraper.check            # 驗證資料，失敗時不要 commit
 poetry run pytest                             # scraper 測試
 node --test tests/frontend/*.test.mjs         # 前端測試
+node --test --experimental-test-coverage tests/frontend/*.test.mjs  # 前端覆蓋率
 cd worker && npm test                         # Worker 測試
 cd e2e && npm test                            # E2E 煙霧測試（需先停掉 npm run dev）
 ```

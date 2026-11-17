@@ -3,9 +3,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { fileURLToPath } from "node:url";
+
+const src = new URL("../../docs/status.js", import.meta.url);
 
 const ctx = vm.createContext({});
-vm.runInContext(readFileSync(new URL("../../docs/status.js", import.meta.url), "utf8"), ctx, { filename: "status.js" });
+vm.runInContext(readFileSync(src, "utf8"), ctx, { filename: fileURLToPath(src) });
 const { saveState, sameTally, needsConfirm, submitError, statsStale, hhmm, STATS_STALE_MS } =
   vm.runInContext("({saveState,sameTally,needsConfirm,submitError,statsStale,hhmm,STATS_STALE_MS})", ctx);
 const S = (...ids) => new Set(ids);
