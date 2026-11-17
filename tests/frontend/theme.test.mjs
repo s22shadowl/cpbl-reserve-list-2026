@@ -1,10 +1,10 @@
-// Contrast + consistency checks for per-team theming. Run: node --test scripts/
+// Contrast + consistency checks for per-team theming. Run: node --test tests/frontend/*.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
-const root = new URL("../docs/", import.meta.url);
+const root = new URL("../../docs/", import.meta.url);
 const ctx = vm.createContext({});
 vm.runInContext(readFileSync(new URL("theme.js", root), "utf8"), ctx, { filename: "theme.js" });
 const { TEAMS, NEUTRAL, deriveTheme, cardColors } = vm.runInContext("({TEAMS,NEUTRAL,deriveTheme,cardColors})", ctx);

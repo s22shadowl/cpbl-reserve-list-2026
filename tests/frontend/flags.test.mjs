@@ -5,12 +5,12 @@ import vm from "node:vm";
 
 function flagsOn(hostname) {
   const ctx = vm.createContext({ location: { hostname } });
-  vm.runInContext(readFileSync(new URL("../docs/flags.js", import.meta.url), "utf8"), ctx, { filename: "flags.js" });
+  vm.runInContext(readFileSync(new URL("../../docs/flags.js", import.meta.url), "utf8"), ctx, { filename: "flags.js" });
   return vm.runInContext("FLAGS", ctx);
 }
 function localHosts() {
   const ctx = vm.createContext({ location: { hostname: "x" } });
-  vm.runInContext(readFileSync(new URL("../docs/flags.js", import.meta.url), "utf8"), ctx, { filename: "flags.js" });
+  vm.runInContext(readFileSync(new URL("../../docs/flags.js", import.meta.url), "utf8"), ctx, { filename: "flags.js" });
   return { hosts: vm.runInContext("LOCAL_HOSTS", ctx), isLocal: vm.runInContext("IS_LOCAL", ctx) };
 }
 
@@ -28,13 +28,13 @@ test("flags.js is the single source of the local host list", () => {
   assert.deepEqual([...hosts], ["localhost", "127.0.0.1"]);
   assert.equal(isLocal, false);
   const ctx = vm.createContext({ location: { hostname: "localhost" } });
-  vm.runInContext(readFileSync(new URL("../docs/flags.js", import.meta.url), "utf8"), ctx);
+  vm.runInContext(readFileSync(new URL("../../docs/flags.js", import.meta.url), "utf8"), ctx);
   assert.equal(vm.runInContext("IS_LOCAL", ctx), true);
 });
 
 test("isInAppBrowser: LINE, Facebook, Instagram and Threads in-app browsers", () => {
   const ctx = vm.createContext({ location: { hostname: "x" } });
-  vm.runInContext(readFileSync(new URL("../docs/flags.js", import.meta.url), "utf8"), ctx);
+  vm.runInContext(readFileSync(new URL("../../docs/flags.js", import.meta.url), "utf8"), ctx);
   const isInApp = vm.runInContext("isInAppBrowser", ctx);
   const ios = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148";
   const android = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/130.0.0.0 Mobile Safari/537.36";

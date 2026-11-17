@@ -1,11 +1,11 @@
-// Keyboard focus after a tile toggle re-renders the grid. Run: node --test scripts/
+// Keyboard focus after a tile toggle re-renders the grid. Run: node --test tests/frontend/*.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const ctx = vm.createContext({});
-vm.runInContext(readFileSync(new URL("../docs/focus.js", import.meta.url), "utf8"), ctx, { filename: "focus.js" });
+vm.runInContext(readFileSync(new URL("../../docs/focus.js", import.meta.url), "utf8"), ctx, { filename: "focus.js" });
 const { nextFocusId } = vm.runInContext("({nextFocusId})", ctx);
 
 test("keeps focus on the same tile when it is still shown", () => {

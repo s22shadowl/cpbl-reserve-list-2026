@@ -8,7 +8,8 @@
     "db:reset": "wrangler d1 execute DB --local --command \"DELETE FROM picks; DELETE FROM tally;\"",
     "db:seed": "node scripts/seed-dev.mjs && wrangler d1 execute DB --local --file=.wrangler/seed-dev.sql",
     "deploy": "wrangler deploy",
-    "test": "vitest run"
+    "test": "vitest run && node --test scripts/*.test.mjs",
+    "test:node": "node --test scripts/*.test.mjs"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.23.0",

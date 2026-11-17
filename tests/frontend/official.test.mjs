@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const ctx = vm.createContext({});
-for (const f of ["limit.js", "official.js"]) vm.runInContext(readFileSync(new URL("../docs/" + f, import.meta.url), "utf8"), ctx, { filename: f });
+for (const f of ["limit.js", "official.js"]) vm.runInContext(readFileSync(new URL("../../docs/" + f, import.meta.url), "utf8"), ctx, { filename: f });
 const { offOverlap, offFanAverage, offConsensus, offUpsets, offAnswer, offDate, OFF_MIN_N, LIMIT } =
   vm.runInContext("({offOverlap,offFanAverage,offConsensus,offUpsets,offAnswer,offDate,OFF_MIN_N,LIMIT})", ctx);
 const plain = o => JSON.parse(JSON.stringify(o));

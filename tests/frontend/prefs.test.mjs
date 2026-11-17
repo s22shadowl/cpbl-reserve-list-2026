@@ -1,11 +1,11 @@
-// Colour-mode cycling. Run: node --test scripts/
+// Colour-mode cycling. Run: node --test tests/frontend/*.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const ctx = vm.createContext({});
-vm.runInContext(readFileSync(new URL("../docs/prefs.js", import.meta.url), "utf8"), ctx, { filename: "prefs.js" });
+vm.runInContext(readFileSync(new URL("../../docs/prefs.js", import.meta.url), "utf8"), ctx, { filename: "prefs.js" });
 const { nextMode, normMode } = vm.runInContext("({nextMode,normMode})", ctx);
 
 test("cycles auto -> light -> dark -> auto", () => {

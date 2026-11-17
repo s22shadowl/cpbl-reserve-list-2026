@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { buildSeed, SEED_PREFIX } from "../worker/scripts/seed-dev.mjs";
+import { buildSeed, SEED_PREFIX } from "./seed-dev.mjs";
 
-const read = f => JSON.parse(readFileSync(new URL("../docs/data/" + f, import.meta.url), "utf8"));
+const read = f => JSON.parse(readFileSync(new URL("../../docs/data/" + f, import.meta.url), "utf8"));
 const teams = read("teams.json").teams, official = read("official.sample.json").teams;
 const VOTER = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const seed = buildSeed({ teams, official, perTeam: 50 });

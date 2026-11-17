@@ -1,11 +1,11 @@
-// Submit-button / status decision. Run: node --test scripts/
+// Submit-button / status decision. Run: node --test tests/frontend/*.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const ctx = vm.createContext({});
-vm.runInContext(readFileSync(new URL("../docs/status.js", import.meta.url), "utf8"), ctx, { filename: "status.js" });
+vm.runInContext(readFileSync(new URL("../../docs/status.js", import.meta.url), "utf8"), ctx, { filename: "status.js" });
 const { saveState, sameTally, needsConfirm, submitError, statsStale, hhmm, STATS_STALE_MS } =
   vm.runInContext("({saveState,sameTally,needsConfirm,submitError,statsStale,hhmm,STATS_STALE_MS})", ctx);
 const S = (...ids) => new Set(ids);

@@ -1,6 +1,6 @@
 "use strict";
 // Team palettes + whole-page colour derivation. Classic script loaded before app.js (TEAMS, NEUTRAL, deriveTheme are
-// globals there); scripts/theme.test.mjs loads it with node:vm. Each team gives 5 base colours:
+// globals there); tests/frontend/theme.test.mjs loads it with node:vm. Each team gives 5 base colours:
 // band (hero/top bar), acc (accent fill), on (text on acc), ink (accent text, light mode), hi (accent text, dark mode).
 // acc = the club's official primary colour; band = its official dark colour or a dark shade of the primary (roadmap P2-6).
 // Secondary colours are deliberately not used.

@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const ctx = vm.createContext({});
-vm.runInContext(readFileSync(new URL("../docs/mine.js", import.meta.url), "utf8"), ctx, { filename: "mine.js" });
+vm.runInContext(readFileSync(new URL("../../docs/mine.js", import.meta.url), "utf8"), ctx, { filename: "mine.js" });
 const { mineVsFans, MINE_MIN_OTHERS, MINE_LOW, MINE_HIGH } =
   vm.runInContext("({mineVsFans,MINE_MIN_OTHERS,MINE_LOW,MINE_HIGH})", ctx);
 const plain = o => JSON.parse(JSON.stringify(o));

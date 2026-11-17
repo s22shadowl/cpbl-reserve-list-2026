@@ -1,11 +1,11 @@
-// Stats ranking split (top 20, toggle, 21–60, cut row, 61+). Run: node --test scripts/*.test.mjs
+// Stats ranking split (top 20, toggle, 21–60, cut row, 61+). Run: node --test tests/frontend/*.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const ctx = vm.createContext({});
-vm.runInContext(readFileSync(new URL("../docs/rank.js", import.meta.url), "utf8"), ctx, { filename: "rank.js" });
+vm.runInContext(readFileSync(new URL("../../docs/rank.js", import.meta.url), "utf8"), ctx, { filename: "rank.js" });
 const { RANK_PREVIEW, rankParts, rankToggleText } = vm.runInContext("({RANK_PREVIEW,rankParts,rankToggleText})", ctx);
 const rows = n => Array.from({ length: n }, (_, i) => ({ rank: i + 1 }));
 const ranks = a => a.map(x => x.rank);

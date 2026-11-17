@@ -4,7 +4,7 @@ img{max-width:100%}
 
 /* Layout: team-colour hero band → one sticky team-colour top bar (count + actions / view tabs + search / per-position kept-of-total tabs) → compact photo-row grid. Team look: colours from theme.js deriveTheme(), skewed tabs, Rajdhani numerals. */
 :root{
-  /* colour tokens = deriveTheme(NEUTRAL) from theme.js (scripts/theme.test.mjs keeps them in sync); applyTheme() overrides per team */
+  /* colour tokens = deriveTheme(NEUTRAL) from theme.js (tests/frontend/theme.test.mjs keeps them in sync); applyTheme() overrides per team */
   --page:#F3F3F3; --paper:#FFFFFF; --ink:#111214; --text:#1D1E21; --muted:#57595F; --line:#E0E0E0;
   --tab:#ECECEC; --tab-ink:#111214; --acc:#4A4D52; --acc-hover:#3D3F43; --on-acc:#FFFFFF; --acc-ink:#4A4D52; --acc-ink-l:#4A4D52;
   --hi:#C4C7CC; --band:#111214; --on-band:#FFFFFF; --band-muted:#C9CACB; --tile:#DBDBDC; --soft:#EDEDEE;

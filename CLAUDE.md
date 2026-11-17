@@ -33,7 +33,7 @@
 
 ## 測試
 
-- 測試：`poetry run pytest`（scraper）、`node --test scripts/*.test.mjs`（前端；Node 24 不接受只給目錄）、`cd worker && npm test`（Worker，vitest + workerd）、`cd e2e && npm test`（E2E，Playwright）。
+- 測試：`poetry run pytest`（scraper）、`node --test tests/frontend/*.test.mjs`（前端；Node 24 不接受只給目錄）、`cd worker && npm test`（Worker：vitest + workerd，再以 node --test 跑 `worker/scripts/` 的本機假名單測試）、`cd e2e && npm test`（E2E，Playwright）。
 - **E2E 必跑**（Worker 固定以 `--var LOCKED:false` 啟動，鎖定流程用 `page.route` 模擬）：改動前端流程（`docs/app.js` 的按鈕、分頁、送出、撤回、統計讀取、localStorage）或 Worker 後，以及 P1-3 開啟對答案上線前，一律跑 `cd e2e && npm test` 並全數通過才合併。單元測試只涵蓋純函式，串接層的 bug（撤回、統計快取）只有 E2E 抓得到。執行前先停掉 `npm run dev`（前端固定連 8787）；E2E 用獨立的 `e2e/.state`，不影響 `worker/.wrangler` 的開發資料。
 - 統計讀取的 `fresh=1` 請求要同時加 `cache:"no-store"`：Worker 回應帶 `max-age=60`，否則瀏覽器會在 60 秒內對同一網址回舊結果（E2E 抓到：送出後一分鐘內撤回，份數不更新）。
 

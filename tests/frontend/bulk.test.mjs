@@ -1,11 +1,11 @@
-// Group-header bulk select/deselect decision. Run: node --test scripts/
+// Group-header bulk select/deselect decision. Run: node --test tests/frontend/*.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const ctx = vm.createContext({});
-vm.runInContext(readFileSync(new URL("../docs/bulk.js", import.meta.url), "utf8"), ctx, { filename: "bulk.js" });
+vm.runInContext(readFileSync(new URL("../../docs/bulk.js", import.meta.url), "utf8"), ctx, { filename: "bulk.js" });
 const { bulkState } = vm.runInContext("({bulkState})", ctx);
 const plain = o => JSON.parse(JSON.stringify(o));
 

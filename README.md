@@ -47,11 +47,11 @@ worker/               Cloudflare Worker API + D1
   src/roster.json     各隊允許送出的球員 ID（由 scraper 產生，必須與 teams.json 一致）
   schema.sql
   test/               vitest + workerd 測試
-  scripts/seed-dev.mjs  本機假球迷名單
+  scripts/seed-dev.mjs  本機假球迷名單（seed-dev.test.mjs 以 node --test 測試）
 scraper/              Python 爬蟲，從中職官網產生上述資料
   overrides.json      手動排除（引退、國內 FA）、強制納入、標籤（旅外FA）、新人（rookie）、選秀補正（draft）
   official.py         官方名單轉檔與開發用假名單
-scripts/*.test.mjs    前端純函式測試（node --test）
+tests/frontend/       前端純函式測試（node --test）
 e2e/                  Playwright 煙霧測試（選人、送出、撤回、草稿、對答案），使用獨立的本機 D1
 roadmap.md            開發規劃（P0–P3）
 .impeccable.md        設計脈絡（使用者、風格、原則）
@@ -66,7 +66,7 @@ poetry install
 poetry run python -m scraper.build            # 六隊；可加 --team AEO 只更新單隊，--refresh 忽略快取
 poetry run python -m scraper.check            # 驗證資料，失敗時不要 commit
 poetry run pytest                             # scraper 測試
-node --test scripts/*.test.mjs                # 前端測試
+node --test tests/frontend/*.test.mjs         # 前端測試
 cd worker && npm test                         # Worker 測試
 cd e2e && npm test                            # E2E 煙霧測試（需先停掉 npm run dev）
 ```

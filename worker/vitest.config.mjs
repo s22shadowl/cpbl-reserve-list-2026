@@ -10,6 +10,7 @@ export default defineConfig({
     }),
   ],
   test: {
+    // worker/scripts/*.test.mjs run under node --test (see package.json), not in workerd.
     include: ["test/**/*.test.js"],
     setupFiles: ["./test/setup.js"],
   },

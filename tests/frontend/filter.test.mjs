@@ -1,11 +1,11 @@
-// Picker filters and the per-position rail counts. Run: node --test scripts/*.test.mjs
+// Picker filters and the per-position rail counts. Run: node --test tests/frontend/*.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const ctx = vm.createContext({});
-vm.runInContext(readFileSync(new URL("../docs/filter.js", import.meta.url), "utf8"), ctx, { filename: "filter.js" });
+vm.runInContext(readFileSync(new URL("../../docs/filter.js", import.meta.url), "utf8"), ctx, { filename: "filter.js" });
 const { posMatch, filterMatch, railCounts } = vm.runInContext("({posMatch,filterMatch,railCounts})", ctx);
 const plain = o => JSON.parse(JSON.stringify(o));
 

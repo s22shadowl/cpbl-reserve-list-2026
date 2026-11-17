@@ -1,11 +1,11 @@
-// Player-card corner helpers (age, badge, description). Run: node --test scripts/card.test.mjs
+// Player-card corner helpers (age, badge, description). Run: node --test tests/frontend/card.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const ctx = vm.createContext({});
-vm.runInContext(readFileSync(new URL("../docs/card.js", import.meta.url), "utf8"), ctx, { filename: "card.js" });
+vm.runInContext(readFileSync(new URL("../../docs/card.js", import.meta.url), "utf8"), ctx, { filename: "card.js" });
 const { ageOn, cornerBadge, cardNote, isRookie } = vm.runInContext("({ageOn,cornerBadge,cardNote,isRookie})", ctx);
 const plain = o => JSON.parse(JSON.stringify(o));
 const REF = "2026-11-15";
