@@ -26,7 +26,7 @@ function contrast(a, b) {
 const PAIRS = [
   ["--text", "--page"], ["--text", "--paper"], ["--ink", "--page"], ["--muted", "--paper"],
   ["--acc-ink", "--paper"], ["--on-band", "--band"], ["--band-muted", "--band"],
-  ["--on-acc", "--acc"], ["--tab-ink", "--tab"],
+  ["--on-acc", "--acc"], ["--on-acc", "--acc-hover"], ["--tab-ink", "--tab"],
 ];
 const PALETTES = [...TEAMS.map((t) => [t.slug, t]), ["NEUTRAL", NEUTRAL]];
 

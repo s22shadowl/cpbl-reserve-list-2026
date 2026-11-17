@@ -3,7 +3,7 @@ const API=IS_LOCAL?"http://localhost:8787":"https://cpbl-reserve-2026-api.cpbl-s
 const GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",C:"Catchers",I:"Infielders",O:"Outfielders"}, GORD="PCIO";
 // TEAMS, NEUTRAL, deriveTheme(), themeDecls() come from theme.js (loaded first).
 // ageOn(), cornerBadge(), cardNote(), isRookie() come from card.js (loaded first); mineVsFans() from mine.js.
-// LIMIT comes from limit.js; FLAGS from flags.js; offAnswer() etc. from official.js (both loaded first).
+// posMatch(), filterMatch(), railCounts() from filter.js; RANK_PREVIEW, rankParts(), rankToggleText() from rank.js. LIMIT comes from limit.js; FLAGS from flags.js; offAnswer() etc. from official.js (both loaded first).
 // statLine(), statTier(), statsShown(), tileTitle(), playerHead(), CAP_MSG come from stats.js; saveState(), needsConfirm(),
 // submitError(), sameTally(), statsStale(), hhmm() from status.js; isInAppBrowser() from flags.js (loaded first).
 const EXEMPT=[["foreign","洋將"],["training","自主／自行培訓"],["fa","行使自由球員"],["expansion","擴編選秀被選走"],["removed","已非球員"]];
@@ -62,6 +62,8 @@ let lockKnown=false, mineSeq=0, statsSeq=0, saveEpoch=0, mineRetries=0, mineRetr
 const MINE_RETRY_MS=10000, MINE_RETRY_MAX=3;
 // showFilter = the 顯示 select: all / kept / dropped / new
 let pos="all", showFilter="all", q="", tab="pick";
+// rankOpen = the stats ranking shows ranks RANK_PREVIEW+1..LIMIT too; kept across re-renders, reset per team.
+let rankOpen=false;
 // After our own submit, cached /stats (edge + browser, max-age 60s) is older than what we just wrote; bypass it for a while.
 let freshUntil=0;
 const FRESH_MS=65000;
@@ -101,6 +103,7 @@ function applyTheme(t){
 // ---------- routing ----------
 function teamFromHash(){const h=location.hash.replace("#","");return AVAIL.find(t=>t.slug===h||t.code===h)||null}
 function route(){
+  closeTeamMenu($("teamMenu").contains(document.activeElement)); // e.g. the back button while it is open
   const t=teamFromHash();
   if(!t){
     if(AVAIL.length===1){location.replace("#"+AVAIL[0].slug);return}
@@ -111,13 +114,13 @@ function route(){
   try{const d=JSON.parse(store("rl-draft-"+t.code)||"null");if(Array.isArray(d))sel=new Set(d.filter(id=>BY[id]))}catch(e){}
   const clubIds=officialList&&officialList.teams[t.code];
   clubKept=Array.isArray(clubIds)?new Set(clubIds):null;
-  saved=null;savedAt=null;mineFailed=false;mineRetries=0;clearTimeout(mineRetryTimer);stats=null;statsAt=0;pos="all";showFilter="all";q="";$("q").value="";
+  saved=null;savedAt=null;mineFailed=false;mineRetries=0;clearTimeout(mineRetryTimer);stats=null;statsAt=0;rankOpen=false;pos="all";showFilter="all";q="";$("q").value="";
   disarmSave();
   applyTheme(t);
   document.title=t.short+"契約保留名簿｜中職 60 人名單模擬";
   $("kicker").textContent=t.en+" · 2027 Reserve List";
   $("h1").textContent="排出你的"+t.name+" 60 人契約保留名單";
-  $("teamSw").value=t.code;$("teamSwBox").hidden=AVAIL.length<2;
+  markTeam(t);$("teamSwBox").hidden=AVAIL.length<2;
   renderExempt();
   $("picker").hidden=true;$("app").hidden=false;
   if(store("rl-tab")==="stats")tab="stats";
@@ -153,38 +156,101 @@ function renderExempt(){
     ...rows.map(([label,names])=>el("span",{},el("b",{text:label}),names.join("、")))));
 }
 
+// ---------- team switch menu ----------
+// Our own popup, not a <select>: Chrome keeps the native list painted until route()'s blocking re-render is done.
+// The list lives outside the hero (which clips, and sits under the sticky top bar), positioned under the button.
+const teamItems=()=>[...$("teamMenu").querySelectorAll("a")];
+function buildTeamMenu(){
+  $("teamMenu").replaceChildren(...AVAIL.map(t=>{
+    const a=el("a",{role:"menuitemradio","aria-checked":"false",href:"#"+t.slug,tabindex:"-1","data-code":t.code,text:t.name});
+    a.onclick=e=>{if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();pickTeam(t)}; // modified clicks open a tab
+    return a;
+  }));
+}
+function markTeam(t){
+  const b=$("teamSw");b.textContent=t.name;b.setAttribute("aria-label","切換球隊，目前："+t.name);
+  for(const a of teamItems())a.setAttribute("aria-checked",String(a.dataset.code===t.code));
+}
+function placeTeamMenu(){
+  const r=$("teamSw").getBoundingClientRect(),s=$("teamMenu").style;
+  s.top=Math.round(r.bottom+scrollY+4)+"px";s.left=Math.round(r.left+scrollX)+"px";s.minWidth=Math.max(150,Math.round(r.width))+"px";
+}
+let menuY=0; // scrollY when the menu opened
+function openTeamMenu(focusCurrent){
+  $("teamMenu").hidden=false;placeTeamMenu();menuY=scrollY;
+  $("teamSw").setAttribute("aria-expanded","true");$("teamSwBox").classList.add("open");
+  if(focusCurrent){const it=teamItems();(it.find(a=>a.getAttribute("aria-checked")==="true")||it[0])?.focus({preventScroll:true})}
+}
+function closeTeamMenu(refocus){
+  if($("teamMenu").hidden)return;
+  if(refocus)$("teamSw").focus({preventScroll:true}); // before hiding, so focus never drops to <body>
+  $("teamMenu").hidden=true;$("teamSw").setAttribute("aria-expanded","false");$("teamSwBox").classList.remove("open");
+}
+// Close first, then switch a frame later: route() re-themes :root and rebuilds every tile in one blocking task.
+function pickTeam(t){
+  closeTeamMenu(true);
+  if(T&&T.code===t.code)return;
+  requestAnimationFrame(()=>setTimeout(()=>{location.hash=t.slug},0));
+}
+// Keyboard clicks (detail 0: Enter/Space) open on the current team's item; mouse opens keep focus on the button.
+$("teamSw").onclick=e=>{if($("teamMenu").hidden)openTeamMenu(e.detail===0);else closeTeamMenu(false)};
+$("teamSw").addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&!$("teamMenu").hidden){e.preventDefault();closeTeamMenu(false);return}
+  if(e.key==="Tab"){closeTeamMenu(false);return} // a mouse-opened menu keeps focus on the button
+  if(e.key!=="ArrowDown"&&e.key!=="ArrowUp")return;
+  e.preventDefault();if($("teamMenu").hidden)openTeamMenu(true);else teamItems().find(a=>a.getAttribute("aria-checked")==="true")?.focus({preventScroll:true});
+});
+$("teamMenu").addEventListener("keydown",e=>{
+  const it=teamItems(),n=it.length,i=it.indexOf(document.activeElement);
+  if(e.key==="Escape"){e.preventDefault();closeTeamMenu(true);return}
+  if(e.key==="Tab"){closeTeamMenu(true);return} // the default Tab then moves on from the button
+  if(e.key==="Enter"||e.key===" "){e.preventDefault();if(i>=0)it[i].click();return}
+  const j=e.key==="ArrowDown"?(i+1)%n:e.key==="ArrowUp"?(i+n-1)%n:e.key==="Home"?0:e.key==="End"?n-1:-1;
+  if(j<0)return;
+  e.preventDefault();it[j].focus({preventScroll:true});
+});
+$("teamMenu").addEventListener("focusout",e=>{
+  const to=e.relatedTarget;if(to&&!$("teamMenu").contains(to)&&to!==$("teamSw"))closeTeamMenu(false);
+});
+document.addEventListener("pointerdown",e=>{
+  if(!$("teamMenu").hidden&&!$("teamMenu").contains(e.target)&&!$("teamSwBox").contains(e.target))closeTeamMenu(false);
+});
+window.addEventListener("resize",()=>{if(!$("teamMenu").hidden)placeTeamMenu()});
+// The menu lives in the document (not the sticky top bar): scrolling would carry it over the top bar, so close it.
+// Small shifts (mobile address bar) are ignored.
+window.addEventListener("scroll",()=>{if(Math.abs(scrollY-menuY)>40)closeTeamMenu($("teamMenu").contains(document.activeElement))},{passive:true});
+
 // ---------- top bar ----------
+// Pick tab: counts follow the 顯示 select and search (like the groups below); the stats tab counts the whole roster.
+// Stats ranks the whole team, so there the row is plain counts (not buttons); pos is kept for the pick tab.
 function renderRail(){
-  const pt=$("posTabs");pt.replaceChildren();
+  const pt=$("posTabs"),pick=tab==="pick";pt.replaceChildren();
+  pt.setAttribute("aria-label",pick?"守備位置":"各守位已保留人數");
+  const cnt=railCounts(pick?ROSTER.filter(shown):ROSTER,sel,GORD);
   for(const k of["all",...GORD]){
-    const tot=k==="all"?ROSTER.length:ROSTER.filter(p=>p.g===k).length;
-    const kept=k==="all"?sel.size:keptIn(k),label=k==="all"?"全部":GN[k];
-    const b=el("button",{class:"pc-tab","aria-pressed":String(pos===k),"aria-label":`${label}：已保留 ${kept}，共 ${tot} 人`},
-      el("span",{},
-        el("span",{class:"l",text:label}),
-        el("span",{class:"n"},el("b",{class:"k",text:kept}),el("span",{class:"t",text:"/"+tot}))));
+    const{kept,tot}=cnt[k],label=k==="all"?"全部":GN[k],desc=`${label}：已保留 ${kept}，共 ${tot} 人`;
+    const face=el("span",pick?{}:{"aria-hidden":"true"},
+      el("span",{class:"l",text:label}),
+      el("span",{class:"n"},el("b",{class:"k",text:kept}),el("span",{class:"t",text:"/"+tot})));
+    if(!pick){pt.append(el("div",{class:"pc-tab ro"},face,el("span",{class:"sr",text:desc})));continue}
+    const b=el("button",{class:"pc-tab","aria-pressed":String(pos===k),"aria-label":desc},face);
     b.onclick=()=>setPos(k);pt.append(b);
   }
   $("showSel").value=showFilter;
   $("showBox").hidden=$("searchBox").hidden=tab!=="pick";
 }
-$("showSel").onchange=e=>{showFilter=e.target.value;renderGroups()};
+$("showSel").onchange=e=>{showFilter=e.target.value;renderRail();renderGroups()};
 function setPos(k){
-  pos=k;renderRail();if(tab==="pick")renderGroups();else renderStats();
+  pos=k;renderRail();renderGroups();
   const top=document.querySelector("#app main").getBoundingClientRect().top+window.scrollY-$("top").offsetHeight-4;
   if(window.scrollY>top)window.scrollTo({top,behavior:"smooth"});
 }
 try{new ResizeObserver(()=>document.documentElement.style.setProperty("--hh",$("top").offsetHeight+"px")).observe($("top"))}catch(e){}
 
 // ---------- picker ----------
-function match(p){
-  if(pos!=="all"&&p.g!==pos)return false;
-  if(showFilter==="kept"&&!sel.has(p.id))return false;
-  if(showFilter==="dropped"&&sel.has(p.id))return false;
-  if(showFilter==="new"&&!isRookie(p))return false;
-  if(q){const s=q.trim();if(s&&!p.n.includes(s)&&p.no!==s&&String(+p.no)!==s)return false}
-  return true;
-}
+// shown = every filter but the position (also what the rail counts); match = shown at the current position.
+function shown(p){return filterMatch(p,showFilter,q,sel,isRookie)}
+function match(p){return posMatch(p,pos)&&shown(p)}
 function tileIds(box){return[...box.querySelectorAll(".tile")].map(b=>b.dataset.id)}
 // One player tile. full = the list is at the limit (unselected tiles are dimmed); show = this team shows stat lines.
 function tileEl(p,full,show){
@@ -341,7 +407,7 @@ async function save(){
     const here=!!T&&T.code===code;
     if(here){saveEpoch++;saved=new Set(ids);savedAt=j.at;mineFailed=false;stats=null;freshUntil=Date.now()+FRESH_MS}
     // Switched teams while waiting: say which team the result belongs to.
-    toast((here?"":name+"：")+(ids.length?"已送出 "+ids.length+" 人名單":"已撤回你的名單"));
+    toast((here?"":name+"：")+(ids.length?"已送出 "+ids.length+" 人名單":"已撤回你的名單"),"ok");
   }catch(e){
     toast(submitError(e.code,e.status));
     if(e.code==="locked"){locked=true;lockKnown=true;showOfficialCopy();loadMine()}
@@ -368,7 +434,7 @@ $("clear").onclick=()=>{
     return;
   }
   disarm();
-  sel.clear();keepDraft();renderAll();toast("已清空名單（尚未送出）");
+  sel.clear();keepDraft();renderAll();toast("已清空名單（尚未送出）","ok");
 };
 $("save").onclick=save;
 
@@ -454,7 +520,9 @@ async function loadStats(fresh){
   subCount();
 }
 function renderStats(){
-  const box=$("statsBody");box.replaceChildren();
+  const box=$("statsBody"),refocus=document.activeElement?.id==="rankMore";
+  if(refocus)document.activeElement.blur(); // see renderGroups: drop focus before removing its subtree
+  box.replaceChildren();
   if(!stats){box.append(el("div",{class:"empty"},el("b",{text:"載入中…"})));return}
   if(stats.error){box.append(el("div",{class:"empty"},el("b",{text:"暫時讀不到統計"}),"請檢查網路，稍後會自動重新讀取。"));return}
   const N=stats.n||0,cnt=stats.counts||{};
@@ -481,17 +549,34 @@ function renderStats(){
   box.append(kp);
   box.append(mineBlock(mineVsFans({roster:ROSTER,counts:cnt,N,saved,cmp:sortP})));
   const list=el("div",{class:"rank"+(clubKept?" club":""),style:"--cd:"+String(N).length}); // --cd = digits of N, sizes the count column
-  for(const x of rows.filter(x=>pos==="all"||x.p.g===pos)){
-    if(pos==="all"&&x.rank===LIMIT+1)list.append(el("div",{class:"cut"},`▲ 共識 ${LIMIT} 人保留線`,el("span",{text:"以下未進共識名單"})));
+  const row=x=>{
     const cls=["rk"];if(sel.has(x.p.id))cls.push("mine");if(N>=3&&x.r>=.35&&x.r<=.65)cls.push("split");
-    list.append(el("div",{class:cls.join(" ")},el("div",{class:"r",text:x.rank}),photo(x.p,"av"),
+    return el("div",{class:cls.join(" ")},el("div",{class:"r",text:x.rank}),photo(x.p,"av"),
       el("div",{class:"nm"},el("span",{class:"n2",text:x.p.no}),x.p.n,clubMark(x.p.id)?.node,el("small",{text:posLabel(x.p)})),
       el("div",{class:"track"},el("i",{style:`width:${(x.r*100).toFixed(1)}%`})),
-      el("div",{class:"pc"},el("span",{text:Math.round(x.r*100)+"%"}),el("small",{text:`${x.c}/${N}`}))));
+      el("div",{class:"pc"},el("span",{text:Math.round(x.r*100)+"%"}),el("small",{text:`${x.c}/${N}`})));
+  };
+  // ranks 1–20, toggle, (open) 21–LIMIT, cut row, LIMIT+1… — the toggle stays put, only rows below it appear.
+  const part=rankParts(rows,RANK_PREVIEW,LIMIT);
+  list.append(...part.head.map(row));
+  if(part.more){
+    const b=el("button",{type:"button",class:"rank-more",id:"rankMore","aria-expanded":String(rankOpen),"aria-controls":"rankMid",
+      "data-n":rows.length,text:rankToggleText(rows.length,rankOpen,LIMIT,RANK_PREVIEW)});
+    b.onclick=toggleRank;
+    const mid=el("div",{id:"rankMid"},...part.mid.map(row));mid.hidden=!rankOpen;
+    list.append(b,mid);
   }
+  if(part.tail.length)list.append(el("div",{class:"cut"},`▲ 共識 ${LIMIT} 人保留線`,el("span",{text:"以下未進共識名單"})),...part.tail.map(row));
   box.append(list);
+  if(refocus&&part.more)$("rankMore").focus({preventScroll:true});
   box.append(el("p",{class:"note"},"依保留率排序，名次為全隊排名。● 為你目前名單中保留的球員；虛線為 50%；橘色百分比代表意見分歧（至少 3 份名單時才標示）。每台裝置每隊計一份，重新送出會覆蓋舊的名單。"+(clubKept?"✓／✗ 為球團公布的決定。":""),
     el("span",{id:"statsAt",text:statsAtText()})));
+}
+// Only the rows below the toggle change, so it is updated in place (no rebuild, nothing above it moves).
+function toggleRank(){
+  rankOpen=!rankOpen;
+  const b=$("rankMore");$("rankMid").hidden=!rankOpen;
+  b.setAttribute("aria-expanded",String(rankOpen));b.textContent=rankToggleText(+b.dataset.n,rankOpen,LIMIT,RANK_PREVIEW);
 }
 function statsAtText(){return statsAt?"更新於 "+hhmm(statsAt)+"。":""}
 function subCount(){$("subN").textContent=stats&&stats.n?stats.n:""}
@@ -524,7 +609,7 @@ window.addEventListener("storage",e=>{
   let ids=[];try{const d=JSON.parse(e.newValue||"[]");if(Array.isArray(d))ids=d}catch(err){}
   sel=new Set(ids.filter(id=>BY[id]));disarmSave();renderAll();
 });
-$("q").oninput=e=>{q=e.target.value;renderGroups()};
+$("q").oninput=e=>{q=e.target.value;renderRail();renderGroups()};
 
 // ---------- export ----------
 function groupsOf(){return GORD.split("").map(g=>({g,on:ROSTER.filter(p=>p.g===g&&sel.has(p.id)).sort(sortP)}))}
@@ -538,8 +623,24 @@ function listText(){
   return L.join("\n");
 }
 let toastT=0;
-// Longer messages stay up longer.
-function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{t.hidden=true},Math.max(2400,msg.length*90))}
+const TOAST_ICON={
+  ok:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M7.5 12.3l3 3 6-6.3"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v5.5M12 16.4v.1"/></svg>',
+};
+// kind "ok" = something finished (check icon); anything else is a warning. Longer messages stay up longer.
+// Desktop CSS places it under the top bar (--tt), which sits lower until the hero scrolls away.
+function toast(msg,kind){
+  const t=$("toast");
+  t.hidden=true;void t.offsetWidth; // a toast replacing a visible one replays the entry animation
+  t.innerHTML=TOAST_ICON[kind==="ok"?"ok":"warn"];t.append(msg);
+  placeToast();t.hidden=false;
+  clearTimeout(toastT);toastT=setTimeout(()=>{t.hidden=true},Math.max(2400,msg.length*90));
+}
+function placeToast(){
+  const b=$("top").getBoundingClientRect().bottom; // 0 while the app is hidden
+  $("toast").style.setProperty("--tt",Math.round(Math.min(Math.max(b,0),innerHeight-80))+10+"px");
+}
+for(const ev of["scroll","resize"])window.addEventListener(ev,()=>{if(!$("toast").hidden)placeToast()},{passive:true});
 // Modal sheet: focus moves in on open, Tab stays inside, and closing returns focus to the button that opened it.
 let sheetUrl=null,sheetOpener=null;
 function openSheet(title,kids,opener){
@@ -568,7 +669,7 @@ $("copyTxt").onclick=()=>{
   const fb=()=>{const ta=el("textarea",{class:"ta",readonly:"","aria-label":"名單文字"});ta.value=t;
     openSheet("複製名單文字",[el("p",{class:"hint",text:"無法自動複製。文字已全選，請按 Ctrl+C（Mac 按 ⌘C），手機請長按後選「複製」。"}),ta],$("copyTxt"));
     setTimeout(()=>{ta.focus();ta.select()},0)};
-  try{navigator.clipboard.writeText(t).then(()=>toast("已複製 "+sel.size+" 人名單到剪貼簿"),fb)}catch(e){fb()}
+  try{navigator.clipboard.writeText(t).then(()=>toast("已複製 "+sel.size+" 人名單到剪貼簿","ok"),fb)}catch(e){fb()}
 };
 async function drawCard(){
   const W=1080,P=64,IW=W-P*2,RH=52,ORH=38,COLS=4,OCOLS=5;
@@ -611,8 +712,11 @@ async function drawCard(){
   if(dropped.length){
     c.fillStyle=C.muted;c.font="700 26px "+SANS;c.fillText("未列入（"+dropped.length+" 人）",P,y+28);
     c.fillStyle=C.line;c.fillRect(P,y+42,IW,1);y+=56;const ow=IW/OCOLS;
+    // number column as wide as the widest number here, right-aligned, so names line up
+    c.font="400 21px "+SANS;const nw=Math.ceil(Math.max(...dropped.map(p=>c.measureText(p.no).width)));
     dropped.forEach((p,i)=>{const cx=P+(i%OCOLS)*ow,cy=y+Math.floor(i/OCOLS)*ORH+26;
-      c.fillStyle=C.muted;c.font="400 21px "+SANS;c.fillText(p.no+" "+p.n,cx,cy,ow-12)});
+      c.fillStyle=C.muted;c.font="400 21px "+SANS;
+      c.textAlign="right";c.fillText(p.no,cx+nw,cy);c.textAlign="left";c.fillText(p.n,cx+nw+9,cy,ow-nw-21)});
   }
   c.fillStyle=C.line;c.fillRect(P,H-70,IW,1);
   c.fillStyle=C.muted;c.font="400 20px "+SANS;c.fillText("依中職聯盟規章第 8 章第 10 條 · "+location.host+location.pathname,P,H-34,IW);
@@ -668,8 +772,7 @@ initMode();
     if(officialList)$("disclaimer").textContent="對答案的球團名單依中華職棒公告整理；球迷排出的名單僅為模擬。";
   }
   AVAIL=TEAMS.filter(t=>DATA.teams[t.code]);
-  for(const t of AVAIL)$("teamSw").append(el("option",{value:t.code,text:t.name}));
-  $("teamSw").onchange=e=>{const t=AVAIL.find(x=>x.code===e.target.value);location.hash=t.slug};
+  buildTeamMenu();
   window.addEventListener("hashchange",()=>{route();window.scrollTo(0,0)});
   route();
 })();

@@ -6,7 +6,7 @@ img{max-width:100%}
 :root{
   /* colour tokens = deriveTheme(NEUTRAL) from theme.js (scripts/theme.test.mjs keeps them in sync); applyTheme() overrides per team */
   --page:#F3F3F3; --paper:#FFFFFF; --ink:#111214; --text:#1D1E21; --muted:#57595F; --line:#E0E0E0;
-  --tab:#ECECEC; --tab-ink:#111214; --acc:#4A4D52; --on-acc:#FFFFFF; --acc-ink:#4A4D52; --acc-ink-l:#4A4D52;
+  --tab:#ECECEC; --tab-ink:#111214; --acc:#4A4D52; --acc-hover:#3D3F43; --on-acc:#FFFFFF; --acc-ink:#4A4D52; --acc-ink-l:#4A4D52;
   --hi:#C4C7CC; --band:#111214; --on-band:#FFFFFF; --band-muted:#C9CACB; --tile:#DBDBDC; --soft:#EDEDEE;
   --pri-hover:#E9EAEA; --shade-rgb:12,13,14; --scrim:rgba(10,11,12,.6);
   --warn:#C2611B; --over:#D0342C;
@@ -17,13 +17,13 @@ img{max-width:100%}
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --page:#080809; --paper:#191A1C; --ink:#F4F4F5; --text:#CDCDD1; --muted:#909398; --line:#303133;
-  --tab:#27282A; --tab-ink:#E4E4E5; --acc:#65686C; --on-acc:#FFFFFF; --acc-ink:#C4C7CC; --acc-ink-l:#4A4D52;
+  --tab:#27282A; --tab-ink:#E4E4E5; --acc:#65686C; --acc-hover:#535559; --on-acc:#FFFFFF; --acc-ink:#C4C7CC; --acc-ink-l:#4A4D52;
   --hi:#C4C7CC; --band:#0D0E0F; --on-band:#FFFFFF; --band-muted:#C0C1C2; --tile:#2B2C2E; --soft:#202224;
   --pri-hover:#E9EAEA; --shade-rgb:0,0,0; --scrim:rgba(0,0,0,.7);
   --warn:#F09A5C; --over:#FF6B63; color-scheme:dark}}
 :root[data-theme="dark"]{
   --page:#080809; --paper:#191A1C; --ink:#F4F4F5; --text:#CDCDD1; --muted:#909398; --line:#303133;
-  --tab:#27282A; --tab-ink:#E4E4E5; --acc:#65686C; --on-acc:#FFFFFF; --acc-ink:#C4C7CC; --acc-ink-l:#4A4D52;
+  --tab:#27282A; --tab-ink:#E4E4E5; --acc:#65686C; --acc-hover:#535559; --on-acc:#FFFFFF; --acc-ink:#C4C7CC; --acc-ink-l:#4A4D52;
   --hi:#C4C7CC; --band:#0D0E0F; --on-band:#FFFFFF; --band-muted:#C0C1C2; --tile:#2B2C2E; --soft:#202224;
   --pri-hover:#E9EAEA; --shade-rgb:0,0,0; --scrim:rgba(0,0,0,.7);
   --warn:#F09A5C; --over:#FF6B63; color-scheme:dark}
@@ -91,10 +91,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .pc-tab .t{font-family:var(--f-num);font-weight:600;font-size:14px;opacity:.75}
 .pc-tab[aria-pressed="true"]{background:#fff;color:var(--band)}
 .pc-tab[aria-pressed="true"] .k{color:var(--acc-ink-l)}
+/* stats tab: the same counts, read-only (the ranking always covers the whole team) */
+.pc-tab.ro{cursor:default;position:relative}
 .show{flex:none;position:relative}
 .show select{font:inherit;font-size:13px;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:6px 26px 6px 10px;appearance:none;-webkit-appearance:none;cursor:pointer}
 /* the native option list follows the page colour scheme, so its text must come from page tokens, not the white band text */
-.show option,.teamsw option{color:var(--text);background:var(--paper)}
+.show option{color:var(--text);background:var(--paper)}
 .show::after{content:"";position:absolute;right:10px;top:50%;width:6px;height:6px;border-right:1.5px solid var(--band-muted);border-bottom:1.5px solid var(--band-muted);transform:translateY(-70%) rotate(45deg);pointer-events:none}
 .top .bar{height:3px;background:rgba(255,255,255,.12)}
 .top .bar i{display:block;height:100%;background:var(--hi);transition:width .2s}
@@ -208,7 +210,7 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .rank{background:var(--paper);border:1px solid var(--line);--cw:calc(var(--cd,2)*12px + 7px);--name-col:minmax(110px,230px)}
 .rank.club{--name-col:minmax(220px,290px)}
 .rk{display:grid;grid-template-columns:34px 36px var(--name-col) 1fr calc(46px + var(--cw));gap:10px;align-items:center;padding:7px 14px;border-top:1px solid var(--line);font-size:14px}
-.rk:first-child{border-top:0}
+.rank>.rk:first-child,#rankMid>.rk:first-child{border-top:0}
 .rk .r{font-family:var(--f-num);font-weight:600;color:var(--muted);text-align:right;font-size:16px}
 .rk .av{width:36px;height:36px;border-radius:50%;overflow:hidden;background:var(--tile);display:flex;align-items:center;justify-content:center;font-family:var(--f-num);font-weight:700;font-size:14px;color:var(--muted)}
 .rk .av .ph-no{font-size:14px}
@@ -226,6 +228,12 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .rk.split .pc{color:var(--warn)}
 .cut{padding:8px 14px;background:var(--band);color:var(--on-band);font-size:12px;letter-spacing:.1em;font-weight:700;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .cut span{font-weight:400;letter-spacing:0;color:var(--band-muted)}
+/* toggle between rank 20 and 21, styled as a ranking row */
+.rank-more{display:block;width:100%;margin:0;padding:12px 14px;background:var(--soft);border:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0;color:var(--acc-ink);font-size:15px;font-weight:700;letter-spacing:.02em;cursor:pointer;text-align:center;box-shadow:inset 0 3px 0 var(--acc)}
+.rank-more:focus-visible{outline-offset:-2px}
+.rank-more::after{content:"";display:inline-block;width:7px;height:7px;margin-left:10px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-3px) rotate(45deg)}
+.rank-more[aria-expanded="true"]::after{transform:translateY(1px) rotate(-135deg)}
+.rank-more:hover{background:color-mix(in srgb,var(--acc) 14%,var(--soft))}
 .note{font-size:12px;color:var(--muted);margin:10px 0 0}
 .src{font-size:12px;color:var(--muted);margin-top:28px;border-top:1px solid var(--line);padding-top:12px}
 .src a{color:var(--acc-ink)}
@@ -240,7 +248,17 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
   .rk .track{grid-column:2 / -1;grid-row:2}
 }
 
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--page);padding:8px 16px;font-size:13px;z-index:20;max-width:calc(100% - 32px);border-radius:6px}
+/* toast: team-band rounded bar with a kind icon, above content and the top bar (z 8), below the sheet (z 30).
+   Desktop: centred under the top bar (--tt = top bar bottom + 10px, set by placeToast()). Phones: bottom centre. */
+.toast{position:fixed;z-index:20;left:50%;transform:translateX(-50%);top:var(--tt,16px);width:max-content;max-width:min(460px,calc(100% - 32px));
+  display:flex;align-items:center;gap:10px;background:var(--band);color:#fff;font:500 15px/1.45 var(--f-body);
+  padding:10px 18px 10px 13px;border-radius:8px;box-shadow:0 10px 28px rgba(0,0,0,.30),0 0 0 1px rgba(255,255,255,.10) inset;
+  pointer-events:none;animation:toast-down .2s ease-out}
+.toast svg{width:20px;height:20px;flex:none;color:var(--hi);fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+@keyframes toast-down{from{opacity:0;transform:translate(-50%,-6px)}}
+@keyframes toast-up{from{opacity:0;transform:translate(-50%,6px)}}
+@media (max-width:640px){.toast{top:auto;bottom:calc(20px + env(safe-area-inset-bottom,0px));animation-name:toast-up}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}}
 
 /* sheet */
 .sheet{position:fixed;inset:0;background:var(--scrim);z-index:30;display:flex;align-items:center;justify-content:center;padding:16px}
@@ -252,6 +270,8 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .shot{width:100%;height:auto;border:1px solid var(--line)}
 .sheet-a{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .sheet-a .btn{background:var(--acc);color:var(--on-acc);border-color:var(--acc)}
+/* beats the band .btn:hover (white wash): stays on the accent, fill shifts away from the text colour (--acc-hover) */
+.sheet-a .btn:hover:not(:disabled){background:var(--acc-hover);border-color:var(--acc);text-decoration:underline;text-underline-offset:3px}
 .hint{font-size:12.5px;color:var(--muted);margin:0}
 .ta{width:100%;min-height:260px;font:inherit;font-size:13px;line-height:1.6;padding:10px;border:1px solid var(--line);background:var(--page);color:var(--text);resize:vertical}
 
@@ -262,8 +282,19 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .themebtn:hover{background:rgba(255,255,255,.2)}
 .themebtn:focus-visible{outline:2px solid var(--on-band);outline-offset:2px}
 .themebtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.teamsw select{font:inherit;font-size:13px;font-weight:500;color:var(--on-band);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:5px 28px 5px 10px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.teamsw button{font:inherit;font-size:13px;font-weight:500;line-height:1.55;color:var(--on-band);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:5px 28px 5px 10px;cursor:pointer;white-space:nowrap}
+.teamsw button:hover{background:rgba(255,255,255,.2)}
+.teamsw button:focus-visible{outline:2px solid var(--on-band);outline-offset:2px}
 .teamsw::after{content:"";position:absolute;right:11px;top:50%;width:6px;height:6px;border-right:1.5px solid var(--band-muted);border-bottom:1.5px solid var(--band-muted);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.teamsw.open::after{transform:translateY(-25%) rotate(-135deg)}
+/* popup list: absolute in the document (scrolls with the hero), above the sticky top bar (8), below the toast (20) */
+.teammenu{position:absolute;z-index:15;min-width:150px;padding:4px 0;background:var(--paper);border:1px solid var(--line);border-radius:6px;box-shadow:0 10px 28px rgba(var(--shade-rgb),.28)}
+.teammenu a{display:flex;align-items:center;gap:8px;padding:7px 14px 7px 10px;color:var(--text);text-decoration:none;font-size:14px;white-space:nowrap}
+.teammenu a::before{content:"✓";width:1em;flex:none;text-align:center;color:var(--acc-ink);font-weight:700;visibility:hidden}
+.teammenu a[aria-checked="true"]{color:var(--ink);font-weight:700}
+.teammenu a[aria-checked="true"]::before{visibility:visible}
+.teammenu a:hover,.teammenu a:focus{background:var(--soft);outline:0}
+.teammenu a:focus-visible{outline:2px solid var(--acc-ink);outline-offset:-2px}
 .picker{padding-block:28px 60px}
 .picker h2{font-size:20px;font-weight:500;color:var(--ink);margin:0 0 14px}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}

@@ -28,6 +28,9 @@ function ensureContrast(fg,bg,min,toward){let c=fg;for(let t=0.05;contrastRatio(
 // Lift a dark-mode accent fill toward white until it stands out from bg (UI contrast 3:1), never letting the text on it drop below AA.
 function liftAccent(acc,on,bg){let c=acc;for(let t=0.05;contrastRatio(c,bg)<3&&t<=1.0001;t+=0.05){const n=mixHex(acc,WHITE,t);if(contrastRatio(on,n)<AA)break;c=n}return c}
 
+// Hover fill for accent buttons: move the accent away from its text colour, so contrast only grows.
+function accHover(acc,on){return mixHex(acc,luminance(on)>0.18?BLACK:WHITE,0.18)}
+
 function deriveTheme(base){
   const {band,acc,on,ink,hi}=base;
   const rgb=h=>hexRgb(h).join(",");
@@ -39,7 +42,7 @@ function deriveTheme(base){
     "--muted":ensureContrast(mixHex("#6E7178",band,0.25),lPage,AA,BLACK),
     "--line":mixHex(WHITE,band,0.13),"--tab":mixHex(WHITE,band,0.08),
     "--tab-ink":ensureContrast(band,mixHex(WHITE,band,0.08),AA,BLACK),
-    "--acc":acc,"--on-acc":on,"--acc-ink":ink,"--acc-ink-l":ink,"--hi":hi,
+    "--acc":acc,"--acc-hover":accHover(acc,on),"--on-acc":on,"--acc-ink":ink,"--acc-ink-l":ink,"--hi":hi,
     "--band":band,"--on-band":WHITE,"--band-muted":ensureContrast(mixHex(WHITE,acc,0.3),band,AA,WHITE),
     "--tile":mixHex(WHITE,band,0.15),"--soft":mixHex(WHITE,acc,0.1),"--pri-hover":mixHex(WHITE,acc,0.12),
     "--shade-rgb":rgb(mixHex(band,BLACK,0.3)),"--scrim":`rgba(${rgb(mixHex(band,BLACK,0.4))},.6)`,
@@ -52,7 +55,7 @@ function deriveTheme(base){
     "--text":ensureContrast(mixHex("#D8D8DC",acc,0.08),dPaper,AA,WHITE),
     "--muted":ensureContrast(mixHex("#9A9CA2",acc,0.12),dPaper,AA,WHITE),
     "--line":mixHex(dPaper,WHITE,0.1),"--tab":dTab,"--tab-ink":ensureContrast(mixHex(WHITE,acc,0.15),dTab,AA,WHITE),
-    "--acc":dAcc,"--on-acc":on,"--acc-ink":hi,"--acc-ink-l":ink,"--hi":hi,
+    "--acc":dAcc,"--acc-hover":accHover(dAcc,on),"--on-acc":on,"--acc-ink":hi,"--acc-ink-l":ink,"--hi":hi,
     "--band":dBand,"--on-band":WHITE,"--band-muted":ensureContrast(mixHex(WHITE,acc,0.35),dBand,AA,WHITE),
     "--tile":mixHex(dPaper,WHITE,0.08),"--soft":mixHex(dPaper,acc,0.15),"--pri-hover":mixHex(WHITE,acc,0.12),
     "--shade-rgb":"0,0,0","--scrim":"rgba(0,0,0,.7)",
