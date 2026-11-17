@@ -1,7 +1,25 @@
-.wrangler/
+# Dependencies
 node_modules/
-.DS_Store
+.venv/
+
+# Cloudflare Wrangler: local D1 state and local secrets (e.g. IP_SALT)
+.wrangler/
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+
+# Python
 __pycache__/
 .pytest_cache/
+
+# Coverage reports
 .coverage
+htmlcov/
+coverage/
+
+# Scraper page cache
 scraper/.cache/
+
+# OS
+.DS_Store
