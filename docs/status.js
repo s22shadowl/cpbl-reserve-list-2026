@@ -19,10 +19,10 @@ function saveState({saving,saved,sel,locked=false,mineFailed=false}){
 function needsConfirm(n,limit){return n>0&&n<limit}
 // Toast text for a failed POST /picks by the Worker's error code (network errors have none).
 function submitError(code,status){
-  if(code==="rate_limited"||status===429)return"這個網路今天送出太多份名單，請明天再試。宿舍、公司等共用網路可能共用額度，可改用行動網路";
-  if(code==="bad_ids")return"球員名單已更新，請重新整理頁面";
+  if(code==="rate_limited"||status===429)return"今日已達到送出次數上限";
+  if(code==="bad_ids")return"名單已更新，請重新整理";
   if(code==="locked")return"送出已截止";
-  return"伺服器或網路暫時有問題，請稍後再試";
+  return"請稍後再試";
 }
 // Same /stats payload ({n, counts}) as the one already shown? null or an error placeholder never matches.
 function sameTally(a,b){

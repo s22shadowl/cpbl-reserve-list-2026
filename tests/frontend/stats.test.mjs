@@ -58,7 +58,7 @@ test("tile title keeps stats when the 60-man cap disables the tile", () => {
   const p = { no: "12", n: "江國豪", g: "P", s: { A: PIT_A } };
   const full = "一軍 18 場 · 36.1 局 · ERA 1.71 · WHIP 1.47 · 奪三振 34";
   assert.equal(tileTitle(p, true, false), "12 江國豪\n" + full);
-  assert.equal(tileTitle(p, true, true), "已達 60 人上限，先移除一位才能再加入\n" + full);
+  assert.equal(tileTitle(p, true, true), "已達 60 人上限\n" + full);
   assert.equal(tileTitle(p, false, false), "12 江國豪");
   assert.equal(tileTitle({ no: "1", n: "甲", g: "I" }, true, false), "1 甲\n本季未出賽");
 });

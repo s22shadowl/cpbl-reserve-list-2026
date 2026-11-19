@@ -233,7 +233,7 @@ test("bulk select: 全選 takes only the players shown by the search; 全部取�
   expect(picked.sort()).toEqual(rookies);
 });
 
-test("bulk select: not enough slots → aria-disabled and 需要 N 個名額，只剩 M 個; a narrower search fits", async ({ page }) => {
+test("bulk select: not enough slots → aria-disabled and 名額不足（需 N，剩 M）; a narrower search fits", async ({ page }) => {
   const p = AEO.filter(x => x.g === "P").length, target = LIMIT + 1 - p; // left = p - 1 < need = p
   test.skip(target < 1 || target > AEO.length - p, "roster shape does not allow this setup");
   await open(page);
@@ -242,7 +242,7 @@ test("bulk select: not enough slots → aria-disabled and 需要 N 個名額，�
   await expect(page.locator("#selN")).toHaveText(String(target));
 
   const bulk = page.locator("#g-P .bulk"), left = LIMIT - target;
-  const msg = `需要 ${p} 個名額，只剩 ${left} 個，無法全選`;
+  const msg = `名額不足（需 ${p}，剩 ${left}）`;
   await expect(bulk).toHaveText("全選");
   await expect(bulk).toHaveAttribute("aria-disabled", "true");
   await expect(bulk).toHaveAttribute("title", msg);

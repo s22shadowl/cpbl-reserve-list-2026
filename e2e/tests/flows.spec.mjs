@@ -16,7 +16,7 @@ test("pick 60, submit, stats count +1 and 'you vs most fans' shows", async ({ pa
   await capped.focus();
   await expect(capped).toBeFocused();
   await page.keyboard.press("Enter"); // Playwright refuses to click aria-disabled; a keyboard press is the real path too
-  await expect(page.locator("#toast")).toHaveText(/已達 60 人上限，先移除一位/);
+  await expect(page.locator("#toast")).toHaveText(/已達 60 人上限/);
   await expect(page.locator("#selN")).toHaveText("60");
   await submit(page);
   await expect(page.locator("#save")).toBeDisabled();
@@ -25,7 +25,7 @@ test("pick 60, submit, stats count +1 and 'you vs most fans' shows", async ({ pa
   const mine = page.locator("section.mvf");
   await expect(mine.locator("h2")).toHaveText("你和多數球迷不同");
   await expect(mine).not.toContainText("送出名單後");
-  await expect(mine).not.toContainText("才會顯示");
+  await expect(mine).not.toContainText("樣本數不足");
 });
 
 test("withdraw: clear + submit empty resets status and stats", async ({ page }) => {
@@ -112,7 +112,6 @@ test("locked: submit off, picking and sharing still work, hit rate from the subm
   await expect(page.locator("#save")).toBeDisabled();
   await expect(page.locator("#save")).toHaveText("已截止");
   await expect(page.locator("#heroOff")).toContainText("送出已截止");
-  await expect(page.locator("#heroOff")).toContainText("對答案");
 
   // No local draft: the submitted 40 become the draft; picking more still works and is kept locally.
   await expect(page.locator("#selN")).toHaveText("40");
@@ -136,7 +135,7 @@ test("locked without a submitted list: hint instead of a hit rate", async ({ pag
   await open(page);
   await page.locator('.tile[aria-pressed="false"]').first().click();
   await page.locator("#tab-stats").click();
-  await expect(page.locator("section.ans:not(.mvf) .hit")).toContainText("公布前沒有送出名單，無法計算命中率");
+  await expect(page.locator("section.ans:not(.mvf) .hit")).toContainText("公布前未送出名單");
 });
 
 test("submit refused as locked: toast and the button switches to 已截止", async ({ page }) => {
@@ -195,7 +194,7 @@ test("in-app browser: the image sheet suggests opening in Safari／Chrome", asyn
   await open(page);
   await page.locator('.tile[aria-pressed="false"]').first().click();
   await page.locator("#mkImg").click();
-  await expect(page.locator("#sheet .inapp")).toHaveText("若無法儲存，請從右上角選單改用 Safari／Chrome 開啟。");
+  await expect(page.locator("#sheet .inapp")).toHaveText("無法儲存請改用 Safari／Chrome 開啟。");
   await context.close();
 });
 

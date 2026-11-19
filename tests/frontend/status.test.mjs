@@ -60,12 +60,12 @@ test("needsConfirm: only a partial list (1..limit-1) needs a second press", () =
 });
 
 test("submitError maps the Worker error code to a message", () => {
-  assert.match(submitError("rate_limited", 429), /明天再試.*行動網路/);
-  assert.match(submitError(undefined, 429), /行動網路/);
-  assert.equal(submitError("bad_ids", 400), "球員名單已更新，請重新整理頁面");
+  assert.equal(submitError("rate_limited", 429), "今日已達到送出次數上限");
+  assert.equal(submitError(undefined, 429), "今日已達到送出次數上限");
+  assert.equal(submitError("bad_ids", 400), "名單已更新，請重新整理");
   assert.equal(submitError("locked", 403), "送出已截止");
   for (const [code, status] of [[undefined, undefined], ["server_error", 500], ["bad_json", 400]])
-    assert.equal(submitError(code, status), "伺服器或網路暫時有問題，請稍後再試");
+    assert.equal(submitError(code, status), "請稍後再試");
 });
 
 // loadStats() skips re-rendering when /stats returns what is already shown.
