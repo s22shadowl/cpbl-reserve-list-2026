@@ -17,34 +17,34 @@ const st = o => plain(saveState({ saving: false, saved: S(), sel: S(), ...o }));
 const SEND = "送出名單", WITHDRAW = "撤回名單";
 
 test("saving: locked", () => {
-  assert.deepEqual(st({ saving: true, sel: S("a") }), { kind: "saving", disabled: true, label: SEND });
+  assert.deepEqual(st({ saving: true, sel: S("a") }), { kind: "saving", disabled: true, label: SEND, over: 0 });
 });
 test("still connecting: enabled only with a selection", () => {
-  assert.deepEqual(st({ saved: null }), { kind: "connecting", disabled: true, label: SEND });
-  assert.deepEqual(st({ saved: null, sel: S("a") }), { kind: "connecting", disabled: false, label: SEND });
+  assert.deepEqual(st({ saved: null }), { kind: "connecting", disabled: true, label: SEND, over: 0 });
+  assert.deepEqual(st({ saved: null, sel: S("a") }), { kind: "connecting", disabled: false, label: SEND, over: 0 });
 });
 test("/mine failed: unknown, still enabled with a selection", () => {
-  assert.deepEqual(st({ saved: null, mineFailed: true }), { kind: "unknown", disabled: true, label: SEND });
-  assert.deepEqual(st({ saved: null, mineFailed: true, sel: S("a") }), { kind: "unknown", disabled: false, label: SEND });
+  assert.deepEqual(st({ saved: null, mineFailed: true }), { kind: "unknown", disabled: true, label: SEND, over: 0 });
+  assert.deepEqual(st({ saved: null, mineFailed: true, sel: S("a") }), { kind: "unknown", disabled: false, label: SEND, over: 0 });
 });
 test("nothing selected and nothing submitted: locked", () => {
-  assert.deepEqual(st({}), { kind: "empty", disabled: true, label: SEND });
+  assert.deepEqual(st({}), { kind: "empty", disabled: true, label: SEND, over: 0 });
 });
 test("new selection not yet submitted: enabled", () => {
-  assert.deepEqual(st({ sel: S("a") }), { kind: "unsent", disabled: false, label: SEND });
+  assert.deepEqual(st({ sel: S("a") }), { kind: "unsent", disabled: false, label: SEND, over: 0 });
 });
 test("edited after submitting: enabled", () => {
-  assert.deepEqual(st({ saved: S("a"), sel: S("a", "b") }), { kind: "changed", disabled: false, label: SEND });
+  assert.deepEqual(st({ saved: S("a"), sel: S("a", "b") }), { kind: "changed", disabled: false, label: SEND, over: 0 });
 });
 test("regression: cleared after submitting must allow withdrawing, labelled 撤回名單", () => {
-  assert.deepEqual(st({ saved: S("a", "b"), sel: S() }), { kind: "changed", disabled: false, label: WITHDRAW });
+  assert.deepEqual(st({ saved: S("a", "b"), sel: S() }), { kind: "changed", disabled: false, label: WITHDRAW, over: 0 });
   assert.equal(st({ saving: true, saved: S("a"), sel: S() }).label, WITHDRAW);
 });
 test("matches what was submitted: locked", () => {
-  assert.deepEqual(st({ saved: S("a", "b"), sel: S("b", "a") }), { kind: "sent", disabled: true, label: SEND });
+  assert.deepEqual(st({ saved: S("a", "b"), sel: S("b", "a") }), { kind: "sent", disabled: true, label: SEND, over: 0 });
 });
 test("official lists out (Worker locked): always disabled, whatever is selected or submitted", () => {
-  const locked = { kind: "locked", disabled: true, label: "已截止" };
+  const locked = { kind: "locked", disabled: true, label: "已截止", over: 0 };
   assert.deepEqual(st({ locked: true }), locked);
   assert.deepEqual(st({ locked: true, sel: S("a") }), locked);
   assert.deepEqual(st({ locked: true, saved: S("a"), sel: S() }), locked);
@@ -95,4 +95,14 @@ test("hhmm: zero-padded local time, empty for missing or invalid input", () => {
   assert.equal(hhmm(null), "");
   assert.equal(hhmm(undefined), "");
   assert.equal(hhmm("nope"), "");
+});
+
+test("limit: over the cap disables send but keeps the kind; saving/locked keep priority", () => {
+  const ids = n => S(...Array.from({ length: n }, (_, i) => "p" + i));
+  assert.deepEqual(st({ sel: ids(61), limit: 60 }), { kind: "unsent", disabled: true, label: SEND, over: 1 });
+  assert.deepEqual(st({ sel: ids(61), limit: 60, locked: true }), { kind: "locked", disabled: true, label: "已截止", over: 1 });
+  assert.equal(st({ sel: ids(61), limit: 60, saving: true }).kind, "saving");
+  assert.deepEqual(st({ sel: ids(60), limit: 60 }), { kind: "unsent", disabled: false, label: SEND, over: 0 });
+  assert.deepEqual(st({ sel: ids(61) }), { kind: "unsent", disabled: false, label: SEND, over: 0 });
+  assert.deepEqual(st({ saved: null, sel: ids(61), limit: 60 }), { kind: "connecting", disabled: true, label: SEND, over: 1 });
 });

@@ -4,16 +4,17 @@
 // locked: the Worker reported the official lists are out (roadmap P1-6). label: the button text; clearing a
 // submitted list turns the button into 撤回名單.
 function sameSet(a,b){if(!a||a.size!==b.size)return false;for(const x of a)if(!b.has(x))return false;return true}
-function saveState({saving,saved,sel,locked=false,mineFailed=false}){
+function saveState({saving,saved,sel,locked=false,mineFailed=false,limit=Infinity}){
+  const over=Math.max(0,sel.size-limit);
   const label=!sel.size&&saved&&saved.size?"撤回名單":"送出名單";
-  if(saving)return{kind:"saving",disabled:true,label};
-  if(locked)return{kind:"locked",disabled:true,label:"已截止"};
+  if(saving)return{kind:"saving",disabled:true,label,over};
+  if(locked)return{kind:"locked",disabled:true,label:"已截止",over};
   // Unknown: still allow submitting a selection (the Worker decides).
-  if(saved===null)return{kind:mineFailed?"unknown":"connecting",disabled:!sel.size,label};
+  if(saved===null)return{kind:mineFailed?"unknown":"connecting",disabled:!sel.size||over>0,label,over};
   const had=saved.size>0;
-  if(!sel.size&&!had)return{kind:"empty",disabled:true,label};
-  if(!sameSet(saved,sel))return{kind:had?"changed":"unsent",disabled:false,label};
-  return{kind:"sent",disabled:true,label};
+  if(!sel.size&&!had)return{kind:"empty",disabled:true,label,over};
+  if(!sameSet(saved,sel))return{kind:had?"changed":"unsent",disabled:over>0,label,over};
+  return{kind:"sent",disabled:true,label,over};
 }
 // Submitting fewer than the limit (but some) needs a second press; an empty list is a withdrawal, not confirmed.
 function needsConfirm(n,limit){return n>0&&n<limit}

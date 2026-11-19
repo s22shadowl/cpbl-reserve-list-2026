@@ -34,3 +34,11 @@ test("need equal to left: add enabled", () => {
 test("empty list: add with nothing to add, disabled", () => {
   assert.deepEqual(plain(bulkState([], new Set(["a"]), 60)), { mode: "add", need: 0, left: 59, disabled: true });
 });
+
+test("capped=false: add stays enabled beyond left, remove still works", () => {
+  const sel = new Set(Array.from({ length: 55 }, (_, i) => "s" + i));
+  const ids = Array.from({ length: 8 }, (_, i) => "c" + i);
+  assert.deepEqual(plain(bulkState(ids, sel, 60, false)), { mode: "add", need: 8, left: 5, disabled: false });
+  assert.deepEqual(plain(bulkState([], sel, 60, false)), { mode: "add", need: 0, left: 5, disabled: true });
+  assert.equal(bulkState(["a"], new Set(["a"]), 60, false).mode, "remove");
+});
