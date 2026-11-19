@@ -62,12 +62,14 @@ test("edited switch needs a second press within 3 s; editing disarms it", async 
   await page.locator("#modeHint").click();
   await expect(page.locator("#toast")).toHaveText("再次點擊切換模式並清空名單");
   await expect(name).toHaveText("確定？");
+  await expect(page.locator("#modeBtn")).toHaveAttribute("aria-label", "確定？再次點擊切換模式並清空名單");
   await expect(page.locator("#modeHint")).toHaveText("再次點擊切換模式並清空名單");
   await expect(page.locator("#selN")).toHaveText(String(N - 1));
 
   await kept.click(); // an edit cancels the confirmation
   await expect(page.locator("#selN")).toHaveText(String(N - 2));
   await expect(name).toContainText("刪減");
+  await expect(page.locator("#modeBtn")).toHaveAttribute("aria-label", /^刪減模式，已保留 /);
 
   await page.locator("#modeHint").click();
   await expect(name).toHaveText("確定？");

@@ -330,10 +330,11 @@ function renderGroups(){
 // Every selection change goes through keepDraft(), which also cancels a pending 送出 confirmation (the count changed).
 // It also cancels a pending mode switch: the second press must not throw away an edit made after the first.
 function keepDraft(){store("rl-draft-"+T.code,JSON.stringify([...sel]));disarmSave();disarmListMode()}
+function rosterIds(){return ROSTER.map(p=>p.id)}
 // The selection when entering a team or following another tab: the stored draft, else the mode's start (not saved as a draft).
 function draftOrStart(raw){
   try{const d=JSON.parse(raw||"null");if(Array.isArray(d))return new Set(d.filter(id=>BY[id]))}catch(e){}
-  return listModeStart(listMode,ROSTER.map(p=>p.id));
+  return listModeStart(listMode,rosterIds());
 }
 function bulkToggle(ids){
   const bs=bulkState(ids,sel,LIMIT,listMode==="pick");if(bs.disabled)return;
@@ -363,7 +364,7 @@ function renderListMode(){
   b.classList.toggle("arm",listModeArmed);h.classList.toggle("arm",listModeArmed);
   if(listModeArmed)$("modeName").textContent="確定？";else $("modeName").replaceChildren(name,el("span",{class:"md",text:"模式"}));
   $("moveN").textContent=`移出 ${over} 人`;$("moveN").hidden=!over||listModeArmed;
-  b.setAttribute("aria-label",`${name}模式，已保留 ${n} / ${LIMIT}${over?`，需移出 ${over} 人`:""}。按下改用${other}模式`);
+  b.setAttribute("aria-label",listModeArmed?"確定？"+LIST_MODE_ARM_MSG:`${name}模式，已保留 ${n} / ${LIMIT}${over?`，需移出 ${over} 人`:""}。按下改用${other}模式`);
   h.title=`按下改用${other}模式`;
   if(listModeArmed)t.textContent=LIST_MODE_ARM_MSG;else t.replaceChildren(el("b",{text:name+"模式"}),"："+LIST_MODE_DESC[listMode]);
   h.hidden=tab!=="pick";
@@ -371,7 +372,7 @@ function renderListMode(){
 // Unedited (the mode's start list): switch at once. Edited: the first press arms both controls for 3 s, the second switches.
 function pressListMode(){
   if(!T)return;
-  if(listModeArmed||listModePristine(listMode,sel,ROSTER.map(p=>p.id))){switchListMode();return}
+  if(listModeArmed||listModePristine(listMode,sel,rosterIds())){switchListMode();return}
   listModeArmed=true;clearTimeout(listModeTimer);
   listModeTimer=setTimeout(()=>{listModeArmed=false;renderListMode()},3000);
   renderListMode();toast(LIST_MODE_ARM_MSG);
@@ -380,7 +381,7 @@ function disarmListMode(){clearTimeout(listModeTimer);if(listModeArmed){listMode
 function switchListMode(){
   disarmListMode();
   listMode=otherListMode(listMode);store("rl-mode-"+T.code,listMode);
-  sel=listModeStart(listMode,ROSTER.map(p=>p.id));keepDraft();renderAll();
+  sel=listModeStart(listMode,rosterIds());keepDraft();renderAll();
 }
 $("modeBtn").onclick=$("modeHint").onclick=pressListMode;
 function fmt(t){const d=new Date(t);return isNaN(d)?"":`${d.getMonth()+1}/${d.getDate()} ${hhmm(t)}`}
