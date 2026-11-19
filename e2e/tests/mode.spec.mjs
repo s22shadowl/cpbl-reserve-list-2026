@@ -16,6 +16,7 @@ test("default is 刪減: whole team kept, over 60 blocks submit/copy/image", asy
   await expect(page.locator("#moveN")).toBeVisible();
   for (const id of ["#save", "#copyTxt", "#mkImg"]) await expect(page.locator(id)).toBeDisabled();
   await expect(page.locator("#save")).toHaveAttribute("title", `移出 ${N - LIMIT} 人後才能送出`);
+  await expect(page.locator("#save")).not.toHaveClass(/\bdirty\b/); // no reminder dot on a button that cannot be pressed
   await expect(page.locator("#modeHint")).toContainText("全隊已保留");
   await expect(page.locator("#modeBtn")).toHaveAttribute("aria-label", `刪減模式，已保留 ${N} / 60，需移出 ${N - LIMIT} 人。按下改用挑選模式`);
 });
@@ -24,6 +25,7 @@ test("cut mode is not capped: tiles and 全選 go past 60", async ({ page }) => 
   await open(page);
   await cutTo60(page);
   await expect(page.locator("#moveN")).toBeHidden();
+  await expect(page.locator("#save")).toHaveClass(/\bdirty\b/);
   await expect(page.locator("#save")).toBeEnabled();
   await expect(page.locator("#save")).not.toHaveAttribute("title", /移出/);
 

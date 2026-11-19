@@ -390,7 +390,7 @@ function renderStatus(){
   const s=$("status"),btn=$("save");s.replaceChildren();
   const k=saveState({saving,saved,sel,locked,mineFailed,limit:LIMIT}),armed=saveArmed&&!k.disabled;
   btn.disabled=k.disabled;
-  btn.classList.toggle("dirty",!armed&&(k.kind==="changed"||k.kind==="unsent"));
+  btn.classList.toggle("dirty",!armed&&!k.disabled&&(k.kind==="changed"||k.kind==="unsent")); // no dot on a button that cannot be pressed (over the limit)
   btn.classList.toggle("arm",armed);
   btn.querySelector(".lb").textContent=armed?"確定送出？":k.label;
   if(k.kind==="locked")btn.title=LOCKED_MSG;else if(k.over)btn.title=`移出 ${k.over} 人後才能送出`;else btn.removeAttribute("title");
