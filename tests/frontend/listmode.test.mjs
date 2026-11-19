@@ -36,3 +36,7 @@ test("listModeOver", () => {
   assert.equal(listModeOver(60, 60), 0);
   assert.equal(listModeOver(58, 60), 0);
 });
+
+test("listModePristine: same size but different content is not pristine", () => {
+  assert.equal(listModePristine("cut", S("a", "c"), ["a", "b"]), false);
+});

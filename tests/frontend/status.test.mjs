@@ -106,3 +106,8 @@ test("limit: over the cap disables send but keeps the kind; saving/locked keep p
   assert.deepEqual(st({ sel: ids(61) }), { kind: "unsent", disabled: false, label: SEND, over: 0 });
   assert.deepEqual(st({ saved: null, sel: ids(61), limit: 60 }), { kind: "connecting", disabled: true, label: SEND, over: 1 });
 });
+
+test("limit: over the cap with a submitted list stays 'changed' but disabled", () => {
+  const ids = n => S(...Array.from({ length: n }, (_, i) => "p" + i));
+  assert.deepEqual(st({ saved: ids(3), sel: ids(61), limit: 60 }), { kind: "changed", disabled: true, label: SEND, over: 1 });
+});
