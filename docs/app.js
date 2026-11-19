@@ -60,6 +60,9 @@ let locked=false, mineFailed=false, statsAt=0;
 // successful submit must not overwrite it. mineRetries: timed retries after a failed /mine (online/visibility also retry).
 let lockKnown=false, mineSeq=0, statsSeq=0, saveEpoch=0, mineRetries=0, mineRetryTimer=0;
 const MINE_RETRY_MS=10000, MINE_RETRY_MAX=3;
+// listMode = 刪減 "cut" (starts with the whole team) or 挑選 "pick" (starts empty), per team in "rl-mode-<code>".
+// listModeArmed: an edited list needs a second press within 3 s to switch (switching replaces the list).
+let listMode="cut", listModeArmed=false, listModeTimer=0;
 // showFilter = the 顯示 select: all / kept / dropped / new
 let pos="all", showFilter="all", q="", tab="pick";
 // rankOpen = the stats ranking shows ranks RANK_PREVIEW+1..LIMIT too; kept across re-renders, reset per team.
@@ -110,8 +113,8 @@ function route(){
     T=null;showPicker();return;
   }
   T=t;ROSTER=DATA.teams[t.code].players;BY=Object.fromEntries(ROSTER.map(p=>[p.id,p]));
-  sel=new Set();
-  try{const d=JSON.parse(store("rl-draft-"+t.code)||"null");if(Array.isArray(d))sel=new Set(d.filter(id=>BY[id]))}catch(e){}
+  listMode=normListMode(store("rl-mode-"+t.code));clearTimeout(listModeTimer);listModeArmed=false; // a new team never inherits a pending switch
+  sel=draftOrStart(store("rl-draft-"+t.code));
   const clubIds=officialList&&officialList.teams[t.code];
   clubKept=Array.isArray(clubIds)?new Set(clubIds):null;
   saved=null;savedAt=null;mineFailed=false;mineRetries=0;clearTimeout(mineRetryTimer);stats=null;statsAt=0;rankOpen=false;pos="all";showFilter="all";q="";$("q").value="";
@@ -275,7 +278,7 @@ function tileEl(p,full,show){
 }
 // Group-header 全選／全部取消 for the ids currently shown in group g.
 function bulkButton(g,ids){
-  const bs=bulkState(ids,sel,LIMIT),add=bs.mode==="add";
+  const bs=bulkState(ids,sel,LIMIT,listMode==="pick"),add=bs.mode==="add";
   const title=!add?`取消 ${ids.length} 位${GN[g]}`
     :bs.disabled&&bs.need?`名額不足（需 ${bs.need}，剩 ${bs.left}）`
     :bs.need?`選取 ${bs.need} 位${GN[g]}`
@@ -308,7 +311,7 @@ function renderGroups(){
   // Removing a subtree that holds focus makes Chrome lay out the half-empty page at once, clamping scrollY toward 0; drop focus first, restore it below.
   if(focus)document.activeElement.blur();
   box.replaceChildren();
-  const full=sel.size>=LIMIT,show=statsShown(DATA.teams[T.code]);
+  const full=listMode==="pick"&&sel.size>=LIMIT,show=statsShown(DATA.teams[T.code]); // cut mode is not capped
   let any=false;
   for(const g of GORD){
     const all=ROSTER.filter(p=>p.g===g),list=all.filter(match).sort(sortP);
@@ -325,14 +328,20 @@ function renderGroups(){
   restoreFocus(box,focus);
 }
 // Every selection change goes through keepDraft(), which also cancels a pending 送出 confirmation (the count changed).
-function keepDraft(){store("rl-draft-"+T.code,JSON.stringify([...sel]));disarmSave()}
+// It also cancels a pending mode switch: the second press must not throw away an edit made after the first.
+function keepDraft(){store("rl-draft-"+T.code,JSON.stringify([...sel]));disarmSave();disarmListMode()}
+// The selection when entering a team or following another tab: the stored draft, else the mode's start (not saved as a draft).
+function draftOrStart(raw){
+  try{const d=JSON.parse(raw||"null");if(Array.isArray(d))return new Set(d.filter(id=>BY[id]))}catch(e){}
+  return listModeStart(listMode,ROSTER.map(p=>p.id));
+}
 function bulkToggle(ids){
-  const bs=bulkState(ids,sel,LIMIT);if(bs.disabled)return;
+  const bs=bulkState(ids,sel,LIMIT,listMode==="pick");if(bs.disabled)return;
   const next=new Set(sel);for(const id of ids)bs.mode==="add"?next.add(id):next.delete(id);
   sel=next;keepDraft();renderAll();
 }
 function toggle(id){
-  if(sel.has(id))sel.delete(id);else{if(sel.size>=LIMIT){toast(CAP_MSG);return}sel.add(id)}
+  if(sel.has(id))sel.delete(id);else{if(listMode==="pick"&&sel.size>=LIMIT){toast(CAP_MSG);return}sel.add(id)}
   keepDraft();renderAll();
 }
 
@@ -341,18 +350,49 @@ function renderDock(){
   const n=sel.size;
   $("selN").textContent=n;$("selBar").style.width=Math.min(100,n/LIMIT*100)+"%";
   $("top").classList.toggle("over",n>LIMIT);
-  $("copyTxt").disabled=$("mkImg").disabled=$("clear").disabled=n===0;
+  $("copyTxt").disabled=$("mkImg").disabled=n===0||n>LIMIT; // over the limit is not a list to share
+  $("clear").disabled=n===0;
+  renderListMode();
 }
+// ---------- list mode (挑選／刪減) ----------
+const LIST_MODE_NAME={cut:"刪減",pick:"挑選"}, LIST_MODE_DESC={cut:"全隊已保留，點掉不要的球員",pick:"點選要保留的球員"};
+const LIST_MODE_ARM_MSG="再次點擊切換模式並清空名單";
+function renderListMode(){
+  const n=sel.size,over=listModeOver(n,LIMIT),name=LIST_MODE_NAME[listMode],other=LIST_MODE_NAME[otherListMode(listMode)];
+  const b=$("modeBtn"),h=$("modeHint"),t=h.querySelector(".t");
+  b.classList.toggle("arm",listModeArmed);h.classList.toggle("arm",listModeArmed);
+  if(listModeArmed)$("modeName").textContent="確定？";else $("modeName").replaceChildren(name,el("span",{class:"md",text:"模式"}));
+  $("moveN").textContent=`移出 ${over} 人`;$("moveN").hidden=!over||listModeArmed;
+  b.setAttribute("aria-label",`${name}模式，已保留 ${n} / ${LIMIT}${over?`，需移出 ${over} 人`:""}。按下改用${other}模式`);
+  h.title=`按下改用${other}模式`;
+  if(listModeArmed)t.textContent=LIST_MODE_ARM_MSG;else t.replaceChildren(el("b",{text:name+"模式"}),"："+LIST_MODE_DESC[listMode]);
+  h.hidden=tab!=="pick";
+}
+// Unedited (the mode's start list): switch at once. Edited: the first press arms both controls for 3 s, the second switches.
+function pressListMode(){
+  if(!T)return;
+  if(listModeArmed||listModePristine(listMode,sel,ROSTER.map(p=>p.id))){switchListMode();return}
+  listModeArmed=true;clearTimeout(listModeTimer);
+  listModeTimer=setTimeout(()=>{listModeArmed=false;renderListMode()},3000);
+  renderListMode();toast(LIST_MODE_ARM_MSG);
+}
+function disarmListMode(){clearTimeout(listModeTimer);if(listModeArmed){listModeArmed=false;if(T)renderListMode()}}
+function switchListMode(){
+  disarmListMode();
+  listMode=otherListMode(listMode);store("rl-mode-"+T.code,listMode);
+  sel=listModeStart(listMode,ROSTER.map(p=>p.id));keepDraft();renderAll();
+}
+$("modeBtn").onclick=$("modeHint").onclick=pressListMode;
 function fmt(t){const d=new Date(t);return isNaN(d)?"":`${d.getMonth()+1}/${d.getDate()} ${hhmm(t)}`}
 const LOCKED_MSG="官方名單已公布，送出已截止";
 function renderStatus(){
   const s=$("status"),btn=$("save");s.replaceChildren();
-  const k=saveState({saving,saved,sel,locked,mineFailed}),armed=saveArmed&&!k.disabled;
+  const k=saveState({saving,saved,sel,locked,mineFailed,limit:LIMIT}),armed=saveArmed&&!k.disabled;
   btn.disabled=k.disabled;
   btn.classList.toggle("dirty",!armed&&(k.kind==="changed"||k.kind==="unsent"));
   btn.classList.toggle("arm",armed);
   btn.querySelector(".lb").textContent=armed?"確定送出？":k.label;
-  if(k.kind==="locked")btn.title=LOCKED_MSG;else btn.removeAttribute("title");
+  if(k.kind==="locked")btn.title=LOCKED_MSG;else if(k.over)btn.title=`移出 ${k.over} 人後才能送出`;else btn.removeAttribute("title");
   s.title=k.kind==="locked"?LOCKED_MSG:"";
   if(k.kind==="saving")s.append("送出中…");
   else if(k.kind==="connecting")s.append("連線中…");
@@ -603,11 +643,13 @@ document.addEventListener("visibilitychange",()=>{
   retryMine();
   if(statsStale(statsAt,Date.now()))loadStats();
 });
-// Another tab edited this team's draft: follow it.
+// Another tab edited this team's draft or switched its list mode: follow it (and drop any pending confirmation here).
 window.addEventListener("storage",e=>{
-  if(!T||e.key!=="rl-draft-"+T.code)return;
-  let ids=[];try{const d=JSON.parse(e.newValue||"[]");if(Array.isArray(d))ids=d}catch(err){}
-  sel=new Set(ids.filter(id=>BY[id]));disarmSave();renderAll();
+  if(!T)return;
+  if(e.key==="rl-mode-"+T.code){listMode=normListMode(e.newValue);sel=draftOrStart(store("rl-draft-"+T.code))}
+  else if(e.key==="rl-draft-"+T.code)sel=draftOrStart(e.newValue);
+  else return;
+  disarmSave();disarmListMode();renderAll();
 });
 $("q").oninput=e=>{q=e.target.value;renderRail();renderGroups()};
 
@@ -742,7 +784,7 @@ $("mkImg").onclick=async()=>{
     if(isInAppBrowser(navigator.userAgent))kids.push(el("p",{class:"hint inapp",text:"無法儲存請改用 Safari／Chrome 開啟。"}));
     openSheet("名單圖片",kids,b);
   }catch(e){toast("圖片產生失敗，請再試一次")}
-  b.disabled=sel.size===0;lb.textContent="存成圖片";
+  b.disabled=sel.size===0||sel.size>LIMIT;lb.textContent="存成圖片";
 };
 
 function showOfficialCopy(){

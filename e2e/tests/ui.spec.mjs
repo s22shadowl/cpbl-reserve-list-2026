@@ -1,7 +1,7 @@
 // UI behaviour without a server round trip: team switch menu, toast, stats ranking toggle, position rail counts,
 // group bulk select. Expected numbers come from docs/data/teams.json, docs/theme.js or the DOM, never hard-coded.
 import { test, expect } from "@playwright/test";
-import { TEAMS, data, open } from "./helpers.mjs";
+import { TEAMS, data, open, usePickMode } from "./helpers.mjs";
 
 const TEAMS_JSON = data("teams.json").teams;
 const AVAIL = TEAMS.filter(t => TEAMS_JSON[t.code]); // menu order (app.js: TEAMS filtered by teams.json)
@@ -93,7 +93,7 @@ test("toast: team-coloured bar shows the message, the next one replaces it, then
   const toast = page.locator("#toast"), band = AVAIL.find(t => t.code === "AEO").band;
   await open(page);
   await expect(toast).toBeHidden();
-  for (let k = 0; k < 2; k++) await page.locator('.tile[aria-pressed="false"]').first().click();
+  for (let k = 0; k < 2; k++) await page.locator('.tile[aria-pressed="true"]').first().click();
 
   await page.locator("#clear").click();
   await expect(toast).toBeVisible();
@@ -161,8 +161,9 @@ async function expectRailMatchesCards(page) {
 
 test("position rail: counts follow the 顯示 filter and the search, matching the visible cards", async ({ page }) => {
   await open(page);
-  for (const g of ["P", "P", "C", "I"]) await page.locator(`#g-${g} .tile[aria-pressed="false"]`).first().click();
-  const kept = 4, n = AEO.length;
+  // Cut mode starts with the whole team: drop 4.
+  for (const g of ["P", "P", "C", "I"]) await page.locator(`#g-${g} .tile[aria-pressed="true"]`).first().click();
+  const n = AEO.length, kept = n - 4;
   await expect(page.locator("#selN")).toHaveText(String(kept));
   const keptIds = await page.locator('.tile[aria-pressed="true"]').evaluateAll(ts => ts.map(t => t.dataset.id));
 
@@ -194,49 +195,52 @@ test("position rail: counts follow the 顯示 filter and the search, matching th
 });
 
 // ---------- e. group bulk select ----------
-test("bulk select: 全選 takes only the players shown by the search; 全部取消 clears them", async ({ page }) => {
+// Cut mode starts with the whole team, so 全部取消 comes first, then 全選 puts the same players back.
+test("bulk select: 全部取消 drops only the players shown by the search; 全選 takes them back", async ({ page }) => {
+  const n = AEO.length;
   await open(page);
   await page.locator("#q").fill(SURNAME);
   const grp = page.locator("#g-P"), bulk = grp.locator(".bulk");
   const k = await grp.locator(".tile").count();
   expect(k).toBe(AEO.filter(p => p.g === "P" && p.n.includes(SURNAME)).length);
-  await expect(bulk).toHaveText("全選");
-  await expect(bulk).toHaveAttribute("aria-label", `全選投手（${k} 人）`);
+  await expect(bulk).toHaveText("全部取消");
+  await expect(bulk).toHaveAttribute("aria-label", `全部取消投手（${k} 人）`);
 
   await bulk.click();
-  await expect(page.locator("#selN")).toHaveText(String(k));
-  await expect(grp.locator('.tile[aria-pressed="true"]')).toHaveCount(k);
-  await expect(bulk).toHaveText("全部取消");
+  await expect(page.locator("#selN")).toHaveText(String(n - k));
+  await expect(grp.locator('.tile[aria-pressed="true"]')).toHaveCount(0);
+  await expect(bulk).toHaveText("全選");
 
-  // Without the search: only those k are selected, and the pitchers' button offers 全選 again (unless all matched).
+  // Without the search: only those k are dropped, and the pitchers' button offers 全選.
   await page.locator("#q").fill("");
-  const names = await page.locator('.tile[aria-pressed="true"] .nm').allTextContents();
+  const names = await page.locator('.tile[aria-pressed="false"] .nm').allTextContents();
   expect(names).toHaveLength(k);
   for (const nm of names) expect(nm).toContain(SURNAME);
-  if (k < AEO.filter(p => p.g === "P").length) await expect(bulk).toHaveText("全選");
+  await expect(bulk).toHaveText("全選");
 
   await page.locator("#q").fill(SURNAME);
   await bulk.click();
-  await expect(page.locator("#selN")).toHaveText("0");
-  await expect(bulk).toHaveText("全選");
+  await expect(page.locator("#selN")).toHaveText(String(n));
+  await expect(bulk).toHaveText("全部取消");
 
-  // With the 新人 filter: the first group that has rookies selects its rookies only.
+  // With the 新人 filter: the first group that has rookies drops its rookies only.
   await page.locator("#q").fill("");
   await page.locator("#showSel").selectOption("new");
   const g = GORD.find(x => AEO.some(p => p.g === x && isRookie(p)));
   test.skip(!g, "no rookies in this roster");
   const rookies = AEO.filter(p => p.g === g && isRookie(p)).map(p => p.id).sort();
   await page.locator(`#g-${g} .bulk`).click();
-  await expect(page.locator("#selN")).toHaveText(String(rookies.length));
+  await expect(page.locator("#selN")).toHaveText(String(n - rookies.length));
   await page.locator("#showSel").selectOption("all");
-  const picked = await page.locator('.tile[aria-pressed="true"]').evaluateAll(ts => ts.map(t => t.dataset.id));
-  expect(picked.sort()).toEqual(rookies);
+  const dropped = await page.locator('.tile[aria-pressed="false"]').evaluateAll(ts => ts.map(t => t.dataset.id));
+  expect(dropped.sort()).toEqual(rookies);
 });
 
 test("bulk select: not enough slots → aria-disabled and 名額不足（需 N，剩 M）; a narrower search fits", async ({ page }) => {
   const p = AEO.filter(x => x.g === "P").length, target = LIMIT + 1 - p; // left = p - 1 < need = p
   test.skip(target < 1 || target > AEO.length - p, "roster shape does not allow this setup");
   await open(page);
+  await usePickMode(page); // only pick mode is capped
   const other = page.locator('#groups section:not(#g-P) .tile[aria-pressed="false"]').first();
   while (Number(await page.locator("#selN").textContent()) < target) await other.click();
   await expect(page.locator("#selN")).toHaveText(String(target));

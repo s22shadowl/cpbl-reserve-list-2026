@@ -1,23 +1,15 @@
-// Smoke tests for the glue in docs/app.js (buttons, tabs, localStorage, API calls).
+// Smoke tests for the glue in docs/app.js (buttons, tabs, localStorage, API calls). Default 刪減 mode (whole team kept).
 // Each test gets a fresh browser context = a new voter. setup.mjs seeds 50 fake lists per team; earlier tests
 // may leave lists behind, so counts are compared with a baseline read at the start of each test.
 import { test, expect } from "@playwright/test";
-import { TEAM, API, CORS, data, open, pick60, listsSubmitted, submit } from "./helpers.mjs";
+import { TEAM, API, CORS, data, open, pick60, cutTo60, usePickMode, listsSubmitted, submit } from "./helpers.mjs";
 
-test("pick 60, submit, stats count +1 and 'you vs most fans' shows", async ({ page }) => {
+test("cut to 60, submit, stats count +1 and 'you vs most fans' shows", async ({ page }) => {
   await open(page);
   const base = await listsSubmitted(page);
   await page.locator("#tab-pick").click();
-  await pick60(page);
+  await cutTo60(page);
   await expect(page.locator("#status")).toHaveText("尚未送出");
-  // Full: unselected tiles stay focusable (aria-disabled, not disabled) and explain the limit when clicked.
-  const capped = page.locator('.tile[aria-disabled="true"]').first();
-  expect(await capped.evaluate(b => b.disabled)).toBe(false);
-  await capped.focus();
-  await expect(capped).toBeFocused();
-  await page.keyboard.press("Enter"); // Playwright refuses to click aria-disabled; a keyboard press is the real path too
-  await expect(page.locator("#toast")).toHaveText(/已達 60 人上限/);
-  await expect(page.locator("#selN")).toHaveText("60");
   await submit(page);
   await expect(page.locator("#save")).toBeDisabled();
 
@@ -32,7 +24,7 @@ test("withdraw: clear + submit empty resets status and stats", async ({ page }) 
   await open(page);
   const base = await listsSubmitted(page);
   await page.locator("#tab-pick").click();
-  await pick60(page);
+  await cutTo60(page);
   await submit(page);
   await expect.poll(() => listsSubmitted(page)).toBe(base + 1);
 
@@ -51,15 +43,30 @@ test("withdraw: clear + submit empty resets status and stats", async ({ page }) 
   await expect(page.locator("section.mvf")).toContainText("送出名單後");
 });
 
+test("pick mode: at 60 the unselected tiles explain the limit", async ({ page }) => {
+  await open(page);
+  await usePickMode(page);
+  await pick60(page);
+  // Full: unselected tiles stay focusable (aria-disabled, not disabled) and explain the limit when clicked.
+  const capped = page.locator('.tile[aria-disabled="true"]').first();
+  expect(await capped.evaluate(b => b.disabled)).toBe(false);
+  await capped.focus();
+  await expect(capped).toBeFocused();
+  await page.keyboard.press("Enter"); // Playwright refuses to click aria-disabled; a keyboard press is the real path too
+  await expect(page.locator("#toast")).toHaveText(/已達 60 人上限/);
+  await expect(page.locator("#selN")).toHaveText("60");
+});
+
 test("draft survives a reload", async ({ page }) => {
   await open(page);
-  const next = page.locator('.tile[aria-pressed="false"]').first();
+  const n = Number(await page.locator("#selN").textContent());
+  const next = page.locator('.tile[aria-pressed="true"]').first();
   for (let i = 0; i < 3; i++) await next.click();
-  await expect(page.locator("#selN")).toHaveText("3");
+  await expect(page.locator("#selN")).toHaveText(String(n - 3));
 
   await page.reload();
   await expect(page.locator(".tile").first()).toBeVisible();
-  await expect(page.locator("#selN")).toHaveText("3");
+  await expect(page.locator("#selN")).toHaveText(String(n - 3));
   await expect(page.locator("#status")).toHaveText("尚未送出");
 });
 
@@ -78,6 +85,9 @@ test("official answers (on for localhost): stats tab only, never on picker cards
 
 test("fewer than 60: the first press arms 送出, the second submits; it disarms after 3 s", async ({ page }) => {
   await open(page);
+  await page.locator("#clear").click();
+  await page.locator("#clear").click(); // second press confirms
+  await expect(page.locator("#selN")).toHaveText("0");
   const next = page.locator('.tile[aria-pressed="false"]').first();
   for (let i = 0; i < 3; i++) await next.click();
   const save = page.locator("#save");
@@ -133,7 +143,7 @@ test("locked: submit off, picking and sharing still work, hit rate from the subm
 test("locked without a submitted list: hint instead of a hit rate", async ({ page }) => {
   await mockLocked(page, null);
   await open(page);
-  await page.locator('.tile[aria-pressed="false"]').first().click();
+  await page.locator('.tile[aria-pressed="true"]').first().click();
   await page.locator("#tab-stats").click();
   await expect(page.locator("section.ans:not(.mvf) .hit")).toContainText("公布前未送出名單");
 });
@@ -143,7 +153,7 @@ test("submit refused as locked: toast and the button switches to 已截止", asy
   await page.route(`${API}/mine?**`, r => r.fulfill({ json: { ids: null, locked: lockedNow }, headers: CORS }));
   await page.route(`${API}/picks`, r => { lockedNow = true; return r.fulfill({ status: 403, json: { error: "locked" }, headers: CORS }); });
   await open(page);
-  await pick60(page);
+  await cutTo60(page);
   await page.locator("#save").click();
   await expect(page.locator("#toast")).toHaveText("送出已截止");
   await expect(page.locator("#status")).toHaveText("官方名單已公布，送出已截止");
@@ -155,7 +165,7 @@ test("/mine unreachable: 無法確認送出狀態, submitting still allowed, ret
   await page.route(`${API}/mine?**`, r => fail ? r.abort() : r.fallback());
   await page.goto(TEAM);
   await expect(page.locator("#status")).toHaveText("無法確認送出狀態");
-  await page.locator('.tile[aria-pressed="false"]').first().click();
+  await cutTo60(page);
   await expect(page.locator("#save")).toBeEnabled();
   fail = false;
   await context.setOffline(true);
@@ -173,7 +183,7 @@ test("keyboard: tabs move with arrow keys; the image sheet traps Tab and returns
   await page.keyboard.press("ArrowLeft");
   await expect(page.locator("#tab-pick")).toHaveAttribute("aria-selected", "true");
 
-  await page.locator('.tile[aria-pressed="false"]').first().click();
+  await cutTo60(page);
   await page.locator("#mkImg").click();
   const sheet = page.locator("#sheet");
   await expect(sheet.locator("img.shot")).toHaveAttribute("src", /^data:image\/png/);
@@ -192,7 +202,7 @@ test("in-app browser: the image sheet suggests opening in Safari／Chrome", asyn
   const context = await browser.newContext({ userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Safari Line/14.19.0" });
   const page = await context.newPage();
   await open(page);
-  await page.locator('.tile[aria-pressed="false"]').first().click();
+  await cutTo60(page);
   await page.locator("#mkImg").click();
   await expect(page.locator("#sheet .inapp")).toHaveText("無法儲存請改用 Safari／Chrome 開啟。");
   await context.close();
@@ -202,9 +212,10 @@ test("two tabs: a draft change in one shows up in the other", async ({ context }
   const a = await context.newPage(), b = await context.newPage();
   await open(a);
   await open(b);
-  for (let i = 0; i < 2; i++) await a.locator('.tile[aria-pressed="false"]').first().click();
-  await expect(b.locator("#selN")).toHaveText("2");
-  await expect(b.locator('.tile[aria-pressed="true"]')).toHaveCount(2);
+  const n = Number(await a.locator("#selN").textContent());
+  for (let i = 0; i < 2; i++) await a.locator('.tile[aria-pressed="true"]').first().click();
+  await expect(b.locator("#selN")).toHaveText(String(n - 2));
+  await expect(b.locator('.tile[aria-pressed="true"]')).toHaveCount(n - 2);
 });
 
 test("slow /mine answering after a submit does not undo it (still 已送出)", async ({ page }) => {
@@ -214,7 +225,7 @@ test("slow /mine answering after a submit does not undo it (still 已送出)", a
   await page.route(`${API}/mine?**`, async r => { await held; await r.fulfill({ json: { ids: null, locked: false }, headers: CORS }); });
   await page.goto(TEAM);
   await expect(page.locator(".tile").first()).toBeVisible();
-  await pick60(page);
+  await cutTo60(page);
   await page.locator("#save").click();
   await expect(page.locator("#status")).toHaveText(/已送出/);
   release();

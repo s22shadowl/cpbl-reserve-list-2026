@@ -47,8 +47,12 @@
 <div id="app" hidden>
 <div class="top" id="top">
   <div class="in">
+    <div class="mrow" id="modeRow">
+      <button type="button" class="modehint" id="modeHint"><span class="t"></span><svg class="sw" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v14M3 14l4 4 4-4M17 20V6M13 10l4-4 4 4"/></svg></button>
+      <span class="st" id="status">載入中…</span>
+    </div>
     <div class="row">
-      <div class="total"><div class="num"><span id="selN">0</span><small>/60</small></div><div class="lbl"><b>已保留</b><span class="st" id="status">載入中…</span></div></div>
+      <button type="button" class="total" id="modeBtn"><span class="num"><span id="selN">0</span><small>/60</small></span><span class="lbl"><b id="modeName">刪減<span class="md">模式</span></b><span class="mv" id="moveN" hidden></span></span></button>
       <span class="sp"></span>
       <div class="acts">
         <button class="btn" id="clear" title="清空名單" aria-label="清空名單"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span class="lb">清空</span></button>

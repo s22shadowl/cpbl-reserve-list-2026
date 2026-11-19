@@ -21,10 +21,26 @@ export async function open(page, hash = TEAM) {
   await expect(page.locator("#status")).not.toHaveText(/連線中/);
 }
 
+// Pick mode only (cut mode starts with the whole team).
 export async function pick60(page) {
   const next = page.locator('.tile[aria-pressed="false"]:not([aria-disabled="true"])').first();
   while (Number(await page.locator("#selN").textContent()) < 60) await next.click();
   await expect(page.locator("#selN")).toHaveText("60");
+}
+
+// Cut mode (the default): drop the first kept player until 60 are left.
+export async function cutTo60(page) {
+  const next = page.locator('.tile[aria-pressed="true"]').first();
+  while (Number(await page.locator("#selN").textContent()) > 60) await next.click();
+  await expect(page.locator("#selN")).toHaveText("60");
+}
+
+// Switch to pick mode through the count button (a second press confirms when the list was edited).
+export async function usePickMode(page) {
+  await page.locator("#modeBtn").click();
+  if ((await page.locator("#modeName").textContent()) === "確定？") await page.locator("#modeBtn").click();
+  await expect(page.locator("#modeName")).toContainText("挑選");
+  await expect(page.locator("#selN")).toHaveText("0");
 }
 
 export async function listsSubmitted(page) {
