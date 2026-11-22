@@ -769,7 +769,7 @@ async function drawCard(){
   const ink=TH["--ink"],muted=TH["--muted"],line=TH["--line"];
   const SANS='"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif',NUM='"Rajdhani","Arial Narrow",sans-serif';
   const title="我的"+T.name+" 60 人保留名單";
-  const all=title+"放生人0123456789"+ROSTER.map(p=>p.n).join("");
+  const all=title+"放生人0123456789"+GORD.split("").map(g=>GN[g]).join("")+ROSTER.map(p=>p.n).join("");
   try{
     await Promise.all([
       document.fonts.load("400 28px "+SANS,all),document.fonts.load("500 34px "+SANS,all),
