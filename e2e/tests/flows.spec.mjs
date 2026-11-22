@@ -40,7 +40,9 @@ test("withdraw: clear + submit empty resets status and stats", async ({ page }) 
   await expect(page.locator("#status")).toHaveText("點選球員加入名單");
   await expect(page.locator("#save")).toBeDisabled();
   await expect.poll(() => listsSubmitted(page)).toBe(base);
-  await expect(page.locator("section.mvf")).toContainText("送出名單後");
+  // Nothing submitted and the answer block is on (localhost): no "you vs most fans" box, no hit-rate line.
+  await expect(page.locator("section.mvf")).toHaveCount(0);
+  await expect(page.locator("section.ans .hit .hint")).toHaveCount(0);
 });
 
 test("pick mode: at 60 the unselected tiles explain the limit", async ({ page }) => {
@@ -75,8 +77,18 @@ test("official answers (on for localhost): stats tab only, never on picker cards
   await expect(page.locator(".tile .cd")).toHaveCount(0);
 
   await page.locator("#tab-stats").click();
-  await expect(page.locator("section.ans:not(.mvf) h2")).toHaveText("對答案");
-  await expect(page.locator(".rank .rk .cd").first()).toBeVisible();
+  const ans = page.locator("section.ans:not(.mvf)");
+  await expect(ans.locator("h2")).toHaveText("對答案");
+  await expect(ans.locator(".upset")).toHaveCount(0);
+  // Club pills only where the club went against the consensus line = the two answer columns.
+  const cols = await ans.locator(".dc li").count();
+  expect(cols).toBeGreaterThan(0);
+  await expect(page.locator(".rank .rk .cd")).toHaveCount(cols);
+  // Upsets are marked in place (orange), at most 3 per column.
+  const hot = await ans.locator(".dc li.hot").count();
+  expect(hot).toBeGreaterThan(0);
+  expect(hot).toBeLessThanOrEqual(6);
+  await expect(page.locator(".kpi")).toHaveCount(3);
 
   await page.locator("#tab-pick").click();
   await expect(page.locator(".tile").first()).toBeVisible();
@@ -140,12 +152,16 @@ test("locked: submit off, picking and sharing still work, hit rate from the subm
   await expect(ans).toContainText("球迷保留、球團放生");
 });
 
-test("locked without a submitted list: hint instead of a hit rate", async ({ page }) => {
+test("locked without a submitted list: no hit rate and no hint, only the fan average", async ({ page }) => {
   await mockLocked(page, null);
   await open(page);
   await page.locator('.tile[aria-pressed="true"]').first().click();
   await page.locator("#tab-stats").click();
-  await expect(page.locator("section.ans:not(.mvf) .hit")).toContainText("公布前未送出名單");
+  const hit = page.locator("section.ans:not(.mvf) .hit");
+  await expect(hit).toContainText("球迷平均重疊");
+  await expect(hit.locator(".big")).toHaveCount(1);
+  await expect(hit.locator(".hint")).toHaveCount(0);
+  await expect(page.locator("section.mvf")).toHaveCount(0);
 });
 
 test("submit refused as locked: toast and the button switches to 已截止", async ({ page }) => {

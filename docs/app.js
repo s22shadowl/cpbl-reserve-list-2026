@@ -507,44 +507,40 @@ function group(title,items,rate){
   if(!items.length)return el("div",{class:"ag none"},el("b",{text:title}),el("span",{text:"沒有"}));
   return el("div",{class:"ag"},el("b",{text:title+" "+items.length+" 人"}),plist(items,rate));
 }
-// Why there is no hit rate: nothing submitted (before the lock, or still possible to submit), or /mine unknown.
-function mineHint(state){
-  if(state==="unknown")return mineFailed?"讀取失敗，連線恢復後重試。":"讀取你送出的名單中…";
-  return locked?"公布前未送出名單。":"送出名單後顯示結果。";
+// Why there is no hit rate yet: /mine is still loading or failed. (Nothing submitted shows no line at all.)
+function mineHint(){return mineFailed?"讀取失敗，連線恢復後重試。":"讀取你送出的名單中…"}
+// D3 section rule: ── title ── with an optional centred sub line.
+function secHead(title,sub){
+  return el("div",{class:"ans-h"},el("h2",{text:title}),sub?el("span",{text:sub}):null);
 }
 function answerBlock(a,N){
   const box=el("section",{class:"ans","aria-label":"對答案"});
   const d=offDate(officialList.updated);
-  box.append(el("div",{class:"ans-h"},el("h2",{text:"對答案"}),el("span",{text:(d?`球團名單 ${d} 公布`:"球團名單已公布")})));
+  box.append(secHead("對答案",d?`球團名單 ${d} 公布`:"球團名單已公布"));
   const hit=el("div",{class:"hit"});
   if(a.mine)hit.append(el("div",{class:"big"},"你的名單和球團重疊 ",el("b",{text:a.mine.x}),el("small",{text:" / "+a.mine.denom})," 人"));
-  else hit.append(el("div",{class:"hint",text:mineHint(a.mineState)}));
+  else if(a.mineState==="unknown")hit.append(el("div",{class:"hint",text:mineHint()})); // nothing submitted: no line
   if(a.fanAvg!=null)hit.append(el("div",{class:"big"},"球迷平均重疊 ",el("b",{text:a.fanAvg.toFixed(1)})," 人"));
-  box.append(hit);
+  if(hit.childNodes.length)box.append(hit);
   if(a.mine){
     const by=ids=>ids.map(id=>({p:BY[id]})).filter(x=>x.p).sort((x,y)=>sortP(x.p,y.p));
     box.append(el("div",{class:"ags"},group("你保留、球團放生",by(a.mine.mineOnly)),group("你放生、球團保留",by(a.mine.officialOnly))));
   }
   if(!a.diff){box.append(el("p",{class:"hint",text:"樣本數不足。"}));return box}
-  const u=a.upsets;
-  if(u.dropped.length||u.kept.length){
-    const row=(x,k)=>el("li",{},el("span",{class:"pct",text:Math.round(x.r*100)+"%"}),
-      k===0?"球迷保留、球團放生 ":"球迷放生、球團保留 ",el("b",{text:x.p.no+" "+x.p.n}));
-    box.append(el("div",{class:"upset"},el("h3",{},"爆冷"),el("ul",{},...u.dropped.map(x=>row(x,0)),...u.kept.map(x=>row(x,1)))));
-  }
-  const li=x=>el("li",{},el("span",{class:"n2",text:x.p.no}),x.p.n,el("small",{text:Math.round(x.r*100)+"%"}));
+  const hot=new Set([...a.upsets.dropped,...a.upsets.kept].map(x=>x.p.id)); // most extreme 3 each side
+  const li=x=>el("li",{class:hot.has(x.p.id)?"hot":""},el("span",{class:"n2",text:x.p.no}),x.p.n,el("small",{text:Math.round(x.r*100)+"%"}));
   const col=(title,items)=>el("div",{class:"dc"},el("h3",{text:title+" "+items.length+" 人"}),
     items.length?el("ol",{},...items.map(li)):el("p",{class:"hint",text:"沒有"}));
   box.append(
     el("div",{class:"dcs"},col("球迷保留、球團放生",a.diff.fanKeepClubDrop),col("球迷放生、球團保留",a.diff.fanDropClubKeep)),
-    el("p",{class:"hint",text:`球迷保留 = 保留率前 ${LIMIT} 名。`}));
+    el("p",{class:"hint",text:`球迷保留 = 保留率前 ${LIMIT} 名；${warnWord(T)}為爆冷（球迷 ${Math.round(OFF_UPSET*100)}% 以上保留卻被放生，或 ${Math.round((1-OFF_UPSET)*100)}% 以下卻被保留）。`}));
   return box;
 }
 
 // ---------- you vs most fans (P2-2) ----------
 function mineBlock(m){
   const box=el("section",{class:"ans mvf","aria-label":"你和多數球迷不同的決定"});
-  box.append(el("div",{class:"ans-h"},el("h2",{text:"你和多數球迷不同"}),el("span",{text:"百分比為其他球迷保留率"})));
+  box.append(secHead("你和多數球迷不同","百分比為其他球迷保留率"));
   if(m.state==="unsent"){box.append(el("p",{class:"hint",text:"送出名單後顯示結果。"}));return box}
   if(m.state==="few"){box.append(el("p",{class:"hint",text:"樣本數不足。"}));return box}
   if(!m.keptLow.length&&!m.droppedHigh.length){box.append(el("p",{class:"hint",text:"沒有明顯不同。"}));return box}
@@ -594,20 +590,23 @@ function renderStats(){
   const kpis=[
     [N,"份名單已送出"],
     [(tot/N).toFixed(1),"平均保留人數"],
-    [rows.filter(x=>x.r===1).length,"全票保留"],
-    [N>=3?split:"—","意見分歧（35–65%）"],
+    [N>=3?split:"—","意見分歧"],
   ];
   for(const[v,k]of kpis)kp.append(el("div",{class:"kpi"},el("div",{class:"v",text:v}),el("div",{class:"k",text:k})));
   box.append(kp);
-  box.append(mineBlock(mineVsFans({roster:ROSTER,counts:cnt,N,saved,cmp:sortP})));
+  const mvf=mineVsFans({roster:ROSTER,counts:cnt,N,saved,cmp:sortP});
+  if(!(ans&&mvf.state==="unsent"))box.append(mineBlock(mvf)); // the answer block already says "送出名單後顯示結果"
   const list=el("div",{class:"rank"+(clubKept?" club":""),style:"--cd:"+String(N).length}); // --cd = digits of N, sizes the count column
   const row=x=>{
     const cls=["rk"];if(sel.has(x.p.id))cls.push("mine");if(N>=3&&x.r>=.35&&x.r<=.65)cls.push("split");
     return el("div",{class:cls.join(" ")},el("div",{class:"r",text:x.rank}),photo(x.p,"av"),
-      el("div",{class:"nm"},el("span",{class:"n2",text:x.p.no}),x.p.n,clubMark(x.p.id)?.node,el("small",{text:posLabel(x.p)})),
+      el("div",{class:"nm"},el("span",{class:"n2",text:x.p.no}),x.p.n,clubOff(x),el("small",{text:posLabel(x.p)})),
       el("div",{class:"track"},el("i",{style:`width:${(x.r*100).toFixed(1)}%`})),
       el("div",{class:"pc"},el("span",{text:Math.round(x.r*100)+"%"}),el("small",{text:`${x.c}/${N}`})));
   };
+  // Club pill only where the club went against the consensus line (dropped above it / kept below it).
+  // Shown only with the answer columns (enough lists, OFF_MIN_N): the pills are exactly those players.
+  const clubOff=x=>{const m=ans&&ans.diff&&clubMark(x.p.id);return m&&m.keep!==(x.rank<=LIMIT)?m.node:null};
   // ranks 1–20, toggle, (open) 21–LIMIT, cut row, LIMIT+1… — the toggle stays put, only rows below it appear.
   const part=rankParts(rows,RANK_PREVIEW,LIMIT);
   list.append(...part.head.map(row));
@@ -621,8 +620,9 @@ function renderStats(){
   if(part.tail.length)list.append(el("div",{class:"cut"},`▲ 共識 ${LIMIT} 人保留線`,el("span",{text:"以下未進共識名單"})),...part.tail.map(row));
   box.append(list);
   if(refocus&&part.more)$("rankMore").focus({preventScroll:true});
-  box.append(el("p",{class:"note"},"● 為你保留的球員；虛線為 50%；橘色為意見分歧。重新送出會覆蓋舊名單。"+(clubKept?"✓／✗ 為球團公布的決定。":""),
-    el("span",{id:"statsAt",text:statsAtText()})));
+  box.append(el("p",{class:"note"},
+    el("span",{text:`● 為你保留的球員；虛線為 50%；${warnWord(T)}為意見分歧。`+(clubKept?`✗ 放生 = 共識 ${LIMIT} 人內但球團放生；✓ 保留 = 共識外但球團保留。`:"")}),
+    el("span",{},"重新送出會覆蓋舊名單。",el("span",{id:"statsAt",text:statsAtText()}))));
 }
 // Only the rows below the toggle change, so it is updated in place (no rebuild, nothing above it moves).
 function toggleRank(){

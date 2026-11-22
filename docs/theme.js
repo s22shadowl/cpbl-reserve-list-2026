@@ -3,10 +3,11 @@
 // globals there); tests/frontend/theme.test.mjs loads it with node:vm. Each team gives 5 base colours:
 // band (hero/top bar), acc (accent fill), on (text on acc), ink (accent text, light mode), hi (accent text, dark mode).
 // acc = the club's official primary colour; band = its official dark colour or a dark shade of the primary (roadmap P2-6).
-// Secondary colours are deliberately not used.
+// Secondary colours are deliberately not used. warn = optional [light, dark, name in copy] override of the shared orange --warn
+// (意見分歧, 爆冷) for a team whose own accent is orange (Lions); others keep the style.css default.
 const TEAMS=[
   {code:"ACN",slug:"brothers",cardSwap:true,name:"中信兄弟",short:"兄弟",en:"CTBC Brothers",band:"#0B1B3D",acc:"#FCCF00",on:"#08132B",ink:"#7E6800",hi:"#FCCF00"},
-  {code:"ADD",slug:"lions",cardSwap:true,name:"統一7-ELEVEn獅",short:"統一獅",en:"Uni-President Lions",band:"#3F1E04",acc:"#E26A10",on:"#2C1503",ink:"#AA500C",hi:"#E76C10"},
+  {code:"ADD",slug:"lions",cardSwap:true,name:"統一7-ELEVEn獅",short:"統一獅",en:"Uni-President Lions",band:"#3F1E04",acc:"#E26A10",on:"#2C1503",ink:"#AA500C",hi:"#E76C10",warn:["#B8326A","#FF85B0","桃紅色"]},
   {code:"AJL",slug:"monkeys",name:"樂天桃猿",short:"桃猿",en:"Rakuten Monkeys",band:"#490615",acc:"#850B26",on:"#FFFFFF",ink:"#850B26",hi:"#F04D71"},
   {code:"AEO",slug:"guardians",name:"富邦悍將",short:"悍將",en:"Fubon Guardians",band:"#002255",acc:"#004B90",on:"#FFFFFF",ink:"#004B90",hi:"#4FA3FF"},
   {code:"AAA",slug:"dragons",name:"味全龍",short:"味全龍",en:"Wei Chuan Dragons",band:"#360104",acc:"#C1020E",on:"#FFFFFF",ink:"#C1020E",hi:"#FD2C39"},
@@ -32,7 +33,7 @@ function liftAccent(acc,on,bg){let c=acc;for(let t=0.05;contrastRatio(c,bg)<3&&t
 function accHover(acc,on){return mixHex(acc,luminance(on)>0.18?BLACK:WHITE,0.18)}
 
 function deriveTheme(base){
-  const {band,acc,on,ink,hi}=base;
+  const {band,acc,on,ink,hi}=base; // base.warn: see TEAMS
   const rgb=h=>hexRgb(h).join(",");
   // light: tints of band/acc on white
   const lPaper=WHITE, lPage=mixHex(WHITE,band,0.05);
@@ -60,8 +61,11 @@ function deriveTheme(base){
     "--tile":mixHex(dPaper,WHITE,0.08),"--soft":mixHex(dPaper,acc,0.15),"--pri-hover":mixHex(WHITE,acc,0.12),
     "--shade-rgb":"0,0,0","--scrim":"rgba(0,0,0,.7)",
   };
+  if(base.warn){light["--warn"]=base.warn[0];dark["--warn"]=base.warn[1]}
   return{light,dark};
 }
+// The --warn colour's name for the copy (意見分歧, 爆冷), so the text matches what the team page shows.
+function warnWord(t){return t&&t.warn?t.warn[2]:"橘色"}
 // Picker card: band background with an accent stripe, or (cardSwap) accent background, on-accent text and a band stripe.
 function cardColors(t){return t.cardSwap?{bg:t.acc,fg:t.on,stripe:t.band}:{bg:t.band,fg:WHITE,stripe:t.acc}}
 // CSS for one token map, e.g. "--page:#F7F7F7;--paper:#FFFFFF;…"

@@ -121,3 +121,33 @@ for (const t of TEAMS) {
     assert.ok(contrast(c.fg, c.bg) >= 4.5, `${c.fg} on ${c.bg}`);
   });
 }
+
+// --warn (意見分歧, 爆冷) is a shared orange from style.css; Lions' accent is orange too, so Lions alone overrides it.
+test("only Lions overrides --warn; others keep the style.css default", () => {
+  assert.deepEqual([...TEAMS.filter((t) => t.warn).map((t) => t.code)], ["ADD"]);
+  for (const t of TEAMS.filter((x) => !x.warn)) for (const mode of ["light", "dark"]) assert.equal(deriveTheme(t)[mode]["--warn"], undefined);
+  assert.equal(deriveTheme(NEUTRAL).light["--warn"], undefined);
+});
+test("Lions --warn: readable on paper and clearly not the team orange", () => {
+  const t = TEAMS.find((x) => x.code === "ADD"), th = deriveTheme(t);
+  const hue = (hex) => {
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(1 + i, 3 + i), 16) / 255);
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+    const h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return (h * 60 + 360) % 360;
+  };
+  const gap = (a, b) => { const x = Math.abs(hue(a) - hue(b)) % 360; return Math.min(x, 360 - x); };
+  for (const mode of ["light", "dark"]) {
+    const w = th[mode]["--warn"];
+    assert.ok(contrast(w, th[mode]["--paper"]) >= 4.5, `${mode} ${w} on paper`);
+    const ink = th[mode]["--acc-ink"], dflt = mode === "light" ? "#C2611B" : "#F09A5C"; // style.css default --warn
+    assert.ok(gap(w, ink) >= 45, `${mode} ${w} vs acc-ink ${ink}`);
+    assert.ok(gap(w, ink) > gap(dflt, ink) + 30, `${mode} ${w} should sit further from the team orange than the default`);
+  }
+});
+test("warnWord names the --warn colour for the copy: 桃紅色 for Lions, 橘色 otherwise", () => {
+  const warnWord = vm.runInContext("warnWord", ctx);
+  assert.equal(warnWord(TEAMS.find((t) => t.code === "ADD")), "桃紅色");
+  for (const t of TEAMS.filter((x) => x.code !== "ADD")) assert.equal(warnWord(t), "橘色");
+  assert.equal(warnWord(null), "橘色");
+});
