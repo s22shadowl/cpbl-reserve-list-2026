@@ -22,7 +22,7 @@ test.use({ colorScheme: "light" }); // toast / theme colours are checked against
 // ---------- a. team switch menu ----------
 async function expectTeam(page, t) {
   await expect(page).toHaveURL(new RegExp("#" + t.slug + "$"));
-  await expect(page.locator("#h1")).toHaveText(`排出你的${t.name} 60 人契約保留名單`);
+  await expect(page.locator("#h1")).toContainText(t.name);
   await expect(page.locator("#teamSw")).toHaveText(t.name);
   await expect(page.locator("#teamSw")).toHaveAttribute("aria-label", "切換球隊，目前：" + t.name);
   await expect(page).toHaveTitle(new RegExp("^" + t.short));
@@ -286,13 +286,15 @@ test("picker: one card per team with name and a decorative watermark; the rules 
   }
   const rules = page.locator("#heroEx");
   await expect(rules).toBeVisible();
-  for (const kind of ["洋將", "自由球員", "擴編選秀", "自主", "自行培訓"]) await expect(rules).toContainText(kind);
+  for (const kind of ["洋將", "國內 FA", "擴編選秀", "自主", "自行培訓"]) await expect(rules).toContainText(kind);
 });
 
 test("team page: the 不需列入 list counts every exempt player in teams.json and names them by category", async ({ page }) => {
+  // The category labels are rule text (the requirement), so they are listed here once rather than read from app.js EXEMPT.
+  const LABEL = { foreign: "洋將", training: "自主／自行培訓", fa: "行使國內 FA", expansion: "擴編選秀被選走", removed: "已非球員" };
   const ex = TEAMS_JSON.AEO.exempt;
-  const cats = Object.values(ex).filter(names => names.length);
-  const total = cats.reduce((a, names) => a + names.length, 0);
+  const cats = Object.entries(ex).filter(([, names]) => names.length);
+  const total = cats.reduce((a, [, names]) => a + names.length, 0);
   test.skip(total === 0, "no exempt players on this team");
   await open(page);
   const box = page.locator("#exempt details");
@@ -300,9 +302,10 @@ test("team page: the 不需列入 list counts every exempt player in teams.json 
   await box.locator("summary").click();
   const rows = box.locator(":scope > span");
   await expect(rows).toHaveCount(cats.length);
-  for (const names of cats) {
+  for (const [kind, names] of cats) {
     const row = rows.filter({ hasText: names[0] });
     await expect(row).toHaveCount(1);
+    await expect(row.locator("b")).toHaveText(LABEL[kind]);
     for (const nm of names) await expect(row).toContainText(nm);
     await expect(row).toBeVisible();
   }

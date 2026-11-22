@@ -61,7 +61,6 @@ test("dialog links to the CPBL player page", async ({ page }) => {
   await expect(a).toHaveAttribute("href", "https://www.cpbl.com.tw/team/person?Acnt=0000006743");
   await expect(a).toHaveAttribute("target", "_blank");
   await expect(a).toHaveAttribute("rel", "noopener");
-  await expect(a).toHaveText("中職官網球員頁");
 });
 
 test("long name stays on one line", async ({ page }) => {

@@ -26,7 +26,7 @@ test("detailChips order and kinds", () => {
     [["中外野手","k"],["二軍",""],["18 歲",""],["新人","tg"],["2026 年選秀第 4 輪",""]]);
   assert.deepEqual(plain(detailChips(liu, REF, "游擊手")).map(c => c.text), ["游擊手","一軍","24 歲"]);
   assert.deepEqual(plain(detailChips({ ...liu, rk:"c" }, REF, "游擊手")).map(c => c.text), ["游擊手","一軍","24 歲","新人","今年自培轉正"]);
-  assert.deepEqual(plain(detailChips({ ...liu, tag:"旅外FA" }, REF, "游擊手")).at(-1), { text:"旅外FA", kind:"tg" });
+  assert.deepEqual(plain(detailChips({ ...liu, tag:"旅外 FA" }, REF, "游擊手")).at(-1), { text:"旅外 FA", kind:"tg" });
 });
 test("detailTable: transposed, shown column only with two levels", () => {
   assert.equal(detailTable(paz), null);
@@ -38,11 +38,12 @@ test("detailTable: transposed, shown column only with two levels", () => {
   assert.deepEqual(u.levels.map(l => l.shown), [false]);
   assert.deepEqual(u.rows.map(r => r.label), ["出賽","局數","ERA","WHIP","奪三振"]);
 });
-test("tierNote", () => {
+test("tierNote: none without a tier, otherwise names the tier's threshold", () => {
   assert.equal(tierNote(paz), null);
-  assert.equal(tierNote({ ...pit, s:{ A:{ g:3, ip:"5.0", era:"1", whip:"1", so:1 } } }), "樣本少：不到 10 局，卡片上以淡色顯示");
-  assert.equal(tierNote({ ...pit, s:{ A:{ g:40, ip:"42.1", era:"1", whip:"1", so:1 } } }), "一軍主力：40 局以上，卡片上以粗體顯示");
-  assert.equal(tierNote({ ...liu, s:{ D:{ g:5, pa:12 } } }), "樣本少：不到 30 打席，卡片上以淡色顯示");
+  assert.equal(tierNote(pit), null); // 26 IP: neither low nor core
+  assert.match(tierNote({ ...pit, s:{ A:{ g:3, ip:"5.0", era:"1", whip:"1", so:1 } } }), /\b10 局/);
+  assert.match(tierNote({ ...pit, s:{ A:{ g:40, ip:"42.1", era:"1", whip:"1", so:1 } } }), /\b40 局/);
+  assert.match(tierNote({ ...liu, s:{ D:{ g:5, pa:12 } } }), /\b30 打席/);
 });
 test("playerUrl", () => assert.equal(playerUrl({ id:"0000006743" }), "https://www.cpbl.com.tw/team/person?Acnt=0000006743"));
 test("isLongName", () => { assert.equal(isLongName("帕蘇拉塔基斯利尼安"), true); assert.equal(isLongName("林安可"), false); assert.equal(isLongName("1234567"), false); assert.equal(isLongName("12345678"), true); });

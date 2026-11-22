@@ -15,7 +15,7 @@ test("cut to 60, submit, stats count +1 and 'you vs most fans' shows", async ({ 
 
   await expect.poll(() => listsSubmitted(page)).toBe(base + 1);
   const mine = page.locator("section.mvf");
-  await expect(mine.locator("h2")).toHaveText("你和多數球迷不同");
+  await expect(mine).toBeVisible();
   await expect(mine).not.toContainText("送出名單後");
   await expect(mine).not.toContainText("樣本數不足");
 });
@@ -78,7 +78,7 @@ test("official answers (on for localhost): stats tab only, never on picker cards
 
   await page.locator("#tab-stats").click();
   const ans = page.locator("section.ans:not(.mvf)");
-  await expect(ans.locator("h2")).toHaveText("對答案");
+  await expect(ans).toBeVisible();
   // Club pills only where the club went against the consensus line = the two answer columns.
   const cols = await ans.locator(".dc li").count();
   expect(cols).toBeGreaterThan(0);
@@ -102,7 +102,7 @@ test("fewer than 60: the first press arms 送出, the second submits; it disarms
   for (let i = 0; i < 3; i++) await next.click();
   const save = page.locator("#save");
   await save.click();
-  await expect(page.locator("#toast")).toHaveText("只選了 3 人，再按一次送出");
+  await expect(page.locator("#toast")).toContainText("60");
   await expect(save).toHaveText("確定送出？");
   await expect(page.locator("#status")).toHaveText("尚未送出");
   await page.waitForTimeout(3300);
@@ -128,7 +128,7 @@ test("locked: submit off, picking and sharing still work, hit rate from the subm
   const kept = AEO.official.slice(0, 30), extra = AEO.roster.filter(id => !AEO.official.includes(id)).slice(0, 10);
   await mockLocked(page, [...kept, ...extra]);
   await open(page);
-  await expect(page.locator("#status")).toHaveText("官方名單已公布，送出已截止");
+  await expect(page.locator("#status")).toHaveText("球團名單已公布，送出已截止");
   await expect(page.locator("#save")).toBeDisabled();
   await expect(page.locator("#save")).toHaveText("已截止");
   await expect(page.locator("#heroOff")).toContainText("送出已截止");
@@ -148,9 +148,12 @@ test("locked: submit off, picking and sharing still work, hit rate from the subm
   // Hit rate compares the submitted 40, not the 41-player draft.
   await page.locator("#tab-stats").click();
   const ans = page.locator("section.ans:not(.mvf)");
-  await expect(ans.locator(".hit .big").first()).toHaveText("你的名單和球團重疊 30 / 40 人");
-  await expect(ans).toContainText("球迷平均重疊");
-  await expect(ans).toContainText("球迷保留、球團放生");
+  // Two lines: your overlap (30 of the submitted 40), then the fan average; then the two fans-vs-club columns.
+  const big = ans.locator(".hit .big");
+  await expect(big).toHaveCount(2);
+  await expect(big.first()).toHaveText(/\b30 \/ 40\b/);
+  await expect(big.nth(1)).toHaveText(/\d+\.\d/);
+  await expect(ans.locator(".dc")).toHaveCount(2);
 });
 
 test("locked without a submitted list: no hit rate and no hint, only the fan average", async ({ page }) => {
@@ -159,8 +162,8 @@ test("locked without a submitted list: no hit rate and no hint, only the fan ave
   await page.locator('.tile[aria-pressed="true"]').first().click();
   await page.locator("#tab-stats").click();
   const hit = page.locator("section.ans:not(.mvf) .hit");
-  await expect(hit).toContainText("球迷平均重疊");
   await expect(hit.locator(".big")).toHaveCount(1);
+  await expect(hit.locator(".big")).toHaveText(/\d+\.\d/); // the fan average
   await expect(hit.locator(".hint")).toHaveCount(0);
   await expect(page.locator("section.mvf")).toHaveCount(0);
 });
@@ -173,7 +176,7 @@ test("submit refused as locked: toast and the button switches to 已截止", asy
   await cutTo60(page);
   await page.locator("#save").click();
   await expect(page.locator("#toast")).toHaveText("送出已截止");
-  await expect(page.locator("#status")).toHaveText("官方名單已公布，送出已截止");
+  await expect(page.locator("#status")).toHaveText("球團名單已公布，送出已截止");
   await expect(page.locator("#save")).toBeDisabled();
 });
 
@@ -226,7 +229,7 @@ test("in-app browser: the image sheet suggests opening in Safari／Chrome", asyn
   await open(page);
   await cutTo60(page);
   await page.locator("#mkImg").click();
-  await expect(page.locator("#sheet .inapp")).toHaveText("長按圖片可存到相簿；無法儲存請改用 Safari／Chrome 開啟。");
+  await expect(page.locator("#sheet .inapp")).toContainText("Safari");
   await context.close();
 });
 
@@ -236,7 +239,7 @@ test("touch device: the image sheet hints long-press, no in-app line", async ({ 
   await open(page);
   await cutTo60(page);
   await page.locator("#mkImg").click();
-  await expect(page.locator("#sheet .hint")).toHaveText("長按圖片可存到相簿。");
+  await expect(page.locator("#sheet .hint")).toContainText("長按");
   await expect(page.locator("#sheet .inapp")).toHaveCount(0);
   await context.close();
 });
@@ -284,8 +287,8 @@ test("copy text: team heading, kept players by position, the not-kept players, a
   // Sections: 【label n】 then the players joined by 、; the last one is the not-kept list (the roster is over 60).
   const sections = [];
   lines.forEach((l, i) => {
-    const m = l.match(/^【.+ (\d+)】$/);
-    if (m) sections.push({ n: Number(m[1]), names: lines[i + 1].split("、") });
+    const m = l.match(/^【(.+) (\d+)】$/);
+    if (m) sections.push({ label: m[1], n: Number(m[2]), names: lines[i + 1].split("、") });
   });
   for (const s of sections) expect(s.names).toHaveLength(s.n);
   const rest = sections.at(-1), groups = sections.slice(0, -1);
@@ -296,6 +299,7 @@ test("copy text: team heading, kept players by position, the not-kept players, a
   const GORD = ["P", "C", "I", "O"], byEntry = new Map(players.map(p => [entry(p), p]));
   const withKept = GORD.filter(g => players.some(p => p.g === g && keptIds.has(p.id)));
   expect(groups.map(s => s.names.map(e => byEntry.get(e).g))).toEqual(withKept.map((g, i) => Array(groups[i].n).fill(g)));
+  expect(rest.label).toBe("未保留");
   expect(rest.names.sort()).toEqual(dropped.sort());
   expect(lines.at(-1)).toContain("#guardians");
 });

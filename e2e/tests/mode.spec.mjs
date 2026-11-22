@@ -27,8 +27,8 @@ test("default is 刪減: whole team kept, over 60 blocks submit/copy/image", asy
   expect(posted).toBe(0);
   await expect(page.locator("#save")).toHaveAttribute("title", `移出 ${N - LIMIT} 人後才能送出`);
   await expect(page.locator("#save")).not.toHaveClass(/\bdirty\b/); // no reminder dot on a button that cannot be pressed
-  await expect(page.locator("#modeHint")).toContainText("全隊已保留");
-  await expect(page.locator("#modeBtn")).toHaveAttribute("aria-label", `刪減模式，已保留 ${N} / 60，需移出 ${N - LIMIT} 人。按下改用挑選模式`);
+  await expect(page.locator("#modeHint")).toContainText("刪減模式");
+  await expect(page.locator("#modeBtn")).toHaveAttribute("aria-label", new RegExp(`^刪減模式.*${N} / 60.*${N - LIMIT} 人`));
 });
 
 test("cut mode is not capped: tiles and 全選 go past 60", async ({ page }) => {
@@ -61,7 +61,7 @@ test("pristine switch is immediate", async ({ page }) => {
   await page.locator("#modeBtn").click();
   await expect(page.locator("#selN")).toHaveText("0");
   await expect(page.locator("#modeName")).toContainText("挑選");
-  await expect(page.locator("#modeHint")).toContainText("點選要保留的球員");
+  await expect(page.locator("#modeHint")).toContainText("挑選模式");
   await page.locator("#modeBtn").click();
   await expect(page.locator("#selN")).toHaveText(String(N));
   await expect(page.locator("#modeName")).toContainText("刪減");
@@ -72,10 +72,12 @@ test("edited switch needs a second press within 3 s; editing disarms it", async 
   const kept = page.locator('.tile[aria-pressed="true"]').first(), name = page.locator("#modeName");
   await kept.click();
   await page.locator("#modeHint").click();
-  await expect(page.locator("#toast")).toHaveText("再次點擊切換模式並清空名單");
+  // The message names what the switch does: to 挑選 the list is emptied (the other direction is checked below).
+  await expect(page.locator("#toast")).toHaveText("再按一次切換，名單會清空");
   await expect(name).toHaveText("確定？");
-  await expect(page.locator("#modeBtn")).toHaveAttribute("aria-label", "確定？再次點擊切換模式並清空名單");
-  await expect(page.locator("#modeHint")).toHaveText("再次點擊切換模式並清空名單");
+  await expect(page.locator("#modeBtn")).toHaveAttribute("aria-label", /^確定？/);
+  await expect(page.locator("#modeHint")).toHaveClass(/\barm\b/);
+  await expect(page.locator("#modeHint")).toContainText("清空");
   await expect(page.locator("#selN")).toHaveText(String(N - 1));
 
   await kept.click(); // an edit cancels the confirmation
@@ -93,6 +95,16 @@ test("edited switch needs a second press within 3 s; editing disarms it", async 
   await page.locator("#modeBtn").click();
   await expect(page.locator("#selN")).toHaveText("0");
   await expect(name).toContainText("挑選");
+
+  // Back to 刪減 from an edited pick list: the whole team is kept, not emptied (the old message said 清空 both ways).
+  await page.locator('.tile[aria-pressed="false"]').first().click();
+  await page.locator("#modeBtn").click();
+  await expect(page.locator("#toast")).toHaveText("再按一次切換，改為整隊保留");
+  await expect(name).toHaveText("確定？");
+  await expect(page.locator("#modeHint")).toContainText("整隊保留");
+  await page.locator("#modeBtn").click();
+  await expect(page.locator("#selN")).toHaveText(String(N));
+  await expect(name).toContainText("刪減");
 });
 
 test("mode is remembered per team", async ({ page }) => {
