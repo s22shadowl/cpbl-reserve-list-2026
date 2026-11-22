@@ -172,7 +172,6 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .tile .mk-age b{font-family:var(--f-num);font-weight:700;font-size:17px}
 .tile .mk-age small{font-size:9px;font-weight:500;margin-left:1px}
 .tile .pic.nopic .mk-age{color:var(--muted);text-shadow:none}
-.tile .ck{position:absolute;top:5px;right:5px;z-index:1;width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.9);background:rgba(var(--shade-rgb),.25);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:transparent}
 .tile .tx{display:flex;flex-direction:column;min-width:0;padding:4px 7px 5px}
 .tile .nm{font-size:15px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35}
 .tile .nmr{display:flex;align-items:center;gap:5px;min-width:0}
@@ -189,7 +188,17 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .tile[aria-pressed="true"] .sub,.tile[aria-pressed="true"] .stat{color:var(--on-acc);opacity:.8}
 .tile[aria-pressed="true"] .stat.low{opacity:.65}
 .tile[aria-pressed="true"] .stat.core{opacity:1}
-.tile[aria-pressed="true"] .ck{background:var(--acc);border-color:#fff;color:var(--on-acc)}
+/* tile wrapper: a button cannot contain a button */
+.tw{position:relative;min-width:0;display:flex}
+.tw>.tile{flex:1;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.info{position:absolute;top:5px;right:5px;z-index:3;width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.9);
+  background:rgba(var(--shade-rgb),.35);color:#fff;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+.info svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round}
+.info::before{content:"";position:absolute;inset:-8px -6px -8px -8px}
+.tw .big{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transform:translateY(6px)}
+.tw .big svg{width:58%;max-width:72px;aspect-ratio:1;fill:#fff;stroke:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+.tw.on .big{opacity:.78}
+.tile[aria-pressed="true"] .pic::before{content:"";position:absolute;inset:0;z-index:1;background:var(--acc);opacity:.28;pointer-events:none}
 .tile:not([aria-pressed="true"]):not([aria-disabled="true"]):hover{border-color:var(--acc)}
 /* full at 60: unselected tiles stay focusable (aria-disabled), dimmed; a click explains the limit */
 .tile[aria-disabled="true"]{cursor:not-allowed;opacity:.38}
@@ -204,7 +213,7 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
   .tile .mk-tag.dy small{margin-left:0}
   /* Narrow tiles: 3px text padding (.tx below) and proportional digits so 「二軍 ERA 12.96」 fits from 360px up. */
   .tile .stat{font-size:10px;font-variant-numeric:normal;letter-spacing:-.02em}
-  .tile .ck{width:19px;height:19px;top:4px;right:4px;font-size:11px}
+  .info{width:19px;height:19px;top:4px;right:4px}.info svg{width:10px;height:10px}
   .tile .tx{padding:3px 3px 4px}
   .tile .nm{font-size:13px}
   .tile .sub{font-size:10px;letter-spacing:-.05em}

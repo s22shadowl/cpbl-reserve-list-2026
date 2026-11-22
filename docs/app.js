@@ -259,7 +259,7 @@ function tileIds(box){return[...box.querySelectorAll(".tile")].map(b=>b.dataset.
 function tileEl(p,full,show){
   const on=sel.has(p.id);
   const pic=photo(p,"pic");
-  pic.append(el("span",{class:"no",text:p.no}),el("span",{class:"ck","aria-hidden":"true",text:"✓"}));
+  pic.append(el("span",{class:"no",text:p.no}));
   const badge=cornerBadge(p),age=ageOn(p.b,DATA.updated),note=cardNote(p,DATA.updated);
   if(badge)pic.append(el("span",{class:"mk-tag "+badge.kind,"aria-hidden":"true",text:badge.text},badge.small?el("small",{text:badge.small}):null));
   if(age!=null)pic.append(el("span",{class:"mk-age","aria-hidden":"true"},el("b",{text:age}),el("small",{text:"歲"})));
@@ -274,8 +274,14 @@ function tileEl(p,full,show){
   // aria-disabled (not disabled) keeps capped tiles focusable and tappable; toggle() explains the limit in a toast.
   if(capped)b.setAttribute("aria-disabled","true");
   b.onclick=()=>toggle(p.id);
-  return b;
+  const info=el("button",{type:"button",class:"info","data-id":p.id,"aria-label":p.n+" 詳細資料"});
+  info.innerHTML='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 5.2v4.6"/><path d="M6 2.4v.1"/></svg>';
+  info.onclick=()=>openDetail(p,info);
+  const big=el("span",{class:"big","aria-hidden":"true"});
+  big.innerHTML='<svg viewBox="0 0 24 24"><path d="M2.8 13.4l2.6-2.2 4.2 3.6C12.6 10.4 16.4 6.6 21.4 3.6l.9 1.3C17.4 9 13.6 13.6 10.6 20z"/></svg>';
+  return el("div",{class:"tw"+(on?" on":"")},b,info,big);
 }
+function openDetail(p,opener){} // stub: the detail dialog arrives in the next task
 // Group-header 全選／全部取消 for the ids currently shown in group g.
 function bulkButton(g,ids){
   const bs=bulkState(ids,sel,LIMIT,listMode==="pick"),add=bs.mode==="add";
@@ -294,13 +300,13 @@ function bulkButton(g,ids){
 function focusBefore(box){
   const ae=document.activeElement;
   if(!box.contains(ae))return null;
-  const tileId=ae.classList.contains("tile")?ae.dataset.id:null;
-  return{tileId,bulkG:ae.classList.contains("bulk")?ae.dataset.g:null,prevIds:tileId?tileIds(box):[]};
+  const tileId=ae.classList.contains("tile")||ae.classList.contains("info")?ae.dataset.id:null,infoFocus=ae.classList.contains("info");
+  return{tileId,infoFocus,bulkG:ae.classList.contains("bulk")?ae.dataset.g:null,prevIds:tileId?tileIds(box):[]};
 }
 function restoreFocus(box,f){
   if(!f)return;
   if(f.tileId){
-    const id=nextFocusId(f.prevIds,tileIds(box),f.tileId),t=id&&box.querySelector(`.tile[data-id="${id}"]`);
+    const id=nextFocusId(f.prevIds,tileIds(box),f.tileId),t=id&&box.querySelector(`.${f.infoFocus?"info":"tile"}[data-id="${id}"]`);
     if(t)t.focus({preventScroll:true});
   }
   if(f.bulkG){const b=box.querySelector(`.bulk[data-g="${f.bulkG}"]`);if(b)b.focus({preventScroll:true})}
