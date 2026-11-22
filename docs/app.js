@@ -86,12 +86,19 @@ const VOTER=voterId();
 function sortP(a,b){return GORD.indexOf(a.g)-GORD.indexOf(b.g)||(+a.no)-(+b.no)||a.no.length-b.no.length}
 function posLabel(p){return p.p||GN[p.g]}
 function keptIn(g){let n=0;for(const p of ROSTER)if(p.g===g&&sel.has(p.id))n++;return n}
-function photo(p,cls){
+// Every selection change rebuilds all tiles (see renderGroups); a re-created <img decoding="async"> paints one blank
+// frame before it decodes, so photos flashed on each click. Decoded <img> nodes are kept per slot and moved into the
+// new wrapper instead. slot defaults to cls; views that can be in the DOM at the same time need different slots
+// (one node can only sit in one place). A photo that failed to load is remembered so later renders go straight to
+// the number fallback.
+const photoNodes=new Map(),photoFailed=new Set();
+function photo(p,cls,slot=cls){
   const b=el("span",{class:cls});
   const fail=()=>{b.classList.add("nopic");b.prepend(el("span",{class:"ph-no",text:p.no}))};
-  if(p.ph){
-    const i=el("img",{src:"photos/"+p.id+".webp",alt:"",loading:"lazy",decoding:"async"});
-    i.onerror=()=>{i.remove();fail()};
+  if(p.ph&&!photoFailed.has(p.id)){
+    const k=slot+":"+p.id;let i=photoNodes.get(k);
+    if(!i){i=el("img",{src:"photos/"+p.id+".webp",alt:"",loading:"lazy",decoding:"async"});photoNodes.set(k,i)}
+    i.onerror=()=>{photoFailed.add(p.id);photoNodes.delete(k);i.remove();fail()}; // re-bound: fail() closes over this wrapper
     b.append(i);
   }else fail();
   return b;
@@ -356,7 +363,6 @@ function toggle(id){
 function renderDock(){
   const n=sel.size;
   $("selN").textContent=n;$("selBar").style.width=Math.min(100,n/LIMIT*100)+"%";
-  $("top").classList.toggle("over",n>LIMIT);
   const why=shareBlockReason(n,LIMIT); // aria-disabled, not disabled: a tap still explains why (over the limit is not a list to share)
   for(const id of["copyTxt","mkImg"]){const b=$(id);b.disabled=false;if(why)b.setAttribute("aria-disabled","true");else b.removeAttribute("aria-disabled")}
   $("clear").disabled=n===0;
@@ -410,7 +416,7 @@ function renderStatus(){
   else if(k.kind==="unknown")s.append(el("span",{class:"warn",text:"無法確認送出狀態"}));
   else if(k.kind==="empty")s.append("點選球員加入名單");
   else if(k.kind==="sent")s.append("已送出"+(savedAt?" "+fmt(savedAt):""));
-  else s.append(el("span",{class:"warn",text:k.kind==="changed"?"有未送出的變更":"尚未送出"}));
+  else s.append(el("span",{class:"pend",text:k.kind==="changed"?"有未送出的變更":"尚未送出"})); // unsent is the normal state, not a warning
 }
 async function api(path,opts){
   const r=await fetch(API+path,opts);const j=await r.json().catch(()=>({}));
@@ -728,7 +734,7 @@ function openDetail(p,opener,byPress){
     el("thead",{},el("tr",{},el("th"),...tb.levels.map(l=>el("th",{scope:"col",...shown(l),text:l.name})))),
     el("tbody",{},...tb.rows.map(r=>el("tr",{},el("th",{scope:"row",text:r.label}),...r.values.map((v,i)=>el("td",{...shown(tb.levels[i]),text:v}))))));
   $("detailBody").replaceChildren(x,
-    el("div",{class:"hd"},el("span",{class:"wm","aria-hidden":"true",text:p.no}),photo(p,"av"),
+    el("div",{class:"hd"},el("span",{class:"wm","aria-hidden":"true",text:p.no}),photo(p,"av","detail"), // own slot: the tile behind the dialog (pic) and the kept stats ranking (av) hold their own nodes
       el("div",{class:"hc"},el("span",{class:"tm","aria-hidden":"true",text:T.en}),
         el("h3",{id:"detailT",class:isLongName(p.n)?"long":""},el("span",{class:"n",text:p.no})," ",p.n),
         el("ul",{class:"meta"},...detailChips(p,DATA.updated,posLabel(p)).map(c=>el("li",c.kind?{class:c.kind,text:c.text}:{text:c.text}))))),

@@ -9,9 +9,9 @@ img{max-width:100%}
   --tab:#ECECEC; --tab-ink:#111214; --acc:#4A4D52; --acc-hover:#3D3F43; --on-acc:#FFFFFF; --acc-ink:#4A4D52; --acc-ink-l:#4A4D52;
   --hi:#C4C7CC; --band:#111214; --on-band:#FFFFFF; --band-muted:#C9CACB; --tile:#DBDBDC; --soft:#EDEDEE;
   --pri-hover:#E9EAEA; --shade-rgb:12,13,14; --scrim:rgba(10,11,12,.6);
-  --warn:#C2611B; --over:#D0342C;
+  --warn:#C2611B;
   /* on the team-colour band, which stays dark in both modes, so these are not redefined for dark mode */
-  --band-over:#FF8A84; --band-warn:#FFB37A; --band-dot:#FF9F43;
+  --band-over:#FF8A84; --band-warn:#FFB37A;
   --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
   --f-num:"Rajdhani","Arial Narrow",sans-serif;
 }
@@ -20,13 +20,13 @@ img{max-width:100%}
   --tab:#27282A; --tab-ink:#E4E4E5; --acc:#65686C; --acc-hover:#535559; --on-acc:#FFFFFF; --acc-ink:#C4C7CC; --acc-ink-l:#4A4D52;
   --hi:#C4C7CC; --band:#0D0E0F; --on-band:#FFFFFF; --band-muted:#C0C1C2; --tile:#2B2C2E; --soft:#202224;
   --pri-hover:#E9EAEA; --shade-rgb:0,0,0; --scrim:rgba(0,0,0,.7);
-  --warn:#F09A5C; --over:#FF6B63; color-scheme:dark}}
+  --warn:#F09A5C; color-scheme:dark}}
 :root[data-theme="dark"]{
   --page:#1E1F23; --paper:#191A1C; --ink:#F4F4F5; --text:#CDCDD1; --muted:#909398; --line:#303133;
   --tab:#27282A; --tab-ink:#E4E4E5; --acc:#65686C; --acc-hover:#535559; --on-acc:#FFFFFF; --acc-ink:#C4C7CC; --acc-ink-l:#4A4D52;
   --hi:#C4C7CC; --band:#0D0E0F; --on-band:#FFFFFF; --band-muted:#C0C1C2; --tile:#2B2C2E; --soft:#202224;
   --pri-hover:#E9EAEA; --shade-rgb:0,0,0; --scrim:rgba(0,0,0,.7);
-  --warn:#F09A5C; --over:#FF6B63; color-scheme:dark}
+  --warn:#F09A5C; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{background:var(--page);color:var(--text);font-family:var(--f-body);font-size:15px;line-height:1.55}
@@ -73,19 +73,21 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .total.arm{border-color:var(--band-over)}
 .num{font-family:var(--f-num);font-weight:700;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;color:#fff;white-space:nowrap}
 .num small{font-size:20px;color:var(--band-muted);font-weight:600;margin-left:2px}
-.top.over .num{color:var(--band-over)}
 .total .lbl{display:flex;flex-direction:column;font-size:12px;line-height:1.3;color:var(--band-muted)}
 .total .lbl>*{white-space:nowrap}
 .total .lbl b{color:var(--on-band);font-weight:500;font-size:13px}
-.total .lbl .mv,.total.arm .lbl b{color:var(--band-over)}
+/* over 60 is the normal 刪減 working state, not an error: team highlight, not the warning red */
+.total .lbl .mv{color:var(--hi)}
+.total.arm .lbl b{color:var(--band-over)}
 .st .warn{color:var(--band-warn)}
+.st .pend{color:var(--on-band)}
 .acts{display:flex;gap:6px;flex:none}
 .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.38);background:transparent;color:#fff;border-radius:6px;padding:7px 12px;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;position:relative}
 .btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .btn:hover:not(:disabled):not([aria-disabled="true"]){background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.6)}
 .btn.pri{background:#fff;color:var(--band);border-color:#fff;font-weight:700;padding-inline:16px}
 .btn.pri:hover:not(:disabled):not([aria-disabled="true"]){background:var(--pri-hover)}
-.btn.pri.dirty::after{content:"";position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:50%;background:var(--band-dot);box-shadow:0 0 0 2px var(--band)}
+.btn.pri.dirty::after{content:"";position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:50%;background:var(--hi);box-shadow:0 0 0 2px var(--band)}
 .btn.arm{border-color:var(--band-over);color:var(--band-over)}
 .btn.pri.arm,.btn.pri.arm:hover{background:transparent}
 .btn:disabled,.btn[aria-disabled="true"]{opacity:.35;cursor:not-allowed}
@@ -115,7 +117,6 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .show::after{content:"";position:absolute;right:10px;top:50%;width:6px;height:6px;border-right:1.5px solid var(--band-muted);border-bottom:1.5px solid var(--band-muted);transform:translateY(-70%) rotate(45deg);pointer-events:none}
 .top .bar{height:3px;background:rgba(255,255,255,.12)}
 .top .bar i{display:block;height:100%;background:var(--hi);transition:width .2s}
-.top.over .bar i{background:var(--over)}
 @media (prefers-reduced-motion:reduce){.top .bar i{transition:none}}
 @media (max-width:640px){
   .total{padding:4px 6px;gap:4px} /* 360px: with 移出 N 人 the row must still end at the 16px gutter */

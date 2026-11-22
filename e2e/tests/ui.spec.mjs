@@ -297,3 +297,32 @@ test("team page: the hero drops the exempt-kinds sentence (the 不需列入 list
   await expect(page.locator(".tcard").first()).toBeVisible();
   await expect(page.locator("#heroEx")).toBeVisible();
 });
+
+// ---------- top bar colours and photo reuse ----------
+test("over the limit (default 刪減 mode): 移出 N 人 and the bar use --hi, the count and unsent status stay --on-band", async ({ page }) => {
+  await open(page);
+  expect(Number(await page.locator("#selN").textContent())).toBeGreaterThan(LIMIT);
+  const v = name => page.evaluate(n => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), name);
+  const hi = rgb(await v("--hi")), onBand = rgb(await v("--on-band"));
+  await expect(page.locator("#moveN")).toBeVisible();
+  await expect(page.locator("#moveN")).toHaveCSS("color", hi);
+  await expect(page.locator("#selN")).toHaveCSS("color", onBand);
+  await expect(page.locator(".top .bar i")).toHaveCSS("background-color", hi);
+  const pend = page.locator("#status .pend");
+  await expect(pend).toHaveText("尚未送出");
+  await expect(pend).toHaveCSS("color", onBand);
+});
+
+test("a selection change rebuilds the tiles but keeps each photo's <img> node (no blank frame)", async ({ page }) => {
+  await open(page);
+  const tiles = page.locator(".tile"), n = await tiles.count();
+  const id = await page.locator(".tile:has(.pic img)").first().getAttribute("data-id");
+  await page.locator(`.tile[data-id="${id}"] .pic img`).evaluate(i => { i._mark = 1; });
+  await page.locator(`.tile[data-id="${id}"]`).evaluate(b => { b._mark = 1; });
+  await page.locator(`.tile:not([data-id="${id}"])`).first().click();
+  await expect(tiles).toHaveCount(n);
+  // premise: the tile itself was rebuilt (new node) …
+  expect(await page.locator(`.tile[data-id="${id}"]`).evaluate(b => b._mark)).toBeUndefined();
+  // … but its photo is the same, already decoded node
+  expect(await page.locator(`.tile[data-id="${id}"] .pic img`).evaluate(i => i._mark)).toBe(1);
+});

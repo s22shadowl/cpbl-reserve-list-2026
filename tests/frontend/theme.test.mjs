@@ -27,7 +27,7 @@ function contrast(a, b) {
 const PAIRS = [
   ["--text", "--page"], ["--text", "--paper"], ["--ink", "--page"], ["--muted", "--paper"],
   ["--acc-ink", "--paper"], ["--on-band", "--band"], ["--band-muted", "--band"],
-  ["--on-acc", "--acc"], ["--on-acc", "--acc-hover"], ["--tab-ink", "--tab"],
+  ["--on-acc", "--acc"], ["--on-acc", "--acc-hover"], ["--tab-ink", "--tab"], ["--hi", "--band"],
 ];
 const PALETTES = [...TEAMS.map((t) => [t.slug, t]), ["NEUTRAL", NEUTRAL]];
 
@@ -71,7 +71,7 @@ function block(re) {
   return out;
 }
 // Not derived from the team palette: status colours, colours on the (always dark) band, fonts.
-const SKIP = new Set(["--warn", "--over", "--band-over", "--band-warn", "--band-dot", "--f-body", "--f-num"]);
+const SKIP = new Set(["--warn", "--band-over", "--band-warn", "--f-body", "--f-num"]);
 const strip = (o) => Object.fromEntries(Object.entries(o).filter(([k]) => !SKIP.has(k)).map(([k, v]) => [k, v.toLowerCase()]));
 const lower = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, v.toLowerCase()]));
 const N = deriveTheme(NEUTRAL);
