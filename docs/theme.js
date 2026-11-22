@@ -5,16 +5,18 @@
 // acc = the club's official primary colour; band = its official dark colour or a dark shade of the primary (roadmap P2-6).
 // Secondary colours are deliberately not used. warn = optional [light, dark, name in copy] override of the shared orange --warn
 // (意見分歧, 爆冷) for a team whose own accent is orange (Lions); others keep the style.css default.
+// cardSwap = the picker card reads better on the accent colour than on the dark band (Brothers, Lions, Dragons; see cardColors).
+// page = optional [light, dark] page colour instead of the band mix; only NEUTRAL sets it (softer picker background).
 const TEAMS=[
   {code:"ACN",slug:"brothers",cardSwap:true,name:"中信兄弟",short:"兄弟",en:"CTBC Brothers",band:"#0B1B3D",acc:"#FCCF00",on:"#08132B",ink:"#7E6800",hi:"#FCCF00"},
   {code:"ADD",slug:"lions",cardSwap:true,name:"統一7-ELEVEn獅",short:"統一獅",en:"Uni-President Lions",band:"#3F1E04",acc:"#E26A10",on:"#2C1503",ink:"#AA500C",hi:"#E76C10",warn:["#B8326A","#FF85B0","桃紅色"]},
   {code:"AJL",slug:"monkeys",name:"樂天桃猿",short:"桃猿",en:"Rakuten Monkeys",band:"#490615",acc:"#850B26",on:"#FFFFFF",ink:"#850B26",hi:"#F04D71"},
   {code:"AEO",slug:"guardians",name:"富邦悍將",short:"悍將",en:"Fubon Guardians",band:"#002255",acc:"#004B90",on:"#FFFFFF",ink:"#004B90",hi:"#4FA3FF"},
-  {code:"AAA",slug:"dragons",name:"味全龍",short:"味全龍",en:"Wei Chuan Dragons",band:"#360104",acc:"#C1020E",on:"#FFFFFF",ink:"#C1020E",hi:"#FD2C39"},
+  {code:"AAA",slug:"dragons",cardSwap:true,name:"味全龍",short:"味全龍",en:"Wei Chuan Dragons",band:"#360104",acc:"#C1020E",on:"#FFFFFF",ink:"#C1020E",hi:"#FD2C39"},
   {code:"AKP",slug:"hawks",name:"台鋼雄鷹",short:"雄鷹",en:"TSG Hawks",band:"#04271E",acc:"#074737",on:"#FFFFFF",ink:"#074737",hi:"#109F7B"},
 ];
 // Shared pages (team picker): monochrome, colour only on the team cards.
-const NEUTRAL={band:"#111214",acc:"#4A4D52",on:"#FFFFFF",ink:"#4A4D52",hi:"#C4C7CC"};
+const NEUTRAL={band:"#111214",acc:"#4A4D52",on:"#FFFFFF",ink:"#4A4D52",hi:"#C4C7CC",page:["#DCDDE0","#1E1F23"]};
 
 const WHITE="#FFFFFF", BLACK="#000000";
 const AA=4.6; // a little above WCAG 4.5 so rounding never tips a pair under
@@ -33,15 +35,15 @@ function liftAccent(acc,on,bg){let c=acc;for(let t=0.05;contrastRatio(c,bg)<3&&t
 function accHover(acc,on){return mixHex(acc,luminance(on)>0.18?BLACK:WHITE,0.18)}
 
 function deriveTheme(base){
-  const {band,acc,on,ink,hi}=base; // base.warn: see TEAMS
+  const {band,acc,on,ink,hi}=base; // base.warn, base.page: see TEAMS
   const rgb=h=>hexRgb(h).join(",");
   // light: tints of band/acc on white
-  const lPaper=WHITE, lPage=mixHex(WHITE,band,0.05);
+  const lPaper=WHITE, lPage=base.page?base.page[0]:mixHex(WHITE,band,0.05);
   const lText=ensureContrast(mixHex("#202124",band,0.2),lPage,AA,BLACK);
   const light={
     "--page":lPage,"--paper":lPaper,"--ink":ensureContrast(band,lPage,AA,BLACK),"--text":lText,
     "--muted":ensureContrast(mixHex("#6E7178",band,0.25),lPage,AA,BLACK),
-    "--line":mixHex(WHITE,band,0.13),"--tab":mixHex(WHITE,band,0.08),
+    "--line":base.page?mixHex(lPage,band,0.1):mixHex(WHITE,band,0.13),"--tab":mixHex(WHITE,band,0.08),
     "--tab-ink":ensureContrast(band,mixHex(WHITE,band,0.08),AA,BLACK),
     "--acc":acc,"--acc-hover":accHover(acc,on),"--on-acc":on,"--acc-ink":ink,"--acc-ink-l":ink,"--hi":hi,
     "--band":band,"--on-band":WHITE,"--band-muted":ensureContrast(mixHex(WHITE,acc,0.3),band,AA,WHITE),
@@ -49,7 +51,7 @@ function deriveTheme(base){
     "--shade-rgb":rgb(mixHex(band,BLACK,0.3)),"--scrim":`rgba(${rgb(mixHex(band,BLACK,0.4))},.6)`,
   };
   // dark: shades of band/acc toward black, so each team's dark mode keeps its hue
-  const dPage=mixHex(BLACK,band,0.45), dPaper=mixHex(mixHex("#202024",band,0.6),acc,0.04);
+  const dPage=base.page?base.page[1]:mixHex(BLACK,band,0.45), dPaper=mixHex(mixHex("#202024",band,0.6),acc,0.04);
   const dBand=mixHex(band,BLACK,0.25), dTab=mixHex(dPaper,WHITE,0.06), dAcc=liftAccent(acc,on,dPaper);
   const dark={
     "--page":dPage,"--paper":dPaper,"--ink":mixHex(WHITE,acc,0.06),

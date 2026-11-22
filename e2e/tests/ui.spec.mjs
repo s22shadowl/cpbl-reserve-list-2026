@@ -273,3 +273,27 @@ test("bulk select: not enough slots → aria-disabled and 名額不足（需 N�
   await bulk.click();
   await expect(page.locator("#selN")).toHaveText(String(target + k));
 });
+
+// ---------- team picker + hero copy ----------
+test("picker: one card per team with name and a decorative watermark, no player count; the rules line names the exempt kinds", async ({ page }) => {
+  await page.goto("/");
+  const cards = page.locator(".tcard");
+  await expect(cards).toHaveCount(AVAIL.length);
+  for (const [i, t] of AVAIL.entries()) {
+    const c = cards.nth(i);
+    await expect(c).toHaveAttribute("href", "#" + t.slug);
+    await expect(c.locator("b")).toHaveText(t.name);
+    await expect(c.locator(".wm")).toHaveAttribute("aria-hidden", "true");
+    await expect(c.locator(".wm")).toHaveText(t.en.split(" ").pop());
+  }
+  await expect(cards.first()).not.toContainText("名可選球員");
+  await expect(page.locator("#heroEx")).toBeVisible();
+});
+
+test("team page: the hero drops the exempt-kinds sentence (the 不需列入 list below covers it); back on the picker it returns", async ({ page }) => {
+  await open(page);
+  await expect(page.locator("#heroEx")).toBeHidden();
+  await page.goto("/#");
+  await expect(page.locator(".tcard").first()).toBeVisible();
+  await expect(page.locator("#heroEx")).toBeVisible();
+});

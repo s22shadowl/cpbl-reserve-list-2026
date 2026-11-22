@@ -5,7 +5,7 @@ img{max-width:100%}
 /* Layout: team-colour hero band → one sticky team-colour top bar (count + actions / view tabs + search / per-position kept-of-total tabs) → compact photo-row grid. Team look: colours from theme.js deriveTheme(), skewed tabs, Rajdhani numerals. */
 :root{
   /* colour tokens = deriveTheme(NEUTRAL) from theme.js (tests/frontend/theme.test.mjs keeps them in sync); applyTheme() overrides per team */
-  --page:#F3F3F3; --paper:#FFFFFF; --ink:#111214; --text:#1D1E21; --muted:#57595F; --line:#E0E0E0;
+  --page:#DCDDE0; --paper:#FFFFFF; --ink:#111214; --text:#1D1E21; --muted:#57595F; --line:#C8C9CC;
   --tab:#ECECEC; --tab-ink:#111214; --acc:#4A4D52; --acc-hover:#3D3F43; --on-acc:#FFFFFF; --acc-ink:#4A4D52; --acc-ink-l:#4A4D52;
   --hi:#C4C7CC; --band:#111214; --on-band:#FFFFFF; --band-muted:#C9CACB; --tile:#DBDBDC; --soft:#EDEDEE;
   --pri-hover:#E9EAEA; --shade-rgb:12,13,14; --scrim:rgba(10,11,12,.6);
@@ -16,13 +16,13 @@ img{max-width:100%}
   --f-num:"Rajdhani","Arial Narrow",sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --page:#080809; --paper:#191A1C; --ink:#F4F4F5; --text:#CDCDD1; --muted:#909398; --line:#303133;
+  --page:#1E1F23; --paper:#191A1C; --ink:#F4F4F5; --text:#CDCDD1; --muted:#909398; --line:#303133;
   --tab:#27282A; --tab-ink:#E4E4E5; --acc:#65686C; --acc-hover:#535559; --on-acc:#FFFFFF; --acc-ink:#C4C7CC; --acc-ink-l:#4A4D52;
   --hi:#C4C7CC; --band:#0D0E0F; --on-band:#FFFFFF; --band-muted:#C0C1C2; --tile:#2B2C2E; --soft:#202224;
   --pri-hover:#E9EAEA; --shade-rgb:0,0,0; --scrim:rgba(0,0,0,.7);
   --warn:#F09A5C; --over:#FF6B63; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --page:#080809; --paper:#191A1C; --ink:#F4F4F5; --text:#CDCDD1; --muted:#909398; --line:#303133;
+  --page:#1E1F23; --paper:#191A1C; --ink:#F4F4F5; --text:#CDCDD1; --muted:#909398; --line:#303133;
   --tab:#27282A; --tab-ink:#E4E4E5; --acc:#65686C; --acc-hover:#535559; --on-acc:#FFFFFF; --acc-ink:#C4C7CC; --acc-ink-l:#4A4D52;
   --hi:#C4C7CC; --band:#0D0E0F; --on-band:#FFFFFF; --band-muted:#C0C1C2; --tile:#2B2C2E; --soft:#202224;
   --pri-hover:#E9EAEA; --shade-rgb:0,0,0; --scrim:rgba(0,0,0,.7);
@@ -35,9 +35,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .in{max-width:1080px;margin:0 auto;padding-inline:16px}
 
 /* hero */
-.hero{background:var(--band);color:var(--on-band);padding-block:28px 26px;position:relative;overflow:hidden}
-.hero::after{content:"";position:absolute;right:-60px;top:0;bottom:0;width:320px;background:var(--acc);transform:skewX(-14deg);opacity:.35}
-.hero .in{position:relative;z-index:1}
+/* D1 band (same as the player dialog header): fine diagonal lines over a band→accent gradient, accent rule below */
+.hero{background:repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0 2px,transparent 2px 9px),linear-gradient(160deg,var(--band),color-mix(in srgb,var(--band) 70%,var(--acc)));
+  border-bottom:3px solid var(--acc);color:var(--on-band);padding-block:28px 26px;position:relative;overflow:hidden}
 .kicker{font-family:var(--f-num);font-weight:600;letter-spacing:.22em;font-size:13px;color:var(--band-muted);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:420px){.kicker{letter-spacing:.1em}}
 .hero h1{font-weight:700;font-size:clamp(26px,4.6vw,38px);line-height:1.2;margin:4px 0 10px;text-wrap:balance}
@@ -362,12 +362,17 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .teammenu a:hover,.teammenu a:focus{background:var(--soft);outline:0}
 .teammenu a:focus-visible{outline:2px solid var(--acc-ink);outline-offset:-2px}
 .picker{padding-block:28px 60px}
-.picker h2{font-size:20px;font-weight:500;color:var(--ink);margin:0 0 14px}
+/* D3 section rule, as .ans h2 */
+.picker h2{margin:0 0 16px;display:flex;align-items:center;gap:12px;font-size:16px;font-weight:700;letter-spacing:.06em;color:var(--ink)}
+.picker h2::before,.picker h2::after{content:"";flex:1;height:1px;background:var(--line)}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
-.tcard{display:flex;flex-direction:column;gap:4px;padding:18px 18px 16px;color:#fff;text-decoration:none;border-radius:6px;overflow:hidden;min-height:110px}
+/* plain team colour + the nickname as a watermark sized to the card width (container query units) */
+.tcard{position:relative;container-type:inline-size;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:18px 18px 16px;color:#fff;text-decoration:none;border-radius:8px;overflow:hidden;min-height:96px}
+.tcard>*{position:relative;z-index:1}
 .tcard b{font-size:22px;font-weight:700}
 .tcard span{font-family:var(--f-num);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px;opacity:.8}
-.tcard em{font-style:normal;font-size:13px;opacity:.85;margin-top:auto}
+.tcard .wm{position:absolute;z-index:0;right:10px;bottom:4px;line-height:.8;font-family:var(--f-num);font-weight:700;font-style:normal;font-size:clamp(40px,21cqi,76px);letter-spacing:.02em;opacity:.14;white-space:nowrap;pointer-events:none}
+@media (max-width:640px){.tcard{min-height:78px;padding:14px 16px 13px;gap:2px}.tcard b{font-size:20px}.tcard .wm{font-size:clamp(40px,19cqi,68px)}}
 .tcard:hover{filter:brightness(1.08)}
 .tcard:focus-visible{outline:3px solid var(--text);outline-offset:2px}
 a.btn{text-decoration:none}

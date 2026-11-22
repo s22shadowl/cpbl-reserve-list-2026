@@ -110,9 +110,22 @@ test("app.js has no hard-coded navy palette left (colours come from theme.js)", 
   assert.deepEqual(navy.filter((h) => app.toUpperCase().includes(h)), []);
 });
 
-// Picker cards: Brothers and Lions read better on their accent colour (yellow / orange) than on the dark band.
-test("only Brothers and Lions swap picker card colours", () => {
-  assert.deepEqual([...TEAMS.filter((t) => t.cardSwap).map((t) => t.code)], ["ACN", "ADD"]);
+// Picker cards: Brothers, Lions and Dragons read better on their accent colour (yellow / orange / red) than on the dark band.
+test("Brothers, Lions and Dragons swap picker card colours", () => {
+  assert.deepEqual([...TEAMS.filter((t) => t.cardSwap).map((t) => t.code)], ["ACN", "ADD", "AAA"]);
+});
+// The team picker (NEUTRAL) uses a softer page colour than the near-white / near-black a 5% / 45% band mix gives.
+test("NEUTRAL page colour is the softened picker background", () => {
+  const n = deriveTheme(NEUTRAL);
+  assert.equal(n.light["--page"], "#DCDDE0");
+  assert.equal(n.dark["--page"], "#1E1F23");
+  for (const t of TEAMS) assert.equal(t.page, undefined, `${t.slug} keeps the derived page colour`);
+});
+// With a custom page colour the light --line is derived from it, so rules (── 選一支球隊 ──, footer) stay visible.
+test("NEUTRAL light --line is darker than its page", () => {
+  const l = deriveTheme(NEUTRAL).light;
+  assert.ok(lum(l["--line"]) < lum(l["--page"]), `${l["--line"]} vs ${l["--page"]}`);
+  assert.ok(contrast(l["--line"], l["--page"]) >= 1.15, `${l["--line"]} on ${l["--page"]}`);
 });
 for (const t of TEAMS) {
   test(`${t.slug} picker card: colours follow cardSwap and text >= 4.5`, () => {

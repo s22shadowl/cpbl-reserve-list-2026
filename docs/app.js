@@ -125,7 +125,7 @@ function route(){
   $("kicker").textContent=t.en+" · 2027 Reserve List";
   $("h1").textContent="排出你的"+t.name+" 60 人契約保留名單";
   markTeam(t);$("teamSwBox").hidden=AVAIL.length<2;
-  renderExempt();
+  renderExempt();$("heroEx").hidden=true; // the 不需列入 details below list these kinds by name
   $("picker").hidden=true;$("app").hidden=false;
   if(store("rl-tab")==="stats")tab="stats";
   setTab(tab);
@@ -139,15 +139,14 @@ function showPicker(){
   document.title="中職契約保留名簿｜各隊 60 人名單模擬";
   $("kicker").textContent="CPBL · 2027 Reserve List";
   $("h1").textContent="排出你支持球隊的 60 人契約保留名單";
-  $("exempt").replaceChildren();$("teamSwBox").hidden=true;
+  $("exempt").replaceChildren();$("teamSwBox").hidden=true;$("heroEx").hidden=false;
   $("app").hidden=true;$("picker").hidden=false;
   const g=$("tgrid");g.replaceChildren();
   for(const t of AVAIL){
-    const n=DATA.teams[t.code].players.length;
     const c=cardColors(t);
-    const style=`background:${c.bg};color:${c.fg};box-shadow:inset 0 -4px 0 ${c.stripe}`;
+    const style=`background:${c.bg};color:${c.fg};box-shadow:inset 0 -3px 0 ${c.stripe}`;
     g.append(el("a",{class:"tcard",href:"#"+t.slug,style},
-      el("span",{text:t.en}),el("b",{text:t.name}),el("em",{text:`${n} 名可選球員 · 選出 ${LIMIT} 人`})));
+      el("i",{class:"wm","aria-hidden":"true",text:t.en.split(" ").pop()}),el("span",{text:t.en}),el("b",{text:t.name})));
   }
 }
 function renderExempt(){
