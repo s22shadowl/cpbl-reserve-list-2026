@@ -25,5 +25,5 @@ function tierNote(p){
   if(t==="core")return"一軍主力："+(pit?CORE_OUTS/3+" 局":CORE_PA+" 打席")+"以上，卡片上以粗體顯示";
   return null;
 }
-function isLongName(name){return String(name).length>=6}
+function isLongName(name){return String(name).length>=8}
 function playerUrl(p){return "https://www.cpbl.com.tw/team/person?Acnt="+p.id}

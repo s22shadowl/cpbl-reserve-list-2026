@@ -45,4 +45,4 @@ test("tierNote", () => {
   assert.equal(tierNote({ ...liu, s:{ D:{ g:5, pa:12 } } }), "樣本少：不到 30 打席，卡片上以淡色顯示");
 });
 test("playerUrl", () => assert.equal(playerUrl({ id:"0000006743" }), "https://www.cpbl.com.tw/team/person?Acnt=0000006743"));
-test("isLongName", () => { assert.equal(isLongName("帕蘇拉塔基斯利尼安"), true); assert.equal(isLongName("林安可"), false); assert.equal(isLongName("12345678"), true); });
+test("isLongName", () => { assert.equal(isLongName("帕蘇拉塔基斯利尼安"), true); assert.equal(isLongName("林安可"), false); assert.equal(isLongName("1234567"), false); assert.equal(isLongName("12345678"), true); });
