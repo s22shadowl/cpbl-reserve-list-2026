@@ -763,54 +763,62 @@ $("copyTxt").onclick=()=>{
   try{navigator.clipboard.writeText(t).then(()=>toast("已複製 "+sel.size+" 人名單到剪貼簿","ok"),fb)}catch(e){fb()}
 };
 async function drawCard(){
-  const W=1080,P=64,IW=W-P*2,RH=52,ORH=38,COLS=4,OCOLS=5;
+  const W=1080,H=1350,P=72,LW=150,IW=W-2*P-LW,FS=34,BOT=1314;
   const gs=groupsOf().filter(x=>x.on.length),dropped=droppedPlayers();
   const TH=deriveTheme(T).light;
-  const C={bg:TH["--page"],band:T.band,ink:TH["--ink"],muted:TH["--muted"],line:TH["--line"],white:"#FFFFFF",soft:"rgba(255,255,255,.72)",acc:TH["--acc-ink"]};
+  const ink=TH["--ink"],muted=TH["--muted"],line=TH["--line"];
   const SANS='"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif',NUM='"Rajdhani","Arial Narrow",sans-serif';
-  const all=T.name+T.short+"年度契約保留球員我的人名單未列入依中職聯盟規章第章條簿投手捕手內野外・｜/"+ROSTER.map(p=>p.n).join("");
+  const title="我的"+T.name+" 60 人保留名單";
+  const all=title+"放生人0123456789"+ROSTER.map(p=>p.n).join("");
   try{
     await Promise.all([
-      document.fonts.load("700 60px "+SANS,all),document.fonts.load("500 24px "+SANS,all),
-      document.fonts.load("400 22px "+SANS,all),document.fonts.load("700 30px "+NUM,"0123456789/"),
+      document.fonts.load("400 28px "+SANS,all),document.fonts.load("500 34px "+SANS,all),
+      document.fonts.load("700 34px "+SANS,all),
+      document.fonts.load("700 28px "+NUM,"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789·"),
     ]);
   }catch(e){}
-  const HEAD=250;let H=HEAD+40;
-  for(const x of gs)H+=60+Math.ceil(x.on.length/COLS)*RH+28;
-  if(dropped.length)H+=56+Math.ceil(dropped.length/OCOLS)*ORH+28;
-  H+=70;
   const cv=document.createElement("canvas");cv.width=W;cv.height=H;const c=cv.getContext("2d");
-  c.fillStyle=C.bg;c.fillRect(0,0,W,H);
-  c.fillStyle=C.band;c.fillRect(0,0,W,HEAD);
-  c.fillStyle=T.acc;c.fillRect(0,HEAD-8,W,8);
-  c.fillStyle=C.soft;c.font="500 24px "+SANS;c.fillText(T.name+" · 2027 年度契約保留球員",P,84);
-  c.fillStyle=C.white;c.font="700 64px "+SANS;c.fillText("我的 60 人名單",P,164);
-  c.font="400 24px "+SANS;c.fillStyle=C.soft;
-  c.fillText(GORD.split("").map(g=>GN[g]+" "+keptIn(g)).join("　")+"　未列入 "+dropped.length,P,214);
-  c.textAlign="right";c.font="500 48px "+NUM;c.fillStyle=C.soft;c.fillText("/ "+LIMIT,W-P,164);const sW=c.measureText("/ "+LIMIT).width;
-  c.font="700 132px "+NUM;c.fillStyle=C.white;c.fillText(String(sel.size),W-P-sW-10,164);
-  c.textAlign="left";
-  let y=HEAD+40;const cw=IW/COLS;
-  for(const x of gs){
-    c.fillStyle=C.ink;c.font="700 32px "+SANS;c.fillText(GN[x.g],P,y+34);
-    const tw=c.measureText(GN[x.g]).width;c.fillStyle=C.muted;c.font="400 22px "+SANS;c.fillText(x.on.length+" 人",P+tw+14,y+34);
-    c.fillStyle=C.line;c.fillRect(P,y+48,IW,2);y+=60;
-    x.on.forEach((p,i)=>{const cx=P+(i%COLS)*cw,cy=y+Math.floor(i/COLS)*RH+34;
-      c.textAlign="right";c.fillStyle=C.acc;c.font="700 30px "+NUM;c.fillText(p.no,cx+50,cy);
-      c.textAlign="left";c.fillStyle=C.ink;c.font="700 27px "+SANS;c.fillText(p.n,cx+62,cy,cw-72)});
-    y+=Math.ceil(x.on.length/COLS)*RH+28;
+  const bandFill=(y,h)=>{
+    const g=c.createLinearGradient(0,y,W*.35,y+h);g.addColorStop(0,T.band);g.addColorStop(1,mixHex(T.band,T.acc,.3));
+    c.fillStyle=g;c.fillRect(0,y,W,h);
+    c.save();c.beginPath();c.rect(0,y,W,h);c.clip();c.strokeStyle="rgba(255,255,255,.06)";c.lineWidth=6;
+    for(let i=-h;i<W+h;i+=27){c.beginPath();c.moveTo(i,y+h);c.lineTo(i+h,y);c.stroke()}
+    c.restore();
+  };
+  const layout=(names,cols,w,weight,size)=>{
+    c.font=weight+" "+size+"px "+SANS;
+    return shotCells(names,cols,n=>c.measureText(n).width<=w/cols-14);
+  };
+  const grid=(L,x0,y,w,cols,rowH,col,weight,size)=>{
+    const cw=w/cols;c.fillStyle=col;c.textAlign="center";c.font=weight+" "+size+"px "+SANS;
+    for(const it of L.cells)c.fillText(it.n,x0+it.k*cw+it.sp*cw/2,y+it.r*rowH+rowH*.7,it.sp*cw-14);
+    c.textAlign="left";return y+L.rows*rowH;
+  };
+  const kL=gs.map(x=>layout(x.on.map(p=>p.n),5,IW,500,FS));
+  const dL=dropped.length?layout(dropped.map(p=>p.n),6,IW,400,28):null;
+  const {rH,dH}=shotRowHeights(kL.reduce((s,l)=>s+l.rows,0),dL?dL.rows:0,gs.length);
+  c.fillStyle=TH["--page"];c.fillRect(0,0,W,H);
+  bandFill(0,195);c.fillStyle=T.acc;c.fillRect(0,185,W,10);
+  c.textAlign="left";c.fillStyle=deriveTheme(T).light["--band-muted"];c.font="700 28px "+NUM;
+  c.letterSpacing="6px";c.fillText(T.en.toUpperCase()+" · 2027",P,67);c.letterSpacing="0px";
+  let ts=84;for(;ts>40;ts--){c.font="700 "+ts+"px "+SANS;if(c.measureText(title).width<=W-2*P)break}
+  c.fillStyle="#fff";c.font="700 "+ts+"px "+SANS;c.fillText(title,P,147,W-2*P);
+  let y=221;
+  gs.forEach((x,i)=>{
+    c.fillStyle=line;c.fillRect(P,y+6,W-2*P,2);
+    c.fillStyle=ink;c.font="700 34px "+SANS;c.fillText(GN[x.g],P+20,y+Math.min(rH,60)*.7+14);
+    c.fillStyle=T.acc;c.fillRect(P,y+14+rH*.18,6,rH*.64);
+    y=grid(kL[i],P+LW,y+14,IW,5,rH,ink,500,FS)+12;
+  });
+  if(dL){
+    y+=4;c.fillStyle=ink;c.fillRect(P,y,W-2*P,3);c.fillRect(P,y+8,W-2*P,1);
+    const lb=y+Math.min(rH,60)*.7;
+    c.fillStyle=muted;c.font="700 34px "+SANS;c.fillText("放生",P+20,lb+14);
+    c.font="400 26px "+SANS;c.fillText(dropped.length+" 人",P+20,lb+52);
+    const ge=grid(dL,P+LW,y+14,IW,6,dH,muted,400,28);
+    y=Math.max(ge,lb+52+8);
   }
-  if(dropped.length){
-    c.fillStyle=C.muted;c.font="700 26px "+SANS;c.fillText("未列入（"+dropped.length+" 人）",P,y+28);
-    c.fillStyle=C.line;c.fillRect(P,y+42,IW,1);y+=56;const ow=IW/OCOLS;
-    // number column as wide as the widest number here, right-aligned, so names line up
-    c.font="400 21px "+SANS;const nw=Math.ceil(Math.max(...dropped.map(p=>c.measureText(p.no).width)));
-    dropped.forEach((p,i)=>{const cx=P+(i%OCOLS)*ow,cy=y+Math.floor(i/OCOLS)*ORH+26;
-      c.fillStyle=C.muted;c.font="400 21px "+SANS;
-      c.textAlign="right";c.fillText(p.no,cx+nw,cy);c.textAlign="left";c.fillText(p.n,cx+nw+9,cy,ow-nw-21)});
-  }
-  c.fillStyle=C.line;c.fillRect(P,H-70,IW,1);
-  c.fillStyle=C.muted;c.font="400 20px "+SANS;c.fillText(location.host+location.pathname,P,H-34,IW);
+  bandFill(BOT,36);c.fillStyle=T.acc;c.fillRect(0,BOT,W,5);
   return cv;
 }
 $("mkImg").onclick=async()=>{

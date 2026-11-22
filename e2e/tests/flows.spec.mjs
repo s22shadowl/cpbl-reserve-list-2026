@@ -187,6 +187,8 @@ test("keyboard: tabs move with arrow keys; the image sheet traps Tab and returns
   await page.locator("#mkImg").click();
   const sheet = page.locator("#sheet");
   await expect(sheet.locator("img.shot")).toHaveAttribute("src", /^data:image\/png/);
+  const dim = await sheet.locator("img.shot").evaluate(i => [i.naturalWidth, i.naturalHeight]);
+  expect(dim).toEqual([1080, 1350]);
   await expect(sheet.locator("a[download]")).toHaveAttribute("href", /^blob:/);
   await expect(sheet.locator(".inapp")).toHaveCount(0);
   for (let i = 0; i < 6; i++) {
