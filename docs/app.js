@@ -277,11 +277,11 @@ function tileEl(p,full,show){
   const info=el("button",{type:"button",class:"info","data-id":p.id,"aria-label":p.n+" 詳細資料"});
   info.innerHTML='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 5.2v4.6"/><path d="M6 2.4v.1"/></svg>';
   info.onclick=()=>openDetail(p,info);
+  longPress(b,()=>openDetail(p,info));
   const big=el("span",{class:"big","aria-hidden":"true"});
   big.innerHTML='<svg viewBox="0 0 24 24"><path d="M2.8 13.4l2.6-2.2 4.2 3.6C12.6 10.4 16.4 6.6 21.4 3.6l.9 1.3C17.4 9 13.6 13.6 10.6 20z"/></svg>';
   return el("div",{class:"tw"+(on?" on":"")},b,info,big);
 }
-function openDetail(p,opener){} // stub: the detail dialog arrives in the next task
 // Group-header 全選／全部取消 for the ids currently shown in group g.
 function bulkButton(g,ids){
   const bs=bulkState(ids,sel,LIMIT,listMode==="pick"),add=bs.mode==="add";
@@ -694,26 +694,50 @@ function placeToast(){
   $("toast").style.setProperty("--tt",Math.round(Math.min(Math.max(b,0),innerHeight-80))+10+"px");
 }
 for(const ev of["scroll","resize"])window.addEventListener(ev,()=>{if(!$("toast").hidden)placeToast()},{passive:true});
-// Modal sheet: focus moves in on open, Tab stays inside, and closing returns focus to the button that opened it.
-let sheetUrl=null,sheetOpener=null;
+// Modals (#sheet, #detail): focus moves in on open, Tab stays inside, and closing returns focus to the button that opened it.
+let sheetUrl=null,modalOpener=null;
+function activeModal(){return["sheet","detail"].map($).find(m=>!m.hidden)||null}
+function restoreFocus(){const o=modalOpener;modalOpener=null;if(o&&o.isConnected&&!o.disabled)o.focus()}
 function openSheet(title,kids,opener){
-  sheetOpener=opener||null;
+  modalOpener=opener||null;
   $("sheetT").textContent=title;$("sheetBody").replaceChildren(...kids);$("sheet").hidden=false;$("sheetX").focus();
 }
 function closeSheet(){
   $("sheet").hidden=true;$("sheetBody").replaceChildren();if(sheetUrl){URL.revokeObjectURL(sheetUrl);sheetUrl=null}
-  const o=sheetOpener;sheetOpener=null;
-  if(o&&o.isConnected&&!o.disabled)o.focus();
+  restoreFocus();
 }
-function sheetFocusables(){return[...$("sheet").querySelectorAll('a[href],button:not([disabled]),textarea,input,select,[tabindex]:not([tabindex="-1"])')].filter(x=>x.offsetParent!==null)}
+const SVG_X='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const SVG_EXT='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+function withSvg(e,svg){e.insertAdjacentHTML("beforeend",svg);return e}
+// Player detail dialog (the tile title, reachable on phones): opened by the tile's ⓘ or a long-press on the tile.
+function openDetail(p,opener){
+  modalOpener=opener||null;
+  const shown=l=>l.shown?{class:"shown"}:{},tb=detailTable(p),tier=tierNote(p);
+  const x=withSvg(el("button",{type:"button",class:"detail-x","aria-label":"關閉"}),SVG_X);x.onclick=closeDetail;
+  const table=tb&&el("table",{},
+    el("thead",{},el("tr",{},el("th"),...tb.levels.map(l=>el("th",{scope:"col",...shown(l),text:l.name})))),
+    el("tbody",{},...tb.rows.map(r=>el("tr",{},el("th",{scope:"row",text:r.label}),...r.values.map((v,i)=>el("td",{...shown(tb.levels[i]),text:v}))))));
+  $("detailBody").replaceChildren(x,
+    el("div",{class:"hd"},el("span",{class:"wm","aria-hidden":"true",text:p.no}),photo(p,"av"),
+      el("div",{class:"hc"},el("span",{class:"tm","aria-hidden":"true",text:T.en}),
+        el("h3",{id:"detailT",class:isLongName(p.n)?"long":""},el("span",{class:"n",text:p.no}),p.n),
+        el("ul",{class:"meta"},...detailChips(p,DATA.updated,posLabel(p)).map(c=>el("li",c.kind?{class:c.kind,text:c.text}:{text:c.text}))))),
+    el("div",{class:"bd"},el("div",{class:"sec",text:DATA.updated.slice(0,4)+" SEASON"}),
+      table||el("p",{class:"none",text:NO_GAMES}),tier&&el("p",{class:"tier",text:tier}),
+      withSvg(el("a",{class:"ext",href:playerUrl(p),target:"_blank",rel:"noopener"},"中職官網球員頁"),SVG_EXT)));
+  $("detail").hidden=false;x.focus();
+}
+function closeDetail(){$("detail").hidden=true;$("detailBody").replaceChildren();restoreFocus()}
+function modalFocusables(m){return[...m.querySelectorAll('a[href],button:not([disabled]),textarea,input,select,[tabindex]:not([tabindex="-1"])')].filter(x=>x.offsetParent!==null)}
 $("sheetX").onclick=closeSheet;
 $("sheet").addEventListener("click",e=>{if(e.target.id==="sheet")closeSheet()});
+$("detail").addEventListener("click",e=>{if(e.target.id==="detail")closeDetail()});
 document.addEventListener("keydown",e=>{
-  if($("sheet").hidden)return;
-  if(e.key==="Escape"){closeSheet();return}
+  const m=activeModal();if(!m)return;
+  if(e.key==="Escape"){if(m.id==="sheet")closeSheet();else closeDetail();return}
   if(e.key!=="Tab")return;
-  const f=sheetFocusables();if(!f.length)return;
-  const first=f[0],last=f[f.length-1],inside=$("sheet").contains(document.activeElement);
+  const f=modalFocusables(m);if(!f.length)return;
+  const first=f[0],last=f[f.length-1],inside=m.contains(document.activeElement);
   if(e.shiftKey&&(!inside||document.activeElement===first)){e.preventDefault();last.focus()}
   else if(!e.shiftKey&&(!inside||document.activeElement===last)){e.preventDefault();first.focus()}
 });
