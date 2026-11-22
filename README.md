@@ -1,10 +1,10 @@
-# 中職契約保留名單 2026（六隊版）
+# 2027 中職 60 人名單模擬器
 
 排出中職六隊的 2027 年度 60 人契約保留名單（《中華職棒大聯盟規章》第 8 章第 10 條），並查看所有球迷的保留率統計。
 
 **網站：<https://s22shadowl.github.io/cpbl-reserve-list-2026/>**
 
-> 改編自 [brienjohn/cpbl-reserve-list](https://github.com/brienjohn/cpbl-reserve-list)（富邦悍將版，原作者開放自由調整），擴充為六隊。與原站為獨立服務，統計不互通。
+> 改編自[中職契約保留名簿](https://brienjohn.github.io/cpbl-reserve-list/#guardians)（原始碼 [brienjohn/cpbl-reserve-list](https://github.com/brienjohn/cpbl-reserve-list)，富邦悍將版，原作者開放自由調整），擴充為六隊。與原站為獨立服務，統計不互通。
 
 ## 功能
 
@@ -31,8 +31,10 @@
 ```
 docs/                 前端
   app.js              串接層（DOM、事件、API）
-  limit.js, flags.js, theme.js, card.js, stats.js, filter.js, bulk.js,
-  rank.js, status.js, official.js, mine.js, focus.js, prefs.js   純函式模組
+  limit.js, flags.js, theme.js, card.js, detail.js, stats.js, filter.js,
+  bulk.js, rank.js, status.js, official.js, mine.js, focus.js, prefs.js,
+  listmode.js, press.js, shot.js   純函式模組
+  og.png              連結預覽圖（scripts/og.mjs 產生）
   data/teams.json     各隊球員資料（scraper 產生）
   data/official.sample.json  開發用假官方名單
   photos/             球員照片（scraper 產生）
@@ -45,6 +47,7 @@ scraper/              爬蟲
   check.py            資料檢查
   official.py         官方名單轉檔
   overrides.json      手動排除、標籤、新人與選秀補正
+scripts/og.mjs        產生連結預覽圖
 tests/frontend/       前端單元測試
 e2e/                  Playwright E2E 測試
 ```
