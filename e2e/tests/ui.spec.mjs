@@ -25,7 +25,6 @@ async function expectTeam(page, t) {
   await expect(page.locator("#h1")).toContainText(t.name);
   await expect(page.locator("#teamSw")).toHaveText(t.name);
   await expect(page.locator("#teamSw")).toHaveAttribute("aria-label", "切換球隊，目前：" + t.name);
-  await expect(page).toHaveTitle(new RegExp("^" + t.short));
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", t.band);
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--band").trim())).toBe(t.band);
   await expect(page.locator(".tile")).toHaveCount(TEAMS_JSON[t.code].players.length);

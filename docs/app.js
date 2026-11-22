@@ -5,7 +5,7 @@ const GN={P:"投手",C:"捕手",I:"內野手",O:"外野手"}, GEN={P:"Pitchers",
 // ageOn(), cornerBadge(), cardNote(), isRookie() come from card.js (loaded first); mineVsFans() from mine.js.
 // posMatch(), filterMatch(), railCounts() from filter.js; RANK_PREVIEW, rankParts(), rankToggleText() from rank.js. LIMIT comes from limit.js; FLAGS from flags.js; offAnswer() etc. from official.js (both loaded first).
 // statLine(), statTier(), statsShown(), tileTitle(), playerHead(), CAP_MSG come from stats.js; saveState(), needsConfirm(),
-// submitError(), sameTally(), statsStale(), hhmm() from status.js; isInAppBrowser() from flags.js (loaded first).
+// submitError(), sameTally(), statsStale(), hhmm() from status.js; isInAppBrowser(), isLineBrowser() from flags.js (loaded first).
 const EXEMPT=[["foreign","洋將"],["training","自主／自行培訓"],["fa","行使國內 FA"],["expansion","擴編選秀被選走"],["removed","已非球員"]];
 const $=id=>document.getElementById(id);
 function el(tag,attrs={},...kids){
@@ -128,7 +128,6 @@ function route(){
   saved=null;savedAt=null;mineFailed=false;mineRetries=0;clearTimeout(mineRetryTimer);stats=null;statsAt=0;rankOpen=false;pos="all";showFilter="all";q="";$("q").value="";
   disarmSave();
   applyTheme(t);
-  document.title=t.short+"契約保留名單｜中職 60 人名單模擬";
   $("kicker").textContent=t.en+" · 2027 Reserve List";
   $("h1").textContent="排出你的"+t.name+" 60 人契約保留名單";
   markTeam(t);$("teamSwBox").hidden=AVAIL.length<2;
@@ -143,7 +142,6 @@ function showPicker(){
   clearInterval(statsTimer);
   $("heroOff").hidden=true;
   applyTheme(NEUTRAL);
-  document.title="中職契約保留名單｜各隊 60 人名單模擬";
   $("kicker").textContent="CPBL · 2027 Reserve List";
   $("h1").textContent="排出你支持球隊的 60 人契約保留名單";
   $("exempt").replaceChildren();$("teamSwBox").hidden=true;$("heroEx").hidden=false;
@@ -676,10 +674,10 @@ function groupsOf(){return GORD.split("").map(g=>({g,on:ROSTER.filter(p=>p.g===g
 function droppedPlayers(){return ROSTER.filter(p=>!sel.has(p.id)).sort(sortP)}
 function listText(){
   const gs=groupsOf(),dropped=droppedPlayers();
-  const L=[T.name+" 2027 年度契約保留球員名單（我的版本）","保留 "+sel.size+" / "+LIMIT+" 人｜"+gs.map(x=>GN[x.g]+" "+x.on.length).join("、"),""];
-  for(const x of gs){if(!x.on.length)continue;L.push("【"+GN[x.g]+" "+x.on.length+"】",x.on.map(p=>p.no+" "+p.n).join("、"),"")}
-  if(dropped.length)L.push("【未保留 "+dropped.length+"】",dropped.map(p=>p.no+" "+p.n).join("、"),"");
-  L.push("— 排你的名單："+location.origin+location.pathname+"#"+T.slug); // no query string (fbclid etc.)
+  const L=["我的"+T.name+" 2027 "+LIMIT+" 人契約保留名單","保留 "+sel.size+" / "+LIMIT+" 人｜"+gs.map(x=>GN[x.g]+" "+x.on.length).join("、"),""];
+  for(const x of gs){if(!x.on.length)continue;L.push("【"+GN[x.g]+" "+x.on.length+"】",x.on.map(p=>p.n).join("、"),"")}
+  if(dropped.length)L.push("【未保留 "+dropped.length+"】",dropped.map(p=>p.n).join("、"),"");
+  L.push(location.origin+location.pathname+"#"+T.slug); // no query string (fbclid etc.)
   return L.join("\n");
 }
 let toastT=0;
@@ -835,15 +833,17 @@ $("mkImg").onclick=async()=>{
     const blob=await new Promise(r=>cv.toBlob(r,"image/png"));if(!blob)throw 0;
     if(sheetUrl)URL.revokeObjectURL(sheetUrl);sheetUrl=URL.createObjectURL(blob);
     const fname=T.short+"契約保留名單.png";
-    const acts=[el("a",{class:"btn",href:sheetUrl,download:fname},el("span",{text:"下載 PNG"}))];
+    const line=isLineBrowser(navigator.userAgent); // LINE cannot save the image at all: no download, just the notice
+    const acts=line?[]:[el("a",{class:"btn",href:sheetUrl,download:fname},el("span",{text:"下載 PNG"}))];
     const file=new File([blob],fname,{type:"image/png"});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){
+    if(!line&&navigator.canShare&&navigator.canShare({files:[file]})){
       const sh=el("button",{class:"btn"},el("span",{text:"分享"}));
       sh.onclick=async()=>{try{await navigator.share({files:[file],title:T.name+"契約保留名單"})}catch(e){}};acts.push(sh);
     }
     // The preview is a data: URL (not the blob URL): some in-app browsers cannot long-press-save blob images.
     const kids=[el("img",{class:"shot",src:cv.toDataURL("image/png"),alt:"我的契約保留球員名單"})];
-    if(isInAppBrowser(navigator.userAgent))kids.push(el("p",{class:"hint inapp",text:"長按圖片可存到相簿；無法儲存請改用 Safari／Chrome 開啟。"}));
+    if(line)kids.push(el("p",{class:"hint inapp",text:"LINE 不支援匯出圖片，請改用 Safari／Chrome 開啟。"}));
+    else if(isInAppBrowser(navigator.userAgent))kids.push(el("p",{class:"hint inapp",text:"長按圖片可存到相簿；無法儲存請改用 Safari／Chrome 開啟。"}));
     else if(matchMedia("(pointer:coarse)").matches)kids.push(el("p",{class:"hint",text:"長按圖片可存到相簿。"}));
     openSheet("名單圖片",kids,b,acts);
   }catch(e){toast("圖片產生失敗，請再試一次")}

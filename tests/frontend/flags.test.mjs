@@ -69,3 +69,21 @@ test("isInAppBrowser: LINE, Facebook, Instagram and Threads in-app browsers", ()
     undefined,
   ]) assert.equal(isInApp(ua), false, String(ua));
 });
+
+test("isLineBrowser: only LINE's in-app browser (it cannot export the image at all)", () => {
+  const ctx = vm.createContext({ location: { hostname: "x" } });
+  vm.runInContext(readFileSync(src, "utf8"), ctx, { filename: fileURLToPath(src) });
+  const isLine = vm.runInContext("isLineBrowser", ctx);
+  const ios = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148";
+  const android = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/130.0.0.0 Mobile Safari/537.36";
+  for (const ua of [ios + " Safari Line/14.19.0", android + " Line/14.19.0/IAB"]) assert.equal(isLine(ua), true, ua);
+  for (const ua of [
+    ios + " [FBAN/FBIOS;FBAV/480.0.0.0;FBBV/1;FBDV/iPhone15,2]",
+    ios + " Instagram 350.0.0.0 (iPhone15,2; iOS 18_0)",
+    android + " Threads 350.0.0.0",
+    ios + " Version/18.0 Safari/604.1",
+    android,
+    "",
+    undefined,
+  ]) assert.equal(isLine(ua), false, String(ua));
+});

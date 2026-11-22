@@ -67,6 +67,8 @@ python3 -m http.server -d docs 8080 --bind 127.0.0.1    # 前端：http://localh
 
 修改後要強制重新整理（Ctrl+Shift+R），`http.server` 會讓瀏覽器快取舊檔。
 
+連結預覽圖 `docs/og.png`（1200×630）由 `node scripts/og.mjs` 依目前的隊色與選隊頁設計產生（用 `e2e/` 的 Playwright，需先在 `e2e/` 執行 `npm install` 與 `npm run install-browser`；需要網路載入 Google Fonts）。加上輸出路徑參數可先產生到別處預覽。
+
 ## 測試
 
 | 範圍 | 指令 |

@@ -223,13 +223,28 @@ test("keyboard: tabs move with arrow keys; the image sheet traps Tab and returns
   await expect(page.locator("#mkImg")).toBeFocused();
 });
 
-test("in-app browser: the image sheet suggests opening in Safari／Chrome", async ({ browser }) => {
-  const context = await browser.newContext({ userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Safari Line/14.19.0" });
+const IOS_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148";
+
+test("in-app browser (Facebook): the image sheet suggests opening in Safari／Chrome, download kept", async ({ browser }) => {
+  const context = await browser.newContext({ userAgent: IOS_UA + " [FBAN/FBIOS;FBAV/480.0.0.0;FBBV/1;FBDV/iPhone15,2]" });
   const page = await context.newPage();
   await open(page);
   await cutTo60(page);
   await page.locator("#mkImg").click();
   await expect(page.locator("#sheet .inapp")).toContainText("Safari");
+  await expect(page.locator("#sheet a[download]")).toHaveCount(1);
+  await context.close();
+});
+
+test("LINE: the image sheet says LINE cannot export the image, no download link, preview kept", async ({ browser }) => {
+  const context = await browser.newContext({ userAgent: IOS_UA + " Safari Line/14.19.0" });
+  const page = await context.newPage();
+  await open(page);
+  await cutTo60(page);
+  await page.locator("#mkImg").click();
+  await expect(page.locator("#sheet .inapp")).toHaveText("LINE 不支援匯出圖片，請改用 Safari／Chrome 開啟。");
+  await expect(page.locator("#sheet img.shot")).toHaveAttribute("src", /^data:image\/png/);
+  await expect(page.locator("#sheet a[download]")).toHaveCount(0);
   await context.close();
 });
 
@@ -272,8 +287,9 @@ test("slow /mine answering after a submit does not undo it (still 已送出)", a
 
 test("copy text: team heading, kept players by position, the not-kept players, all matching the picker", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  const players = data("teams.json").teams.AEO.players, entry = p => `${p.no} ${p.n}`;
-  await open(page);
+  const players = data("teams.json").teams.AEO.players, entry = p => p.n;
+  expect(new Set(players.map(entry)).size).toBe(players.length); // names alone identify players within a team
+  await open(page, "/?fbclid=test#guardians"); // a shared link with a tracking parameter
   await cutTo60(page);
   const keptIds = new Set(await page.locator('.tile[aria-pressed="true"]').evaluateAll(ts => ts.map(t => t.dataset.id)));
   const kept = players.filter(p => keptIds.has(p.id)).map(entry), dropped = players.filter(p => !keptIds.has(p.id)).map(entry);
@@ -282,7 +298,7 @@ test("copy text: team heading, kept players by position, the not-kept players, a
   const text = await page.evaluate(() => navigator.clipboard.readText());
   const lines = text.split("\n");
 
-  expect(lines[0]).toContain(TEAMS.find(t => t.code === "AEO").name);
+  expect(lines[0]).toBe(`我的${TEAMS.find(t => t.code === "AEO").name} 2027 60 人契約保留名單`);
   expect(lines[1]).toContain(`${await page.locator("#selN").textContent()} / 60`);
   // Sections: 【label n】 then the players joined by 、; the last one is the not-kept list (the roster is over 60).
   const sections = [];
@@ -301,7 +317,8 @@ test("copy text: team heading, kept players by position, the not-kept players, a
   expect(groups.map(s => s.names.map(e => byEntry.get(e).g))).toEqual(withKept.map((g, i) => Array(groups[i].n).fill(g)));
   expect(rest.label).toBe("未保留");
   expect(rest.names.sort()).toEqual(dropped.sort());
-  expect(lines.at(-1)).toContain("#guardians");
+  const u = new URL(page.url());
+  expect(lines.at(-1)).toBe(u.origin + u.pathname + "#guardians"); // the bare team URL: the tracking query is dropped
 });
 
 // Official list file: localhost reads official.sample.json. (The production path, official.json, is only reached once

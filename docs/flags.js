@@ -7,3 +7,5 @@ const IS_LOCAL=LOCAL_HOSTS.includes(location.hostname);
 const FLAGS={official:IS_LOCAL};
 // In-app browsers (LINE, Facebook, Instagram, Threads) often cannot download or long-press-save images (P1-6).
 function isInAppBrowser(ua){return/\bLine\/|FBAN|FBAV|Instagram|Barcelona|Threads/i.test(String(ua||""))}
+// LINE's in-app browser cannot export the image by any route (download, long-press or share), so the sheet says so.
+function isLineBrowser(ua){return/\bLine\//.test(String(ua||""))}
