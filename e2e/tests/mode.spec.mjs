@@ -159,3 +159,26 @@ test("empty list: share buttons explain", async ({ page }) => {
   await expect(page.locator("#toast")).toHaveText("名單是空的");
   await expect(page.locator("#sheet")).toBeHidden();
 });
+
+// iOS report: the count button grew a second label line (移出 N 人) over 60 and lost it at 60 or in 挑選,
+// so the whole top row changed height and the tabs below jumped.
+test("the count button keeps one size across modes and counts, so the tabs row does not move", async ({ page }) => {
+  await open(page);
+  const measure = async () => {
+    await page.evaluate(() => document.fonts.ready); // web fonts change the widths; measure after they load
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const b = await page.locator("#modeBtn").boundingBox(), t = await page.locator("#tab-pick").boundingBox();
+    return { w: b.width, h: b.height, tabY: t.y };
+  };
+  await expect(page.locator("#moveN")).toBeVisible();
+  const over = await measure();
+  await cutTo60(page);
+  await expect(page.locator("#moveN")).toBeHidden();
+  expect(await measure()).toEqual(over);
+  await page.locator("#modeBtn").click();
+  await expect(page.locator("#modeName")).toHaveText("確定？");
+  expect(await measure()).toEqual(over);
+  await page.locator("#modeBtn").click();
+  await expect(page.locator("#modeName")).toContainText("挑選");
+  expect(await measure()).toEqual(over);
+});
