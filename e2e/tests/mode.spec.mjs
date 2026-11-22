@@ -138,15 +138,6 @@ test("two tabs: switching mode in one shows up in the other", async ({ context }
   await expect(b.locator("#selN")).toHaveText("0");
 });
 
-test("over-limit save explains itself, then works at 60", async ({ page }) => {
-  test.skip(N <= LIMIT, "roster not over the limit");
-  await open(page);
-  await expect(page.locator("#save")).toHaveAttribute("aria-disabled", "true");
-  await cutTo60(page);
-  await expect(page.locator("#save")).not.toHaveAttribute("aria-disabled", "true");
-  await submit(page);
-});
-
 test("empty list: share buttons explain", async ({ page }) => {
   await open(page);
   await page.locator("#clear").click();

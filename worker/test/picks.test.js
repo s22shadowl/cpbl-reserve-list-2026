@@ -280,7 +280,7 @@ describe("IP rate limit", () => {
 describe("LOCKED (official lists published)", () => {
   const locked = { overrides: { LOCKED: "true" } };
 
-  it("defaults to unlocked from wrangler.toml", async () => {
+  it("the suite runs unlocked whatever wrangler.toml says (vitest.config.mjs binds LOCKED)", async () => {
     expect(env.LOCKED).toBe("false");
     expect((await submit(TEAM, uuid(1), [roster()[0]])).status).toBe(200);
   });

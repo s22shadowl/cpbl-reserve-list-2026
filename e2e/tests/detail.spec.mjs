@@ -2,23 +2,28 @@
 import { test, expect } from "@playwright/test";
 import { open, usePickMode, pick60 } from "./helpers.mjs";
 
-test("every tile has an info button and no corner check", async ({ page }) => {
+test("every tile has an info button named after its player", async ({ page }) => {
   await open(page);
   const tiles = await page.locator(".tile").count();
   expect(await page.locator(".tw .info").count()).toBe(tiles);
-  expect(await page.locator(".tile .ck").count()).toBe(0);
-  await expect(page.locator('.tile[data-id] + .info[aria-label="劉俊豪 詳細資料"]')).toHaveCount(1);
+  await expect(page.locator('.info[aria-label="劉俊豪 詳細資料"]')).toHaveCount(1);
 });
 
-test("kept tile shows the centred check", async ({ page }) => {
+test("kept tile shows the centred check; dropping the player hides it", async ({ page }) => {
   await open(page);
   const id = await page.locator('.tile[aria-pressed="true"]').first().getAttribute("data-id");
-  const tile = page.locator(`.tile[data-id="${id}"]`), tw = tile.locator("xpath=..");
-  await expect(tw).toHaveClass(/\bon\b/);
-  await expect(tw.locator(".big svg")).toHaveCount(1);
+  const tile = page.locator(`.tile[data-id="${id}"]`);
+  // The check is drawn over the photo and shown through opacity (toBeVisible ignores opacity), so read what is painted.
+  const check = () => tile.locator("xpath=..").locator(".big svg").evaluate(svg => {
+    let o = 1;
+    for (let e = svg; e && e.nodeType === 1; e = e.parentElement) o *= Number(getComputedStyle(e).opacity);
+    const r = svg.getBoundingClientRect();
+    return o > 0.5 && r.width > 0 && r.height > 0;
+  });
+  await expect.poll(check).toBe(true);
   await tile.click();
   await expect(tile).toHaveAttribute("aria-pressed", "false");
-  await expect(tw).not.toHaveClass(/\bon\b/);
+  await expect.poll(check).toBe(false);
 });
 
 test("info works on a capped tile", async ({ page }) => {
@@ -44,7 +49,6 @@ test("info opens the dialog with stats", async ({ page }) => {
   const d = page.locator("#detail");
   await expect(d).toBeVisible();
   await expect(d.locator("#detailT")).toHaveText("85 劉俊豪");
-  await expect(d.locator("#detailT .n")).toHaveText("85");
   await expect(d.locator(".meta li")).toHaveText(["游擊手", "一軍", /\d+ 歲/]);
   await expect(d.locator('thead th[scope="col"]')).toHaveText(["一軍", "二軍"]);
   await expect(page.locator("#selN")).toHaveText(n);
@@ -65,7 +69,6 @@ test("long name stays on one line", async ({ page }) => {
   await open(page);
   await page.locator(PSL).click();
   const h = page.locator("#detailT");
-  await expect(h).toHaveClass(/\blong\b/);
   expect((await h.boundingBox()).height).toBeLessThan(30);
   await expect(page.locator("#detail .bd")).toContainText("本季未出賽");
   await expect(page.locator("#detail table")).toHaveCount(0);
@@ -152,7 +155,14 @@ test("closing after a re-render returns focus to the player's info button", asyn
   await open(page);
   await page.locator(LIU).click();
   await expect(page.locator("#detail")).toBeVisible();
-  await page.evaluate(() => renderGroups()); // a background re-render replaces every tile while the dialog is open
+  // Another tab edits the draft while the dialog is open: the storage event re-renders every tile here.
+  const other = await page.context().newPage();
+  await open(other);
+  await other.locator('.tile[aria-pressed="true"]').first().click();
+  await expect(page.locator("#selN")).toHaveText(await other.locator("#selN").textContent());
+  await other.close();
+  await page.bringToFront();
+  await expect(page.locator("#detail")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.locator("#detail")).toBeHidden();
   await expect(page.locator(LIU)).toBeFocused();

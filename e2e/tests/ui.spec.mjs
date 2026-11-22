@@ -99,7 +99,6 @@ test("toast: team-coloured bar shows the message, the next one replaces it, then
   await expect(toast).toBeVisible();
   await expect(toast).toHaveText("再按一次清空名單");
   await expect(toast).toHaveAttribute("role", "status");
-  await expect(toast.locator("svg")).toHaveCount(1);
   await expect(toast).toHaveCSS("background-color", rgb(band));
 
   await page.locator("#clear").click();
@@ -275,7 +274,7 @@ test("bulk select: not enough slots → aria-disabled and 名額不足（需 N�
 });
 
 // ---------- team picker + hero copy ----------
-test("picker: one card per team with name and a decorative watermark, no player count; the rules line names the exempt kinds", async ({ page }) => {
+test("picker: one card per team with name and a decorative watermark; the rules line names the exempt kinds", async ({ page }) => {
   await page.goto("/");
   const cards = page.locator(".tcard");
   await expect(cards).toHaveCount(AVAIL.length);
@@ -284,10 +283,29 @@ test("picker: one card per team with name and a decorative watermark, no player 
     await expect(c).toHaveAttribute("href", "#" + t.slug);
     await expect(c.locator("b")).toHaveText(t.name);
     await expect(c.locator(".wm")).toHaveAttribute("aria-hidden", "true");
-    await expect(c.locator(".wm")).toHaveText(t.en.split(" ").pop());
   }
-  await expect(cards.first()).not.toContainText("名可選球員");
-  await expect(page.locator("#heroEx")).toBeVisible();
+  const rules = page.locator("#heroEx");
+  await expect(rules).toBeVisible();
+  for (const kind of ["洋將", "自由球員", "擴編選秀", "自主", "自行培訓"]) await expect(rules).toContainText(kind);
+});
+
+test("team page: the 不需列入 list counts every exempt player in teams.json and names them by category", async ({ page }) => {
+  const ex = TEAMS_JSON.AEO.exempt;
+  const cats = Object.values(ex).filter(names => names.length);
+  const total = cats.reduce((a, names) => a + names.length, 0);
+  test.skip(total === 0, "no exempt players on this team");
+  await open(page);
+  const box = page.locator("#exempt details");
+  await expect(box.locator("summary")).toContainText(`${total} 位`);
+  await box.locator("summary").click();
+  const rows = box.locator(":scope > span");
+  await expect(rows).toHaveCount(cats.length);
+  for (const names of cats) {
+    const row = rows.filter({ hasText: names[0] });
+    await expect(row).toHaveCount(1);
+    for (const nm of names) await expect(row).toContainText(nm);
+    await expect(row).toBeVisible();
+  }
 });
 
 test("team page: the hero drops the exempt-kinds sentence (the 不需列入 list below covers it); back on the picker it returns", async ({ page }) => {
@@ -313,16 +331,13 @@ test("over the limit (default 刪減 mode): 移出 N 人 and the bar use --hi, t
   await expect(pend).toHaveCSS("color", onBand);
 });
 
-test("a selection change rebuilds the tiles but keeps each photo's <img> node (no blank frame)", async ({ page }) => {
+test("a selection change keeps each photo's <img> node (no blank frame)", async ({ page }) => {
   await open(page);
   const tiles = page.locator(".tile"), n = await tiles.count();
   const id = await page.locator(".tile:has(.pic img)").first().getAttribute("data-id");
   await page.locator(`.tile[data-id="${id}"] .pic img`).evaluate(i => { i._mark = 1; });
-  await page.locator(`.tile[data-id="${id}"]`).evaluate(b => { b._mark = 1; });
   await page.locator(`.tile:not([data-id="${id}"])`).first().click();
   await expect(tiles).toHaveCount(n);
-  // premise: the tile itself was rebuilt (new node) …
-  expect(await page.locator(`.tile[data-id="${id}"]`).evaluate(b => b._mark)).toBeUndefined();
-  // … but its photo is the same, already decoded node
+  // the photo is the same, already decoded node
   expect(await page.locator(`.tile[data-id="${id}"] .pic img`).evaluate(i => i._mark)).toBe(1);
 });

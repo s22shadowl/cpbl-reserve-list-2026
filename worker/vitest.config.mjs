@@ -6,7 +6,9 @@ export default defineConfig({
     cloudflareTest({
       wrangler: { configPath: "./wrangler.toml" },
       // The pool bundles an older workerd than wrangler.toml's compatibility_date allows.
-      miniflare: { compatibilityDate: "2026-08-01" },
+      // LOCKED is pinned to "false" here so the suite does not follow wrangler.toml, which is set to "true" at launch
+      // (roadmap P1-6). The locked-flow tests pass LOCKED: "true" themselves.
+      miniflare: { compatibilityDate: "2026-08-01", bindings: { LOCKED: "false" } },
     }),
   ],
   test: {

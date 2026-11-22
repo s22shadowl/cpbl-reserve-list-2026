@@ -49,20 +49,38 @@ test("shotCells: empty", () => {
   assert.deepEqual(plain(shotCells([], 5, () => true)), { cells: [], rows: 0 });
 });
 
-test("shotRowHeights: crowded team", () => {
+// The 1350px image as drawCard() stacks it: the grid starts under the header band (y 221) and must end above the
+// footer band (y 1314) with a 24px gap. Each position group adds 26px of spacing; a dropped block adds 26px and, because its label is
+// ~90px tall, takes at least two of its rows.
+const TOP = 221, END = 1314 - 24;
+const bottom = (kRows, dRows, groups) => {
+  const { rH, dH } = shotRowHeights(kRows, dRows, groups);
+  return TOP + groups * 26 + kRows * rH + (dRows ? 26 + Math.max(dRows, 2) * dH : 0);
+};
+const shapes = [];
+for (let g = 1; g <= 4; g++) for (let k = g; k <= 20; k++) for (let d = 0; d <= 6; d++) shapes.push([k, d, g]);
+
+test("shotRowHeights: the grid always ends above the footer band, whatever the shape", () => {
+  for (const s of shapes) assert.ok(bottom(...s) <= END + 1e-9, String(s));
+});
+test("shotRowHeights: a crowded image uses the whole space down to the footer", () => {
+  for (const s of shapes) {
+    const { rH, dH } = shotRowHeights(...s);
+    if (rH < 72 && (s[1] === 0 || dH < 48)) assert.ok(Math.abs(bottom(...s) - END) < 1e-6, String(s));
+  }
+});
+test("shotRowHeights: rows are capped at 72 (dropped at 48) when there is room", () => {
+  for (const s of shapes) {
+    const { rH, dH } = shotRowHeights(...s);
+    assert.ok(rH <= 72 && dH <= 48, String(s));
+  }
+  assert.equal(shotRowHeights(2, 0, 1).rH, 72);
+  assert.equal(shotRowHeights(2, 1, 1).dH, 48);
+});
+test("shotRowHeights: dropped rows are 0.75× a kept row", () => {
   const { rH, dH } = shotRowHeights(13, 5, 4);
-  assert.ok(Math.abs(rH - (1314 - 24 - 221 - 104 - 26) / 16.75) < 1e-9);
-  assert.ok(Math.abs(rH - 56.06) < 0.01);
+  assert.ok(rH < 72);
   assert.equal(dH, 0.75 * rH);
-});
-test("shotRowHeights: clamped to 72 / 48", () => {
-  const { rH, dH } = shotRowHeights(2, 0, 1);
-  assert.equal(rH, 72);
-  assert.equal(dH, 48);
-});
-test("shotRowHeights: no dropped block reserves nothing", () => {
-  const { rH } = shotRowHeights(10, 0, 4);
-  assert.equal(rH, Math.min(72, (1314 - 24 - 221 - 104) / 10));
 });
 test("shotRowHeights: one dropped row counts as two (R1)", () => {
   assert.deepEqual(plain(shotRowHeights(13, 1, 4)), plain(shotRowHeights(13, 2, 4)));

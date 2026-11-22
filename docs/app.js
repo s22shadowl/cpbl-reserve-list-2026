@@ -600,7 +600,7 @@ function renderStats(){
   for(const[v,k]of kpis)kp.append(el("div",{class:"kpi"},el("div",{class:"v",text:v}),el("div",{class:"k",text:k})));
   box.append(kp);
   const mvf=mineVsFans({roster:ROSTER,counts:cnt,N,saved,cmp:sortP});
-  if(!(ans&&mvf.state==="unsent"))box.append(mineBlock(mvf)); // the answer block already says "送出名單後顯示結果"
+  if(!(ans&&mvf.state==="unsent"))box.append(mineBlock(mvf)); // with the answer block shown, nothing submitted means no mvf box (no "submit first" hint)
   const list=el("div",{class:"rank"+(clubKept?" club":""),style:"--cd:"+String(N).length}); // --cd = digits of N, sizes the count column
   const row=x=>{
     const cls=["rk"];if(sel.has(x.p.id))cls.push("mine");if(N>=3&&x.r>=.35&&x.r<=.65)cls.push("split");

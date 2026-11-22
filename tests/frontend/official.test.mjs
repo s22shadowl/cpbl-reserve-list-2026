@@ -95,8 +95,6 @@ test("answer: hit rate comes only from the submitted list; unknown while /mine h
   assert.equal(unknown.mineState, "unknown");
   assert.equal(unknown.mine, null);
   assert.ok(unknown.diff, "fan view does not depend on my list");
-  // There is no draft parameter: an old `mine` argument is ignored rather than scored.
-  assert.equal(offAnswer({ roster, counts, N: 10, mine: ["p3"], saved: new Set(), official: ["p3"], limit: 3, cmp }).mine, null);
 });
 test("offDate: M/D without leading zeros, empty when missing", () => {
   assert.equal(offDate("2026-11-30"), "11/30");

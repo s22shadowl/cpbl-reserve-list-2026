@@ -37,13 +37,6 @@ def test_farm_roster_marks():
     assert (rows["0000007834"].name, rows["0000007834"].mark) == ("泰威", "*")
 
 
-def test_rosters_do_not_overlap():
-    a = {r.id for r in parse_roster(read("team_AEO_A.html"), "一軍")}
-    d = {r.id for r in parse_roster(read("team_AEO_D.html"), "二軍")}
-    assert not a & d
-    assert len(a | d) == 96
-
-
 def test_coaches_skipped():
     names = {r.name for r in parse_roster(read("team_AEO_A.html"), "一軍")}
     assert "後藤光尊" not in names

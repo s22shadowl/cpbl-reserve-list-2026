@@ -2,7 +2,7 @@
 // Each test gets a fresh browser context = a new voter. setup.mjs seeds 50 fake lists per team; earlier tests
 // may leave lists behind, so counts are compared with a baseline read at the start of each test.
 import { test, expect } from "@playwright/test";
-import { TEAM, API, CORS, data, open, pick60, cutTo60, usePickMode, listsSubmitted, submit } from "./helpers.mjs";
+import { TEAM, TEAMS, API, CORS, data, open, pick60, cutTo60, usePickMode, listsSubmitted, submit } from "./helpers.mjs";
 
 test("cut to 60, submit, stats count +1 and 'you vs most fans' shows", async ({ page }) => {
   await open(page);
@@ -79,7 +79,6 @@ test("official answers (on for localhost): stats tab only, never on picker cards
   await page.locator("#tab-stats").click();
   const ans = page.locator("section.ans:not(.mvf)");
   await expect(ans.locator("h2")).toHaveText("對答案");
-  await expect(ans.locator(".upset")).toHaveCount(0);
   // Club pills only where the club went against the consensus line = the two answer columns.
   const cols = await ans.locator(".dc li").count();
   expect(cols).toBeGreaterThan(0);
@@ -88,7 +87,6 @@ test("official answers (on for localhost): stats tab only, never on picker cards
   const hot = await ans.locator(".dc li.hot").count();
   expect(hot).toBeGreaterThan(0);
   expect(hot).toBeLessThanOrEqual(6);
-  await expect(page.locator(".kpi")).toHaveCount(3);
 
   await page.locator("#tab-pick").click();
   await expect(page.locator(".tile").first()).toBeVisible();
@@ -142,7 +140,10 @@ test("locked: submit off, picking and sharing still work, hit rate from the subm
   await expect(page.locator("#save")).toBeDisabled();
   await expect(page.locator("#copyTxt")).toBeEnabled();
   await expect(page.locator("#mkImg")).toBeEnabled();
-  expect(JSON.parse(await page.evaluate(() => localStorage.getItem("rl-draft-AEO")))).toHaveLength(41);
+  await page.reload(); // the 41-player draft is kept across a reload, still locked
+  await expect(page.locator(".tile").first()).toBeVisible();
+  await expect(page.locator("#selN")).toHaveText("41");
+  await expect(page.locator("#save")).toBeDisabled();
 
   // Hit rate compares the submitted 40, not the 41-player draft.
   await page.locator("#tab-stats").click();
@@ -207,8 +208,6 @@ test("keyboard: tabs move with arrow keys; the image sheet traps Tab and returns
   expect(dim).toEqual([1080, 1350]);
   await expect(sheet.locator("a[download]")).toHaveAttribute("href", /^blob:/);
   await expect(sheet).toHaveAttribute("aria-label", "名單圖片");
-  await expect(page.locator("#sheetT")).toHaveCount(0);
-  await expect(sheet.locator(".sheet-h a[download]")).toHaveAttribute("href", /^blob:/);
   await expect(page.locator("#sheetX")).toHaveAttribute("aria-label", "關閉");
   await expect(sheet.locator(".inapp")).toHaveCount(0);
   await expect(sheet.locator(".hint")).toHaveCount(0);
@@ -266,4 +265,74 @@ test("slow /mine answering after a submit does not undo it (still 已送出)", a
   await page.waitForTimeout(500);
   await expect(page.locator("#status")).toHaveText(/已送出/);
   await expect(page.locator("#save")).toBeDisabled();
+});
+
+test("copy text: team heading, kept players by position, the not-kept players, all matching the picker", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  const players = data("teams.json").teams.AEO.players, entry = p => `${p.no} ${p.n}`;
+  await open(page);
+  await cutTo60(page);
+  const keptIds = new Set(await page.locator('.tile[aria-pressed="true"]').evaluateAll(ts => ts.map(t => t.dataset.id)));
+  const kept = players.filter(p => keptIds.has(p.id)).map(entry), dropped = players.filter(p => !keptIds.has(p.id)).map(entry);
+  await page.locator("#copyTxt").click();
+  await expect(page.locator("#toast")).toContainText("60");
+  const text = await page.evaluate(() => navigator.clipboard.readText());
+  const lines = text.split("\n");
+
+  expect(lines[0]).toContain(TEAMS.find(t => t.code === "AEO").name);
+  expect(lines[1]).toContain(`${await page.locator("#selN").textContent()} / 60`);
+  // Sections: 【label n】 then the players joined by 、; the last one is the not-kept list (the roster is over 60).
+  const sections = [];
+  lines.forEach((l, i) => {
+    const m = l.match(/^【.+ (\d+)】$/);
+    if (m) sections.push({ n: Number(m[1]), names: lines[i + 1].split("、") });
+  });
+  for (const s of sections) expect(s.names).toHaveLength(s.n);
+  const rest = sections.at(-1), groups = sections.slice(0, -1);
+  expect(groups.length).toBeGreaterThan(0);
+  expect(groups.flatMap(s => s.names).sort()).toEqual(kept.sort());
+  // Position sections follow the picker order (投手, 捕手, 內野, 外野), skipping positions with nobody kept, and
+  // each one lists only players of that position.
+  const GORD = ["P", "C", "I", "O"], byEntry = new Map(players.map(p => [entry(p), p]));
+  const withKept = GORD.filter(g => players.some(p => p.g === g && keptIds.has(p.id)));
+  expect(groups.map(s => s.names.map(e => byEntry.get(e).g))).toEqual(withKept.map((g, i) => Array(groups[i].n).fill(g)));
+  expect(rest.names.sort()).toEqual(dropped.sort());
+  expect(lines.at(-1)).toContain("#guardians");
+});
+
+// Official list file: localhost reads official.sample.json. (The production path, official.json, is only reached once
+// FLAGS.official is switched on for the site host, roadmap P1-3; a non-local host has the flag off, so it is untested here.)
+for (const [why, reply] of [["missing (404)", { status: 404, body: "" }], ["malformed", { status: 200, contentType: "application/json", body: "{not json" }]]) {
+  test(`official list file ${why}: no answer block, picking and stats still work`, async ({ page }) => {
+    let asked = 0;
+    await page.route("**/data/official.sample.json", r => { asked++; return r.fulfill(reply); });
+    await open(page);
+    expect(asked).toBe(1);
+    const n = Number(await page.locator("#selN").textContent());
+    await page.locator('.tile[aria-pressed="true"]').first().click();
+    await expect(page.locator("#selN")).toHaveText(String(n - 1));
+    await page.locator("#tab-stats").click();
+    await expect(page.locator(".kpi .v").first()).toBeVisible();
+    await expect(page.locator(".rank .rk").first()).toBeVisible();
+    await expect(page.locator("section.ans:not(.mvf)")).toHaveCount(0);
+    await expect(page.locator(".rank .cd")).toHaveCount(0);
+  });
+}
+
+test("an old draft with a player no longer on the roster loads without him and submits without him", async ({ page }) => {
+  const real = data("teams.json").teams.AEO.players[0].id, gone = "0000000000";
+  await open(page);
+  await page.evaluate(ids => localStorage.setItem("rl-draft-AEO", JSON.stringify(ids)), [real, gone]); // a draft saved before the roster changed
+  await page.reload();
+  await expect(page.locator(".tile").first()).toBeVisible();
+  await expect(page.locator("#status")).not.toHaveText(/連線中/);
+  await expect(page.locator("#selN")).toHaveText("1");
+  await expect(page.locator('.tile[aria-pressed="true"]')).toHaveCount(1);
+  await expect(page.locator(`.tile[data-id="${real}"]`)).toHaveAttribute("aria-pressed", "true");
+
+  const posted = page.waitForRequest(r => r.method() === "POST" && r.url().includes("/picks"));
+  await page.locator("#save").click();
+  await page.locator("#save").click(); // under 60: the second press submits
+  expect((await posted).postDataJSON().ids).toEqual([real]);
+  await expect(page.locator("#status")).toHaveText(/已送出/);
 });

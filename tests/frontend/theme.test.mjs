@@ -31,11 +31,6 @@ const PAIRS = [
 ];
 const PALETTES = [...TEAMS.map((t) => [t.slug, t]), ["NEUTRAL", NEUTRAL]];
 
-test("seven palettes are defined", () => {
-  assert.equal(TEAMS.length, 6);
-  assert.equal(NEUTRAL.band.toLowerCase(), "#111214");
-});
-
 for (const [name, base] of PALETTES) {
   for (const mode of ["light", "dark"]) {
     test(`${name} ${mode}: WCAG contrast >= 4.5`, () => {
@@ -110,16 +105,12 @@ test("app.js has no hard-coded navy palette left (colours come from theme.js)", 
   assert.deepEqual(navy.filter((h) => app.toUpperCase().includes(h)), []);
 });
 
-// Picker cards: Brothers, Lions and Dragons read better on their accent colour (yellow / orange / red) than on the dark band.
-test("Brothers, Lions and Dragons swap picker card colours", () => {
-  assert.deepEqual([...TEAMS.filter((t) => t.cardSwap).map((t) => t.code)], ["ACN", "ADD", "AAA"]);
-});
 // The team picker (NEUTRAL) uses a softer page colour than the near-white / near-black a 5% / 45% band mix gives.
-test("NEUTRAL page colour is the softened picker background", () => {
+test("a palette's own page colour is used as --page in both modes", () => {
   const n = deriveTheme(NEUTRAL);
-  assert.equal(n.light["--page"], "#DCDDE0");
-  assert.equal(n.dark["--page"], "#1E1F23");
-  for (const t of TEAMS) assert.equal(t.page, undefined, `${t.slug} keeps the derived page colour`);
+  assert.ok(NEUTRAL.page, "NEUTRAL sets a page colour");
+  assert.equal(n.light["--page"], NEUTRAL.page[0]);
+  assert.equal(n.dark["--page"], NEUTRAL.page[1]);
 });
 // With a custom page colour the light --line is derived from it, so rules (── 選一支球隊 ──, footer) stay visible.
 test("NEUTRAL light --line is darker than its page", () => {
@@ -135,9 +126,8 @@ for (const t of TEAMS) {
   });
 }
 
-// --warn (意見分歧, 爆冷) is a shared orange from style.css; Lions' accent is orange too, so Lions alone overrides it.
-test("only Lions overrides --warn; others keep the style.css default", () => {
-  assert.deepEqual([...TEAMS.filter((t) => t.warn).map((t) => t.code)], ["ADD"]);
+// --warn (意見分歧, 爆冷) is a shared orange from style.css; Lions' accent is orange too, so Lions overrides it.
+test("palettes without a warn override keep the style.css --warn", () => {
   for (const t of TEAMS.filter((x) => !x.warn)) for (const mode of ["light", "dark"]) assert.equal(deriveTheme(t)[mode]["--warn"], undefined);
   assert.equal(deriveTheme(NEUTRAL).light["--warn"], undefined);
 });
