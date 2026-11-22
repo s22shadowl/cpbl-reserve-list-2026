@@ -791,7 +791,7 @@ $("mkImg").onclick=async()=>{
     if(isInAppBrowser(navigator.userAgent))kids.push(el("p",{class:"hint inapp",text:"無法儲存請改用 Safari／Chrome 開啟。"}));
     openSheet("名單圖片",kids,b);
   }catch(e){toast("圖片產生失敗，請再試一次")}
-  b.disabled=sel.size===0||sel.size>LIMIT;lb.textContent="存成圖片";
+  b.disabled=false;lb.textContent="存成圖片";
 };
 
 function showOfficialCopy(){

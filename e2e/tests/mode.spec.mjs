@@ -154,5 +154,5 @@ test("empty list: share buttons explain", async ({ page }) => {
   await expect(page.locator("#selN")).toHaveText("0");
   await page.locator("#mkImg").click({ force: true });
   await expect(page.locator("#toast")).toHaveText("名單是空的");
-  await expect(page.locator("#sheet img.shot")).toHaveCount(0);
+  await expect(page.locator("#sheet")).toBeHidden();
 });

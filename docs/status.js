@@ -16,9 +16,9 @@ function saveState({saving,saved,sel,locked=false,mineFailed=false,limit=Infinit
   if(!sameSet(saved,sel))return{kind:had?"changed":"unsent",disabled:over>0,label,over};
   return{kind:"sent",disabled:true,label,over};
 }
-// Submitting fewer than the limit (but some) needs a second press; an empty list is a withdrawal, not confirmed.
 function saveBlockReason(k){return k.over>0&&k.kind!=="saving"&&k.kind!=="locked"?`移出 ${k.over} 人後才能送出`:null}
 function shareBlockReason(n,limit){return n===0?"名單是空的":n>limit?`移出 ${n-limit} 人後才能分享`:null}
+// Submitting fewer than the limit (but some) needs a second press; an empty list is a withdrawal, not confirmed.
 function needsConfirm(n,limit){return n>0&&n<limit}
 // Toast text for a failed POST /picks by the Worker's error code (network errors have none).
 function submitError(code,status){
