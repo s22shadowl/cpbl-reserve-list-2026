@@ -283,10 +283,11 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 
 /* sheet */
 .sheet{position:fixed;inset:0;background:var(--scrim);z-index:30;display:flex;align-items:center;justify-content:center;padding:16px}
-.sheet-in{background:var(--paper);width:100%;max-width:640px;max-height:100%;overflow:auto;padding:16px 18px 18px;display:flex;flex-direction:column;gap:12px;border-top:4px solid var(--acc)}
-.sheet-h{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.sheet-h b{font-size:18px;color:var(--ink);font-weight:700}
-.link{background:none;border:0;color:var(--acc-ink);cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-size:14px;padding:4px}
+.sheet-in{background:var(--paper);width:100%;max-width:640px;max-height:100%;overflow:auto;padding:0 18px 18px;display:flex;flex-direction:column;gap:12px;border-radius:8px;box-shadow:0 12px 36px rgba(0,0,0,.35)}
+.sheet-h{position:sticky;top:0;z-index:1;background:var(--paper);display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0 4px}
+.sheet-x{flex:none;margin-left:auto;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:none;border:0;border-radius:50%;color:var(--muted);cursor:pointer;padding:0}
+.sheet-x:hover{background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink)}
+.sheet-x svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
 #sheetBody{display:flex;flex-direction:column;gap:12px}
 .shot{width:100%;height:auto;border:1px solid var(--line)}
 .sheet-a{display:flex;gap:12px;align-items:center;flex-wrap:wrap}

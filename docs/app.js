@@ -704,13 +704,13 @@ function restoreModalFocus(){
   if(o&&!o.isConnected&&o.classList.contains("info"))o=document.querySelector(`.info[data-id="${o.dataset.id}"]`);
   if(o&&o.isConnected&&!o.disabled)o.focus();
 }
-function openSheet(title,kids,opener){
+function openSheet(label,kids,opener,acts=[]){
   if(!$("detail").hidden)closeDetail(); // one modal at a time, so Esc closes the one on screen
   modalOpener=opener||null;
-  $("sheetT").textContent=title;$("sheetBody").replaceChildren(...kids);$("sheet").hidden=false;$("sheetX").focus();
+  $("sheet").setAttribute("aria-label",label);$("sheetA").replaceChildren(...acts);$("sheetBody").replaceChildren(...kids);$("sheet").hidden=false;$("sheetX").focus();
 }
 function closeSheet(){
-  $("sheet").hidden=true;$("sheetBody").replaceChildren();if(sheetUrl){URL.revokeObjectURL(sheetUrl);sheetUrl=null}
+  $("sheet").hidden=true;$("sheetA").replaceChildren();$("sheetBody").replaceChildren();if(sheetUrl){URL.revokeObjectURL(sheetUrl);sheetUrl=null}
   restoreModalFocus();
 }
 const SVG_X='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
@@ -758,7 +758,7 @@ $("copyTxt").onclick=()=>{
   const why=shareBlockReason(sel.size,LIMIT);if(why){toast(why);return}
   const t=listText();
   const fb=()=>{const ta=el("textarea",{class:"ta",readonly:"","aria-label":"名單文字"});ta.value=t;
-    openSheet("複製名單文字",[el("p",{class:"hint",text:"複製失敗，請手動複製。"}),ta],$("copyTxt"));
+    openSheet("名單文字",[el("p",{class:"hint",text:"複製失敗，請手動複製。"}),ta],$("copyTxt"));
     setTimeout(()=>{ta.focus();ta.select()},0)};
   try{navigator.clipboard.writeText(t).then(()=>toast("已複製 "+sel.size+" 人名單到剪貼簿","ok"),fb)}catch(e){fb()}
 };
@@ -829,18 +829,17 @@ $("mkImg").onclick=async()=>{
     const blob=await new Promise(r=>cv.toBlob(r,"image/png"));if(!blob)throw 0;
     if(sheetUrl)URL.revokeObjectURL(sheetUrl);sheetUrl=URL.createObjectURL(blob);
     const fname=T.short+"契約保留名單.png";
-    const row=el("div",{class:"sheet-a"});
-    const dla=el("a",{class:"btn",href:sheetUrl,download:fname},el("span",{text:"下載 PNG"}));row.append(dla);
+    const acts=[el("a",{class:"btn",href:sheetUrl,download:fname},el("span",{text:"下載 PNG"}))];
     const file=new File([blob],fname,{type:"image/png"});
     if(navigator.canShare&&navigator.canShare({files:[file]})){
       const sh=el("button",{class:"btn"},el("span",{text:"分享"}));
-      sh.onclick=async()=>{try{await navigator.share({files:[file],title:T.name+"契約保留名單"})}catch(e){}};row.append(sh);
+      sh.onclick=async()=>{try{await navigator.share({files:[file],title:T.name+"契約保留名單"})}catch(e){}};acts.push(sh);
     }
-    row.append(el("span",{class:"hint",text:"或長按圖片另存。"}));
     // The preview is a data: URL (not the blob URL): some in-app browsers cannot long-press-save blob images.
-    const kids=[el("img",{class:"shot",src:cv.toDataURL("image/png"),alt:"我的契約保留球員名單"}),row];
-    if(isInAppBrowser(navigator.userAgent))kids.push(el("p",{class:"hint inapp",text:"無法儲存請改用 Safari／Chrome 開啟。"}));
-    openSheet("名單圖片",kids,b);
+    const kids=[el("img",{class:"shot",src:cv.toDataURL("image/png"),alt:"我的契約保留球員名單"})];
+    if(isInAppBrowser(navigator.userAgent))kids.push(el("p",{class:"hint inapp",text:"長按圖片可存到相簿；無法儲存請改用 Safari／Chrome 開啟。"}));
+    else if(matchMedia("(pointer:coarse)").matches)kids.push(el("p",{class:"hint",text:"長按圖片可存到相簿。"}));
+    openSheet("名單圖片",kids,b,acts);
   }catch(e){toast("圖片產生失敗，請再試一次")}
   b.disabled=false;lb.textContent="存成圖片";
 };

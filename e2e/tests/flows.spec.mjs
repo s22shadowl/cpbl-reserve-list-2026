@@ -190,7 +190,12 @@ test("keyboard: tabs move with arrow keys; the image sheet traps Tab and returns
   const dim = await sheet.locator("img.shot").evaluate(i => [i.naturalWidth, i.naturalHeight]);
   expect(dim).toEqual([1080, 1350]);
   await expect(sheet.locator("a[download]")).toHaveAttribute("href", /^blob:/);
+  await expect(sheet).toHaveAttribute("aria-label", "名單圖片");
+  await expect(page.locator("#sheetT")).toHaveCount(0);
+  await expect(sheet.locator(".sheet-h a[download]")).toHaveAttribute("href", /^blob:/);
+  await expect(page.locator("#sheetX")).toHaveAttribute("aria-label", "關閉");
   await expect(sheet.locator(".inapp")).toHaveCount(0);
+  await expect(sheet.locator(".hint")).toHaveCount(0);
   for (let i = 0; i < 6; i++) {
     await page.keyboard.press("Tab");
     expect(await page.evaluate(() => document.getElementById("sheet").contains(document.activeElement))).toBe(true);
@@ -206,7 +211,18 @@ test("in-app browser: the image sheet suggests opening in Safari／Chrome", asyn
   await open(page);
   await cutTo60(page);
   await page.locator("#mkImg").click();
-  await expect(page.locator("#sheet .inapp")).toHaveText("無法儲存請改用 Safari／Chrome 開啟。");
+  await expect(page.locator("#sheet .inapp")).toHaveText("長按圖片可存到相簿；無法儲存請改用 Safari／Chrome 開啟。");
+  await context.close();
+});
+
+test("touch device: the image sheet hints long-press, no in-app line", async ({ browser }) => {
+  const context = await browser.newContext({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  await open(page);
+  await cutTo60(page);
+  await page.locator("#mkImg").click();
+  await expect(page.locator("#sheet .hint")).toHaveText("長按圖片可存到相簿。");
+  await expect(page.locator("#sheet .inapp")).toHaveCount(0);
   await context.close();
 });
 
