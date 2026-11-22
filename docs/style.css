@@ -82,13 +82,13 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 .acts{display:flex;gap:6px;flex:none}
 .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.38);background:transparent;color:#fff;border-radius:6px;padding:7px 12px;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;position:relative}
 .btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
-.btn:hover:not(:disabled){background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.6)}
+.btn:hover:not(:disabled):not([aria-disabled="true"]){background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.6)}
 .btn.pri{background:#fff;color:var(--band);border-color:#fff;font-weight:700;padding-inline:16px}
-.btn.pri:hover:not(:disabled){background:var(--pri-hover)}
+.btn.pri:hover:not(:disabled):not([aria-disabled="true"]){background:var(--pri-hover)}
 .btn.pri.dirty::after{content:"";position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:50%;background:var(--band-dot);box-shadow:0 0 0 2px var(--band)}
 .btn.arm{border-color:var(--band-over);color:var(--band-over)}
 .btn.pri.arm,.btn.pri.arm:hover{background:transparent}
-.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn:disabled,.btn[aria-disabled="true"]{opacity:.35;cursor:not-allowed}
 .views{display:flex;flex:none}
 .views button{background:none;border:0;padding:4px 12px 6px 0;margin-right:12px;font-weight:700;font-size:15px;color:var(--band-muted);cursor:pointer;position:relative}
 .views button[aria-selected="true"]{color:#fff}
@@ -283,7 +283,7 @@ section.grp{margin-bottom:22px;scroll-margin-top:calc(var(--hh,150px) + 10px)}
 .sheet-a{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .sheet-a .btn{background:var(--acc);color:var(--on-acc);border-color:var(--acc)}
 /* beats the band .btn:hover (white wash): stays on the accent, fill shifts away from the text colour (--acc-hover) */
-.sheet-a .btn:hover:not(:disabled){background:var(--acc-hover);border-color:var(--acc);text-decoration:underline;text-underline-offset:3px}
+.sheet-a .btn:hover:not(:disabled):not([aria-disabled="true"]){background:var(--acc-hover);border-color:var(--acc);text-decoration:underline;text-underline-offset:3px}
 .hint{font-size:12.5px;color:var(--muted);margin:0}
 .ta{width:100%;min-height:260px;font:inherit;font-size:13px;line-height:1.6;padding:10px;border:1px solid var(--line);background:var(--page);color:var(--text);resize:vertical}
 

@@ -14,7 +14,17 @@ test("default is 刪減: whole team kept, over 60 blocks submit/copy/image", asy
   await expect(page.locator("#modeName")).toContainText("刪減");
   await expect(page.locator("#moveN")).toHaveText(`移出 ${N - LIMIT} 人`);
   await expect(page.locator("#moveN")).toBeVisible();
-  for (const id of ["#save", "#copyTxt", "#mkImg"]) await expect(page.locator(id)).toBeDisabled();
+  let posted = 0;
+  page.on("request", r => { if (r.method() === "POST" && r.url().includes("/picks")) posted++; });
+  for (const id of ["#save", "#copyTxt", "#mkImg"]) {
+    await expect(page.locator(id)).toHaveAttribute("aria-disabled", "true");
+    await expect(page.locator(id)).toHaveJSProperty("disabled", false); // toBeEnabled() counts aria-disabled as disabled
+  }
+  await page.locator("#save").click({ force: true }); // Playwright waits out aria-disabled otherwise
+  await expect(page.locator("#toast")).toHaveText(`移出 ${N - LIMIT} 人後才能送出`);
+  await page.locator("#copyTxt").click({ force: true });
+  await expect(page.locator("#toast")).toHaveText(`移出 ${N - LIMIT} 人後才能分享`);
+  expect(posted).toBe(0);
   await expect(page.locator("#save")).toHaveAttribute("title", `移出 ${N - LIMIT} 人後才能送出`);
   await expect(page.locator("#save")).not.toHaveClass(/\bdirty\b/); // no reminder dot on a button that cannot be pressed
   await expect(page.locator("#modeHint")).toContainText("全隊已保留");
@@ -126,4 +136,23 @@ test("two tabs: switching mode in one shows up in the other", async ({ context }
   await usePickMode(a);
   await expect(b.locator("#modeName")).toContainText("挑選");
   await expect(b.locator("#selN")).toHaveText("0");
+});
+
+test("over-limit save explains itself, then works at 60", async ({ page }) => {
+  test.skip(N <= LIMIT, "roster not over the limit");
+  await open(page);
+  await expect(page.locator("#save")).toHaveAttribute("aria-disabled", "true");
+  await cutTo60(page);
+  await expect(page.locator("#save")).not.toHaveAttribute("aria-disabled", "true");
+  await submit(page);
+});
+
+test("empty list: share buttons explain", async ({ page }) => {
+  await open(page);
+  await page.locator("#clear").click();
+  await page.locator("#clear").click(); // second press confirms
+  await expect(page.locator("#selN")).toHaveText("0");
+  await page.locator("#mkImg").click({ force: true });
+  await expect(page.locator("#toast")).toHaveText("名單是空的");
+  await expect(page.locator("#sheet img.shot")).toHaveCount(0);
 });

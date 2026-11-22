@@ -9,7 +9,7 @@ const src = new URL("../../docs/status.js", import.meta.url);
 
 const ctx = vm.createContext({});
 vm.runInContext(readFileSync(src, "utf8"), ctx, { filename: fileURLToPath(src) });
-const { saveState, sameTally, needsConfirm, submitError, statsStale, hhmm, STATS_STALE_MS } =
+const { saveState, saveBlockReason, shareBlockReason, sameTally, needsConfirm, submitError, statsStale, hhmm, STATS_STALE_MS } =
   vm.runInContext("({saveState,sameTally,needsConfirm,submitError,statsStale,hhmm,STATS_STALE_MS})", ctx);
 const S = (...ids) => new Set(ids);
 const plain = o => JSON.parse(JSON.stringify(o));
@@ -110,4 +110,18 @@ test("limit: over the cap disables send but keeps the kind; saving/locked keep p
 test("limit: over the cap with a submitted list stays 'changed' but disabled", () => {
   const ids = n => S(...Array.from({ length: n }, (_, i) => "p" + i));
   assert.deepEqual(st({ saved: ids(3), sel: ids(61), limit: 60 }), { kind: "changed", disabled: true, label: SEND, over: 1 });
+});
+test("saveBlockReason: only over-limit states explain themselves", () => {
+  const sel = n => new Set(Array.from({ length: n }, (_, i) => "p" + i));
+  assert.equal(saveBlockReason(saveState({ saving:false, saved:new Set(), sel:sel(65), limit:60 })), "移出 5 人後才能送出");
+  assert.equal(saveBlockReason(saveState({ saving:false, saved:null, sel:sel(61), limit:60 })), "移出 1 人後才能送出");
+  assert.equal(saveBlockReason(saveState({ saving:false, saved:new Set(), sel:sel(65), locked:true, limit:60 })), null);
+  assert.equal(saveBlockReason(saveState({ saving:true, saved:new Set(), sel:sel(65), limit:60 })), null);
+  assert.equal(saveBlockReason(saveState({ saving:false, saved:new Set(), sel:sel(0), limit:60 })), null);
+});
+test("shareBlockReason", () => {
+  assert.equal(shareBlockReason(0, 60), "名單是空的");
+  assert.equal(shareBlockReason(63, 60), "移出 3 人後才能分享");
+  assert.equal(shareBlockReason(60, 60), null);
+  assert.equal(shareBlockReason(1, 60), null);
 });

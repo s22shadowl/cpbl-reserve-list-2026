@@ -351,7 +351,8 @@ function renderDock(){
   const n=sel.size;
   $("selN").textContent=n;$("selBar").style.width=Math.min(100,n/LIMIT*100)+"%";
   $("top").classList.toggle("over",n>LIMIT);
-  $("copyTxt").disabled=$("mkImg").disabled=n===0||n>LIMIT; // over the limit is not a list to share
+  const why=shareBlockReason(n,LIMIT); // aria-disabled, not disabled: a tap still explains why (over the limit is not a list to share)
+  for(const id of["copyTxt","mkImg"]){const b=$(id);b.disabled=false;if(why)b.setAttribute("aria-disabled","true");else b.removeAttribute("aria-disabled")}
   $("clear").disabled=n===0;
   renderListMode();
 }
@@ -386,10 +387,12 @@ function switchListMode(){
 $("modeBtn").onclick=$("modeHint").onclick=pressListMode;
 function fmt(t){const d=new Date(t);return isNaN(d)?"":`${d.getMonth()+1}/${d.getDate()} ${hhmm(t)}`}
 const LOCKED_MSG="官方名單已公布，送出已截止";
+const curSaveState=()=>saveState({saving,saved,sel,locked,mineFailed,limit:LIMIT});
 function renderStatus(){
   const s=$("status"),btn=$("save");s.replaceChildren();
-  const k=saveState({saving,saved,sel,locked,mineFailed,limit:LIMIT}),armed=saveArmed&&!k.disabled;
-  btn.disabled=k.disabled;
+  const k=curSaveState(),armed=saveArmed&&!k.disabled,why=saveBlockReason(k);
+  btn.disabled=k.disabled&&!why;
+  if(why)btn.setAttribute("aria-disabled","true");else btn.removeAttribute("aria-disabled");
   btn.classList.toggle("dirty",!armed&&!k.disabled&&(k.kind==="changed"||k.kind==="unsent")); // no dot on a button that cannot be pressed (over the limit)
   btn.classList.toggle("arm",armed);
   btn.querySelector(".lb").textContent=armed?"確定送出？":k.label;
@@ -436,6 +439,7 @@ async function loadMine(){
 const retryMine=()=>{if(T&&saved===null&&mineFailed)loadMine()};
 window.addEventListener("online",retryMine);
 async function save(){
+  const why=saveBlockReason(curSaveState());if(why){toast(why);return}
   if(saving||locked)return;
   const code=T.code,name=T.name,ids=[...sel].sort();
   if(needsConfirm(ids.length,LIMIT)&&!saveArmed){armSave(ids.length);return}
@@ -708,6 +712,7 @@ document.addEventListener("keydown",e=>{
   else if(!e.shiftKey&&(!inside||document.activeElement===last)){e.preventDefault();first.focus()}
 });
 $("copyTxt").onclick=()=>{
+  const why=shareBlockReason(sel.size,LIMIT);if(why){toast(why);return}
   const t=listText();
   const fb=()=>{const ta=el("textarea",{class:"ta",readonly:"","aria-label":"名單文字"});ta.value=t;
     openSheet("複製名單文字",[el("p",{class:"hint",text:"複製失敗，請手動複製。"}),ta],$("copyTxt"));
@@ -766,6 +771,7 @@ async function drawCard(){
   return cv;
 }
 $("mkImg").onclick=async()=>{
+  const why=shareBlockReason(sel.size,LIMIT);if(why){toast(why);return}
   const b=$("mkImg"),lb=b.querySelector(".lb");b.disabled=true;lb.textContent="產生中…";
   try{
     const cv=await drawCard();
