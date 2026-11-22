@@ -44,6 +44,7 @@ function initMode(){
   $("themeBtn").addEventListener("click",()=>{
     const m=nextMode($("themeBtn").dataset.mode);
     setMode(m);
+    toast("配色："+MODE_UI[m].label,"ok");
     store("rl-theme",m==="auto"?null:m);
   });
 }

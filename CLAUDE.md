@@ -37,6 +37,7 @@
 - 前端覆蓋率：`node --test --experimental-test-coverage tests/frontend/*.test.mjs`（測試以 vm 載入 `docs/*.js` 時 `filename` 要給絕對路徑，覆蓋率才會算到該檔）。
 - **E2E 必跑**（Worker 固定以 `--var LOCKED:false` 啟動，鎖定流程用 `page.route` 模擬）：改動前端流程（`docs/app.js` 的按鈕、分頁、送出、撤回、統計讀取、localStorage）或 Worker 後，以及 P1-3 開啟對答案上線前，一律跑 `cd e2e && npm test` 並全數通過才合併。單元測試只涵蓋純函式，串接層的 bug（撤回、統計快取）只有 E2E 抓得到。執行前先停掉 `npm run dev`（前端固定連 8787）；E2E 用獨立的 `e2e/.state`，不影響 `worker/.wrangler` 的開發資料。
 - E2E 預設在刪減模式（整隊全選）下跑；只有挑選模式的行為（60 人上限 toast、名額不足）透過介面切換，用 `e2e/tests/helpers.mjs` 的 `usePickMode`。
+- CSS／版面檢查用兩位富邦球員：帕蘇拉塔基斯利尼安（名字最長）與劉俊豪（標籤只有一列）。
 - 統計讀取的 `fresh=1` 請求要同時加 `cache:"no-store"`：Worker 回應帶 `max-age=60`，否則瀏覽器會在 60 秒內對同一網址回舊結果（E2E 抓到：送出後一分鐘內撤回，份數不更新）。
 
 ## 本機環境

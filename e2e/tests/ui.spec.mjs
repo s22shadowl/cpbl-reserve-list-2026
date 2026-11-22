@@ -108,6 +108,14 @@ test("toast: team-coloured bar shows the message, the next one replaces it, then
   await expect(toast).toBeHidden({ timeout: 6000 }); // stays up max(2.4 s, 90 ms per character)
 });
 
+test("theme button announces its mode in a toast", async ({ page }) => {
+  await open(page);
+  for (const t of ["配色：淺色", "配色：深色", "配色：自動（跟隨系統）"]) {
+    await page.locator("#themeBtn").click();
+    await expect(page.locator("#toast")).toHaveText(t);
+  }
+});
+
 // ---------- c. stats ranking ----------
 test("stats ranking: top 20 by default, the toggle reveals 21–60 and collapses again", async ({ page }) => {
   const n = AEO.length, preview = 20, b = Math.min(LIMIT, n);
