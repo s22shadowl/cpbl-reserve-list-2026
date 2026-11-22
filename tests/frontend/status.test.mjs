@@ -10,7 +10,7 @@ const src = new URL("../../docs/status.js", import.meta.url);
 const ctx = vm.createContext({});
 vm.runInContext(readFileSync(src, "utf8"), ctx, { filename: fileURLToPath(src) });
 const { saveState, saveBlockReason, shareBlockReason, sameTally, needsConfirm, submitError, statsStale, hhmm, STATS_STALE_MS } =
-  vm.runInContext("({saveState,sameTally,needsConfirm,submitError,statsStale,hhmm,STATS_STALE_MS})", ctx);
+  vm.runInContext("({saveState,saveBlockReason,shareBlockReason,sameTally,needsConfirm,submitError,statsStale,hhmm,STATS_STALE_MS})", ctx);
 const S = (...ids) => new Set(ids);
 const plain = o => JSON.parse(JSON.stringify(o));
 const st = o => plain(saveState({ saving: false, saved: S(), sel: S(), ...o }));
