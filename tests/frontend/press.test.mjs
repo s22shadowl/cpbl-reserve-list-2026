@@ -70,6 +70,14 @@ test("a long press whose click never came does not eat the next tap", () => {
   assert.equal(log.clicks, 1);
 });
 
+test("an armed swallow expires 400 ms after the lift (a later keyboard Enter still clicks)", () => {
+  const { fire, run, log } = setup();
+  fire("pointerdown"); run(); fire("pointerup");
+  assert.equal(timers.filter(Boolean)[0]?.ms, 400);
+  run(); fire("click");
+  assert.equal(log.clicks, 1);
+});
+
 test("context menu is suppressed", () => {
   const { fire } = setup();
   assert.equal(fire("contextmenu").defaultPrevented, true);

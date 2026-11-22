@@ -43,7 +43,7 @@ test("info opens the dialog with stats", async ({ page }) => {
   await page.locator(LIU).click();
   const d = page.locator("#detail");
   await expect(d).toBeVisible();
-  await expect(d.locator("#detailT")).toHaveText("85劉俊豪");
+  await expect(d.locator("#detailT")).toHaveText("85 劉俊豪");
   await expect(d.locator("#detailT .n")).toHaveText("85");
   await expect(d.locator(".meta li")).toHaveText(["游擊手", "一軍", /\d+ 歲/]);
   await expect(d.locator('thead th[scope="col"]')).toHaveText(["一軍", "二軍"]);
@@ -136,4 +136,60 @@ test("a short tap still toggles the tile", async ({ page }) => {
   await page.locator(sel).evaluate(t => t.click());
   await expect(page.locator(sel)).toHaveAttribute("aria-pressed", "false");
   await expect(page.locator("#detail")).toBeHidden();
+});
+
+test("keyboard toggle keeps focus on the same tile", async ({ page }) => {
+  await open(page);
+  const id = await page.locator('.tile[aria-pressed="true"]').nth(2).getAttribute("data-id");
+  await page.locator(`.tile[data-id="${id}"]`).focus();
+  await page.keyboard.press("Space");
+  const t = page.locator(`.tile[data-id="${id}"]`);
+  await expect(t).toHaveAttribute("aria-pressed", "false");
+  await expect(t).toBeFocused();
+});
+
+test("closing after a re-render returns focus to the player's info button", async ({ page }) => {
+  await open(page);
+  await page.locator(LIU).click();
+  await expect(page.locator("#detail")).toBeVisible();
+  await page.evaluate(() => renderGroups()); // a background re-render replaces every tile while the dialog is open
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#detail")).toBeHidden();
+  await expect(page.locator(LIU)).toBeFocused();
+});
+
+test("lifting the finger after a long press does not close the dialog", async ({ page }) => {
+  await open(page);
+  const sel = `.tile[data-id="${await page.locator(".tile").nth(1).getAttribute("data-id")}"]`;
+  await touch(page, sel, "pointerdown");
+  await page.waitForTimeout(600);
+  await expect(page.locator("#detail")).toBeVisible();
+  // iOS: the lift lands on whatever is under the finger now, the scrim or the dialog itself
+  await touch(page, "#detail", "pointerup");
+  await page.locator("#detail").evaluate(d => d.click());
+  await expect(page.locator("#detail")).toBeVisible();
+  // the next real tap on the scrim still closes it
+  await page.locator("#detail").click({ position: { x: 5, y: 5 } });
+  await expect(page.locator("#detail")).toBeHidden();
+});
+
+test("a ghost click on the close button after a long press is ignored", async ({ page }) => {
+  await open(page);
+  const sel = `.tile[data-id="${await page.locator(".tile").nth(1).getAttribute("data-id")}"]`;
+  await touch(page, sel, "pointerdown");
+  await page.waitForTimeout(600);
+  await page.locator("#detail .detail-x").evaluate(x => x.click());
+  await expect(page.locator("#detail")).toBeVisible();
+  await page.locator("#detail .detail-x").click();
+  await expect(page.locator("#detail")).toBeHidden();
+});
+
+test("opening the sheet closes the detail dialog first", async ({ page }) => {
+  await open(page);
+  await page.locator(LIU).click();
+  await page.evaluate(() => openSheet("t", [], null)); // e.g. a slow 存圖 finishing while details are open
+  await expect(page.locator("#detail")).toBeHidden();
+  await expect(page.locator("#sheet")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#sheet")).toBeHidden();
 });

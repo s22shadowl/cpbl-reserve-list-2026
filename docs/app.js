@@ -278,7 +278,7 @@ function tileEl(p,full,show){
   const info=el("button",{type:"button",class:"info","data-id":p.id,"aria-label":p.n+" 詳細資料"});
   info.innerHTML='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 5.2v4.6"/><path d="M6 2.4v.1"/></svg>';
   info.onclick=()=>openDetail(p,info);
-  longPress(b,()=>openDetail(p,info));
+  longPress(b,()=>openDetail(p,info,true));
   const big=el("span",{class:"big","aria-hidden":"true"});
   big.innerHTML='<svg viewBox="0 0 24 24"><path d="M2.8 13.4l2.6-2.2 4.2 3.6C12.6 10.4 16.4 6.6 21.4 3.6l.9 1.3C17.4 9 13.6 13.6 10.6 20z"/></svg>';
   return el("div",{class:"tw"+(on?" on":"")},b,info,big);
@@ -698,21 +698,31 @@ for(const ev of["scroll","resize"])window.addEventListener(ev,()=>{if(!$("toast"
 // Modals (#sheet, #detail): focus moves in on open, Tab stays inside, and closing returns focus to the button that opened it.
 let sheetUrl=null,modalOpener=null;
 function activeModal(){return["sheet","detail"].map($).find(m=>!m.hidden)||null}
-function restoreFocus(){const o=modalOpener;modalOpener=null;if(o&&o.isConnected&&!o.disabled)o.focus()}
+// A re-render while a modal was open replaces the tiles: find the same player's ⓘ again.
+function restoreModalFocus(){
+  let o=modalOpener;modalOpener=null;
+  if(o&&!o.isConnected&&o.classList.contains("info"))o=document.querySelector(`.info[data-id="${o.dataset.id}"]`);
+  if(o&&o.isConnected&&!o.disabled)o.focus();
+}
 function openSheet(title,kids,opener){
+  if(!$("detail").hidden)closeDetail(); // one modal at a time, so Esc closes the one on screen
   modalOpener=opener||null;
   $("sheetT").textContent=title;$("sheetBody").replaceChildren(...kids);$("sheet").hidden=false;$("sheetX").focus();
 }
 function closeSheet(){
   $("sheet").hidden=true;$("sheetBody").replaceChildren();if(sheetUrl){URL.revokeObjectURL(sheetUrl);sheetUrl=null}
-  restoreFocus();
+  restoreModalFocus();
 }
 const SVG_X='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const SVG_EXT='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
 function withSvg(e,svg){e.insertAdjacentHTML("beforeend",svg);return e}
 // Player detail dialog (the tile title, reachable on phones): opened by the tile's ⓘ or a long-press on the tile.
-function openDetail(p,opener){
-  modalOpener=opener||null;
+// iOS ghost click: a long-press opens the dialog under the finger, and the lift may click the scrim or a control in it.
+// So the scrim closes only when the press also started on it, and after a long-press the first click inside is dropped
+// (a new press inside clears that).
+let detailDown=null,detailEat=false;
+function openDetail(p,opener,byPress){
+  modalOpener=opener||null;detailDown=null;detailEat=!!byPress;
   const shown=l=>l.shown?{class:"shown"}:{},tb=detailTable(p),tier=tierNote(p);
   const x=withSvg(el("button",{type:"button",class:"detail-x","aria-label":"關閉"}),SVG_X);x.onclick=closeDetail;
   const table=tb&&el("table",{},
@@ -721,18 +731,20 @@ function openDetail(p,opener){
   $("detailBody").replaceChildren(x,
     el("div",{class:"hd"},el("span",{class:"wm","aria-hidden":"true",text:p.no}),photo(p,"av"),
       el("div",{class:"hc"},el("span",{class:"tm","aria-hidden":"true",text:T.en}),
-        el("h3",{id:"detailT",class:isLongName(p.n)?"long":""},el("span",{class:"n",text:p.no}),p.n),
+        el("h3",{id:"detailT",class:isLongName(p.n)?"long":""},el("span",{class:"n",text:p.no})," ",p.n),
         el("ul",{class:"meta"},...detailChips(p,DATA.updated,posLabel(p)).map(c=>el("li",c.kind?{class:c.kind,text:c.text}:{text:c.text}))))),
     el("div",{class:"bd"},el("div",{class:"sec",text:DATA.updated.slice(0,4)+" SEASON"}),
       table||el("p",{class:"none",text:NO_GAMES}),tier&&el("p",{class:"tier",text:tier}),
       withSvg(el("a",{class:"ext",href:playerUrl(p),target:"_blank",rel:"noopener"},"中職官網球員頁"),SVG_EXT)));
   $("detail").hidden=false;x.focus();
 }
-function closeDetail(){$("detail").hidden=true;$("detailBody").replaceChildren();restoreFocus()}
+function closeDetail(){$("detail").hidden=true;$("detailBody").replaceChildren();restoreModalFocus()}
 function modalFocusables(m){return[...m.querySelectorAll('a[href],button:not([disabled]),textarea,input,select,[tabindex]:not([tabindex="-1"])')].filter(x=>x.offsetParent!==null)}
 $("sheetX").onclick=closeSheet;
 $("sheet").addEventListener("click",e=>{if(e.target.id==="sheet")closeSheet()});
-$("detail").addEventListener("click",e=>{if(e.target.id==="detail")closeDetail()});
+$("detail").addEventListener("pointerdown",e=>{detailDown=e.target;detailEat=false},true);
+$("detail").addEventListener("click",e=>{if(!detailEat)return;detailEat=false;e.preventDefault();e.stopImmediatePropagation()},true);
+$("detail").addEventListener("click",e=>{if(e.target.id==="detail"&&detailDown===e.target)closeDetail()});
 document.addEventListener("keydown",e=>{
   const m=activeModal();if(!m)return;
   if(e.key==="Escape"){if(m.id==="sheet")closeSheet();else closeDetail();return}
