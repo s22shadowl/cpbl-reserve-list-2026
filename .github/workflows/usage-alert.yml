@@ -8,6 +8,10 @@ on:
   schedule:
     - cron: "0,30 2-15 * * *"
   workflow_dispatch:
+    inputs:
+      threshold:
+        description: "Override THRESHOLD (e.g. 1 to test the issue/email path)"
+        required: false
 
 permissions:
   contents: read
@@ -26,7 +30,7 @@ jobs:
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          THRESHOLD: "70000"
+          THRESHOLD: ${{ inputs.threshold || '70000' }}
       - if: steps.usage.outputs.over == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
