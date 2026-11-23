@@ -26,7 +26,7 @@
 
 ## 架構
 
-`docs/` 是純靜態前端（無建置步驟），由 GitHub Pages 發布；Cloudflare Worker ＋ D1 收名單、回傳統計；Python 爬蟲從中職官網產生球員資料，手動執行後 commit。全部使用免費方案。
+`docs/` 是純靜態前端（無建置步驟），由 GitHub Pages 發布；Cloudflare Worker ＋ D1 收名單、回傳統計；Python 爬蟲從中職官網產生球員資料，手動執行後 commit。全部使用免費方案。正式站載入 Cloudflare Web Analytics；GitHub Actions 監控 Worker 每日請求數（免費方案每天 10 萬次），接近上限時開 issue 通知。
 
 ```
 docs/                 前端
@@ -48,6 +48,7 @@ scraper/              爬蟲
   official.py         官方名單轉檔
   overrides.json      手動排除、標籤、新人與選秀補正
 scripts/og.mjs        產生連結預覽圖
+scripts/usage_alert.py  Worker 每日用量告警（.github/workflows/usage-alert.yml 排程執行）
 tests/frontend/       前端單元測試
 e2e/                  Playwright E2E 測試
 ```
@@ -76,7 +77,7 @@ python3 -m http.server -d docs 8080 --bind 127.0.0.1    # 前端：http://localh
 
 | 範圍 | 指令 |
 |---|---|
-| 爬蟲 | `poetry run pytest` |
+| 爬蟲、用量告警 | `poetry run pytest` |
 | 前端 | `node --test tests/frontend/*.test.mjs`（覆蓋率加 `--experimental-test-coverage`） |
 | Worker | `cd worker && npm test` |
 | E2E | `cd e2e && npm test` |
@@ -116,6 +117,7 @@ poetry run python -m scraper.check     # 失敗時不要 commit
 - 前端：推上 `main` 後由 GitHub Pages 發布 `docs/`。
 - Worker：`cd worker && npm run deploy`。
 - 對答案上線步驟見 roadmap P1-3。
+- 用量告警：repo secrets `CF_API_TOKEN`（Cloudflare Account Analytics: Read）與 `CF_ACCOUNT_ID`；門檻 `THRESHOLD` 在 workflow 內（預設 7 萬），手動觸發可帶 `threshold` 測試開 issue。
 
 Fork 成自己的服務：
 
