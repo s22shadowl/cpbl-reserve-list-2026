@@ -1,0 +1,41 @@
+name: Workers usage alert
+
+# Opens one issue per UTC day (GitHub emails the owner once) when today's Workers
+# requests pass THRESHOLD. The free limit (100,000/day, whole account) resets at
+# 00:00 UTC = 08:00 Taiwan. A failed query fails the run, so a broken token is noticed.
+# Runs every 30 min from 10:00 to 23:30 Taiwan (02:00-15:30 UTC).
+on:
+  schedule:
+    - cron: "0,30 2-15 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+      - id: usage
+        run: python3 scripts/usage_alert.py
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          THRESHOLD: "70000"
+      - if: steps.usage.outputs.over == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DAY: ${{ steps.usage.outputs.day }}
+          TOTAL: ${{ steps.usage.outputs.total }}
+        run: |
+          title="Workers 用量告警 ${DAY}"
+          if [ -n "$(gh issue list --state all --search "\"${title}\" in:title" --json number --jq '.[].number')" ]; then
+            echo "Already alerted for ${DAY}"; exit 0
+          fi
+          gh issue create --title "$title" --body "UTC ${DAY} 至今 Workers 請求 ${TOTAL} 次，已達告警門檻（免費上限 100,000，台灣 08:00 重置）。詳見 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

@@ -52,6 +52,10 @@
 - rtk 改寫後的 `git log`／`git commit` 輸出可能不完整（曾看起來像合併沒建立）：要確認就用 `git --no-pager log --format=...` 或 `git reflog`。
 - Playwright MCP 只能寫入啟動目錄；從 `~/dev/cpbl-reserve-list` 啟動時，截圖改用 `e2e/node_modules/@playwright/test` 的 node 腳本存到本 repo 的 `.playwright-mcp/`（已在 `.git/info/exclude`），不要寫進原作者 repo。
 
+## 用量告警
+
+Workers 免費方案每帳號每天 10 萬次請求，UTC 0 點（台灣 8 點）重置，超過回 1027。`.github/workflows/usage-alert.yml` 在台灣 10:00–23:30 每半小時跑 `scripts/usage_alert.py`，查整個帳號當天請求數，達 `THRESHOLD`（7 萬）時開一個當天（UTC）的 issue，GitHub 只寄一次信；查詢失敗才讓 workflow 失敗。需要 repo secrets `CF_API_TOKEN`（Account Analytics: Read）與 `CF_ACCOUNT_ID`。每次執行的用量寫在該 run 的 summary。
+
 ## 灌票檢查（手動，原 P3-1）
 
 不做定期機制，11/30 前後流量高峰時手動查一次正式 D1（`--remote` 需 wrangler 已登入；時間為 UTC；撤回的名單已刪除，不會出現）：

@@ -17,7 +17,8 @@ pytest = "^9.2"
 pytest-cov = "^7.1"
 
 [tool.pytest.ini_options]
-testpaths = ["scraper/tests"]
+testpaths = ["scraper/tests", "scripts/tests"]
+pythonpath = ["scripts"]
 
 [build-system]
 requires = ["poetry-core"]
